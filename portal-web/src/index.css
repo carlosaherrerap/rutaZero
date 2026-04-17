@@ -1,0 +1,42 @@
+/* ============================================================
+   RUTA ZERO — Portal Web Design System
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── Tokens ─────────────────────────────────────────────── */
+:root {
+  --c-bg:         #0d1117;
+  --c-surface:    #161b22;
+  --c-surface-2:  #21262d;
+  --c-border:     #30363d;
+  --c-primary:    #2563eb;
+  --c-primary-h:  #1d4ed8;
+  --c-accent:     #10b981;
+  --c-warn:       #f59e0b;
+  --c-danger:     #ef4444;
+  --c-text:       #e6edf3;
+  --c-muted:      #7d8590;
+  --c-muted-2:    #484f58;
+  --radius-sm:    6px;
+  --radius:       10px;
+  --radius-lg:    16px;
+  --shadow:       0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
+  --transition:   0.18s ease;
+  --sidebar-w:    240px;
+  --topbar-h:     60px;
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--c-bg);
+  color: var(--c-text);
+  line-height: 1.5;
+  font-size: 14px;
+}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
