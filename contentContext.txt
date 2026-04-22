@@ -1,0 +1,111 @@
+Mi cliente quiere una app(movil) que monitoree a sus trabajadores de campo a través de su ubicacion en tiempo real. Además de un portal web donde pueda crear las rutas de trabajado de sus trabajadores, tambien en el portal se pueden ver los logs(avances de gestiones) si es que el trabajador está haciendo su trabajo que consiste en llenar un formulario con informacion del cliente. En dicho formulario tambien se puede ver informacion del cliente como datos personales o los que ya están en la base de datos y se va a actualizar esa data según la gestión que tipifique el trabajador.
+En el portal web, se ve los trabajores, se crea trabajadores modificar informacion de los trabajadores, ver ss estados si están almorzando, si finalizaron su día, etc. .Se muestra una vista de todos los clientes que hay en la base de datos, se pueden crear rutas seleccionando un trabajador y despues los clientes a los que dicho trabajador va a visitar.
+Se puede ver dashaboards de todos los clientes, clientes que ya se actualizó su informacion, clientes que un trabajador está yendo a visitar, etc.
+Se puede ver/buscar a un cliente para ver su ficha.
+
+En la app el trabajador puede ingresar solo con usuario y contraseña y si en la base de datos dicho trabajador tiene un estado activo sino no podrá ingresar. Los trabajadores podrán ver ciertas secciones.
+
+*NOTA:Es muy importante mantener el orden y la categorizacion de todo, el hecho de haya datos sueltos no significa que deban estarlo siempre. Necesito que se ordene y categorice para mejorar la experiencia de usuario. Que sea todo el diseño super intuitivo y ordenado.
+
+- Entre esas secciones se encuentra la lista completo de todos los clientes. Cada cliente tiene su card sencilla con informacion rapida como:estado en el que está su ficha, si ya se llenó su ficha o está en proceso o si un trabajador está yendo a visitar al cliente, el trabajador al que se le asignó dicho cliente.
+- Se encuentra la lista de rutas que se le asignó al cliente con sesion activa. con un menu inferior de stats:cantidad de clientes asignados, cantidad de clientes visitados, clientes que se llenó su ficha satisfacotiramente, clientes. Cada ruta es un card con informacion(imagen de mapa o icono + nombre de ruta + total de clientes / cantidad de cliente visitados). Al ingresara a la ruta se puede ver todos los clientes a los que se debe visitar, si un cliente ya se visitó la card del cliente(unicamente para ese cliente) en todas las secciones cambia de color a VERDE, si el cliente se guarda con la tipificacion:REPROGRAMARA entonces su card cambia de color a AMARILLO si al cliente se tipifica NO SE ENCONTRÓ entonces su card cambia a ROJO, si un trabajador está yendo a visitar a un cliente entonces la card de ese cliente cambia a MORADO.
+Dentro de cada ruta hay una cantidad de clientes que el trabajador debe visitar, cada cliente tiene una card que al ingresar nos muestra un mapa del punto donde se encuentra el cliente y se traza una linea de ruta entre el punto del trabajador(el que tiene la app y la ubicacion del cliente) ademas al agrandar el mapa muestra el tiempo que tomaria en llegar al dicho cliente como la distancia en metros(solo esos datos) Ademas que se puede marcar la opcion VISITAR que significa que el trabajador va a visitar a dicho cliente, entonces el boton cambia a CANCELAR VISITA, entonces ese estado para ese cliente cambia: EN_VISITA
+Lo que quiere decir es que ningun otro trabajador puede ir a visitar a dicho cliente, incluyendo el mismo trabajador por logica no puede estar yendo a visitar a mas de 1 cliente a la vez, para visitar a otro cliente tendria que cancelar primero la visita al primer cliente o en todo caso, suponiendo que ya llegó al lugar donde está el cliente entonces puede presionar el siguiente boton:LLENAR FICHA, solo se puede llenar su ficha si previamente se presiona el boton VISITAR. 
+De manera que se ha gestionado al cliente:REPROGRAMARA, NO SE ENCONTRO(10:00 12/01/2026),PAGÓ. Entonces ya no se puede visitar al cliente a menos que su gestion sea "NO SE ENCONTRÓ" 
+Las gestion NO SE ENCONTRO tienen una fecha. Por ejemplo, No se encontró al cliente el día de hoy(16/04/2026) a las 4:30pm, etnonces otro cliente podrá darse cuenta si ya pasaron días o varias horas de que no se encontró para poder visitarlo, igual en los iconos del menu inferior al presionar en el icono de total de clientes que no se encontró entonces me filtra todos los clientes con dicha gestion.
+- ESTADOS:si el trabajador inició su día de labor, si está en camino hacia un cliente, si está en almuerzo, si finalizó su día de trabajo, etc. 
+
+HERRAMIENTAS:
+- Base de datos local para que se guarde cuando no hay internet y  apenas regrese la señal se suba la informacion a la base de datos. Entonces lo que se guarda en cache es con la id del cliente, id de la ficha del cliente, id del trabajador. 
+En pocas palabras todos los clientes que tengan en la base de datos un campo: fecha_gestion  que sea el día de hoy entonces todos esos clientes se guardan en local a penas inicia sesion el cliente a primera hora de la mañana cuando va a empezar a laborar.
+y con esa base de clientes es que se alimenta la aplicacion, ya que normalmente la app deberia estar conectada a internet para extraer informacion de la base de datos:clientes, estados de clientes. Pero como va a haber casos donde no haya internet entonces la app se va alimentar de la base de datos local, en caché(txt o sql) y si en un momneto con internet se registró a un cliente entonces tambien se guarda ese cambio en la base de datos local(caché) y cuando se va el internet entonces aun asi se continua donde se quedó, y se actualiza solo la base de datos local hasta que regrese la señal y se sincronicen los cambios.
+
+CONSIDERACIONES:
+
+- Los datos de un cliente es de manera global, si un cliente tiene un estado:NO_ENCONTRADO
+entonces en la seccion donde se ven todos los clientes de la base de datos asi no esté asignado a un trabajador entonces aún asi todos los trabajadores deben verlo con ese estado, las actulizaciones son en tiempo real.
+- El worker puede ver exactamente todos los clientes de una gestion filtrada por un spinner
+- Si todos los clientes de una ruta del worker ya han sido visitados(cualquier color menos azul o rojo) entonces esa card de esa ruta se pone opaco, y los botones de los card del cliente(VISITAR/LLENAR FICHA) se bloquean. Si ya se visitó y llenó su ficha no tiene sentido que sigan activos
+- Cuando se llena una ficha o guarda una tipificacion entonces por defecto regresa a la vista anterior, en RUTAS
+
+
+
+CASO:
+
+Mas adelante se creara un formulario donde el cliente ingrese su ubicacion(si el cliente no tiene señal solo podrá guardar su ubicacion) y datos personales, con esa informacion se llena la base de datos que proximamente se usara para la app y portal web.
+Entonces, una vez con las ubicaciones y/o direcciones guardadas en la base de datos(long, lat) se muestran en un mapa completo del administrador en el portal web con todos los puntos/PINES de todos los clientes, entonces el administrador selecciona un worker(trabajador PEDRO por ejemplo) y luego selecciona una cantidad de clientes, cada cliente seleccionado se va agregando a una lista en la cual se puede quitar clientes, pero en el mapa podemos continuar agregando clientes presionando sobre su pin, hacemos esto para crear una ruta, a la que podemos poner un nombre(LIMA SUR por ejemplo) 
+
+Luego el trabajador PEDRO podrá ver las rutas que el administrador le asignó y dentro de la ruta el total de clientes, y por cada cliente un camino trazado a seguir desde el punto de ubicacion del worker y el del cliente. Si PEDRO se dirije al cliente(PABLO por ejemplo) entonces PEDRO presiona el boton VISITAR y automaticamente el estado  de PABLO cambia a "EN_VISITA" ademas que cada estado del cliente pinta su card de un color distinto, si está libre:AZUL, si está en visita o un worker está yendo a visitarlo: MORADO, si no se encontró:ROJO, si REPROGRAMARA:AMARILLO, si ya pagó:VERDE
+
+Cada worker podrá ver la actualizacion de un cliente en tiempo real, suponiendo que el worker DANIEL va a la seccion HOME donde se pueden ver todos los clientes, en cada card de cliente sale el worker que se le asignó, entonces puede ver al cliente PABLO que su worker es PEDRO pero está yendo a visitarlo entonces la card de ese cliente PABLO es MORADO
+por lo tanto el worker DANIEL no podrá visitarlo ni ningun otro worker. A menos que el worker que presionó VISITAR cancele la visita y libere al cliente
+
+-------------------------------------------------------------
+
+FICHA DEL CLIENTE:
+
+Son varias vistas, una seguida de otra, en la primera solo se ve los datos del cliente para corroborar la identidad del cliente(estos datos no se pueden manipular solo sirve para validar), la siguiente vista es el formulario o conocido como FICHA del cliente, donde estarán estos datos para llenar:
+
+TIPO DE CREDITO <--numerico entero
+FECHA DE DESEMBOLSO <--solo fecha con calendario
+MONTO DE DESEMBOLSO <--numerico entero
+MONEDA <--numerico flotante
+NRO DE CUOTAS <--- numerico entero
+NRO DE CUOTAS PAGADAS <--numerico entero
+MONTO DE LA CUOTA <--numerico flotante
+CONDICION CONTABLE <---MOROSO, RESPONSABLE, 
+SALDO CAPITAL <--numerico flotante
+
+En la ultima vista, se adjunta evidencia imagenes(maximas, 5) indicando que el worker de verdad se dirigió al lugar del cliente.
+
+--------------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+==========================================================================
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+--------------------------------------------------------------------------
+
+SUGERENCIAS EN LA BASE DE DATOS:
+
+ENTIDAD: clientes
+
+FICHA: TABLA DONDE SE GUARDA LA FICHA DEL CLIENTE INCLUYENDO LAS EVIDENCIAS(fotos, video, audio, etc.)
+ESTADO_FICHA:Si se completó, se está_llenando,reprogramará,sin_datos_aun
+ESTADO_CLIENTE:visitado, en_camino, libre, no_se_encontro
+DATOS_PERSONALES:datos personales del cliente, ubicacion,nombres, etc.
+CLIENT_TO_WORKER:Si el cliente tiene el estado de VISITADO entonces debe mostrar el worker al que se le asignó y visitó, fecha, observacion. Como hay casos en los que no se encuentra al cliente y se le reasigna el cliente a otro worker entonces quire decir que para esta tabla debe mostrar a todos los workers que visitaron a un cliente. Si la gestion fuera EN_CAMINO, igual todos los worker que fueron en camino, evitando la redundancia de datos, aplicando las 5N. id_cliente, {id_worker, id_worker,..}, fecha,gestion(VISITADO,...)
+
+Ademas, para comenzar a implementar la monitorizacion de los worker y saber si verdaderamente están haciendo su trabajo entonces se necesita otra tabla o mas campos donde nos indique:
+- a que hora marcó "VISITAR" a un cliente. un campo para la fecha(dia-mes-año) y otro para la hora(02:20)
+- a que hora abrió la ficha de un cliente para llenarlo
+- a que hora termina y guarda una ficha
+- tiempo que tarda desde que cierra una ficha hasta que presiona "VISITAR"
+
+ENTIDAD:worker
+
+DATOS_PERSONALES:nombres, ubicacion(obligatorio), foto de perfil(solo se guarda la ruta, la imagen se guarda en el servidor)
+RUTAS_ASIGNADAS: todas las rutas con todos los clientes que se le asignó a dicho worker
+GESTIONES:a cuantos clientes ya ha visitado, cuantos clientes aun no visita, cuantos clientes le dieron reprogramar, cuantos clientes le dieron un pago(gestion:YA PAGÓ), etc.
+ESTADO_WORKER: a que hora inició sesion, a que hora se fue a almorzar, a que hora regresó del almuerzo,a que hora marcó salida, 
+ESTADO_GESTION:Está yendo a un cliente, está llenando un formulario, está en tiempo muerto o está en un lugar sin señal.
+GALERIA:aqui por sugerencia se guardan las fotos, videos, audio, etc. 
+
+--------------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+==========================================================================
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+--------------------------------------------------------------------------
+El administrador cuando va a crear rutas, puede ver en el mapa a todos los clientes y a todos los worker, ademas cuando pasa el mouse sobre un cliente se muestra informacion como: fecha_pago, retraso, deuda, nombres.
+Tambien se puede filtrar por fecha de pago.
+De manera ordenada y sistematica el administrador deberia poder ver a todos los clientes que tengan la gestion REPROGRAMARA para poder asignarle otra:fecha_pago al cliente.
+
+ENTIDAD:alertas
+- Suponiendo que el worker PEDRO está yendo a visitar al cliente PABLO, pero el worker DANIEL que está mas cerca, entonces el worker DANIEL debe mandar una alerta peprsonalizada "LIBERA AL CLIENTE XXXXXXX yo estoy mas cerca"
+- El anterior punto abre una nueva funcion, que en la seccion HOME donde se ven absolutamente todos los clientes entonces tambien se puede filtrar por departamento, provincia y distrito y asi cada worker pueda visualizar a los clientes que estan mas cerca
+- Pero suponiendo que el worker PEDRO no haya presionado el boton VISITAR al cliente y otro worker que estaba mas cerca visita a su cliente y llena su ficha entonces al worker PEDRO le llega una notificacion "El worker XXXXXXX ha registrado un cliente tuyo"
+
+
+
+
+
+
+

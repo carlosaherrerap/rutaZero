@@ -40,10 +40,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
-    // Generar JWT
+    // Generar JWT con fallback de seguridad
+    const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
     const token = jwt.sign(
       { id: user.id, username: user.username, rol: user.rol },
-      process.env.JWT_SECRET,
+      SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
@@ -75,7 +76,8 @@ router.get('/me', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'No token' });
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt_lib.verify(token, process.env.JWT_SECRET);
+    const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
+    const decoded = jwt_lib.verify(token, SECRET);
 
     const { rows } = await db.query(
       `SELECT u.id, u.username, u.rol, u.nombres, u.apellidos, u.dni, u.telefono, u.email, u.estado,

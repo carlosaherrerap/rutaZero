@@ -1,125 +1,151 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function RutaScreen({ navigation }) {
+const RutaScreen = ({ navigation }) => {
   const { api } = useContext(AuthContext);
-  const [ruta, setRuta] = useState([]);
+  const [groupedRutas, setGroupedRutas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchRuta();
-  }, []);
-
-  const fetchRuta = async () => {
+  const fetchRutas = useCallback(async () => {
     try {
       const res = await api.get('/api/workers/me/ruta');
-      setRuta(res.data.data || []);
+      const rawData = res.data.data || [];
+      
+      const groups = rawData.reduce((acc, item) => {
+        const key = item.ruta_id;
+        if (!key) return acc;
+
+        if (!acc[key]) {
+          acc[key] = {
+            id: key,
+            nombre: item.ruta_nombre || 'Ruta General',
+            fecha: item.fecha_asignacion,
+            clientes: [],
+            visitados: 0
+          };
+        }
+
+        // Solo agregamos el cliente si realmente existe (evitar nulos del LEFT JOIN)
+        if (item.cliente_id) {
+          acc[key].clientes.push(item);
+          if (item.cliente_estado && item.cliente_estado !== 'LIBRE') {
+            acc[key].visitados++;
+          }
+        }
+        return acc;
+      }, {});
+
+      setGroupedRutas(Object.values(groups));
     } catch (e) {
-      console.log('Error fetching ruta');
+      console.log('[Ruta] Error fetching routes', e);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [api]);
 
-  const handleNavigate = (lat, lng) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    const { Linking } = require('react-native');
-    Linking.openURL(url);
-  };
+  useEffect(() => {
+    fetchRutas();
+  }, [fetchRutas]);
 
-  const renderItem = ({ item }) => (
-    <View style={styles.clientCard}>
+  const renderRutaCard = ({ item }) => {
+    const progress = Math.round((item.visitados / item.clientes.length) * 100);
+    const isCompleted = item.visitados === item.clientes.length;
+
+    return (
       <TouchableOpacity 
-        style={styles.clientInfoContainer}
-        onPress={() => navigation.navigate('Ficha', { client: item })}
+        style={[styles.rutaCard, isCompleted && styles.rutaCardCompleted]} 
+        onPress={() => navigation.navigate('RutaDetalle', { ruta: item })}
+        activeOpacity={0.8}
       >
-        <View style={styles.orderBadge}>
-          <Text style={styles.orderText}>{item.orden}</Text>
+        <View style={styles.cardHeader}>
+           <View style={styles.iconContainer}>
+              <Ionicons name="map" size={24} color="#3b82f6" />
+           </View>
+           <View style={{ flex: 1 }}>
+              <Text style={styles.rutaName}>{item.nombre}</Text>
+              <Text style={styles.rutaDate}>Asignación: {item.fecha ? new Date(item.fecha).toLocaleDateString() : 'Pendiente'}</Text>
+           </View>
+           <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
         </View>
-        <View style={styles.clientInfo}>
-          <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
-          <Text style={styles.clientAddress}>{item.direccion}</Text>
-          <Text style={styles.clientDistrito}>{item.distrito}</Text>
+
+        <View style={styles.cardFooter}>
+           <View style={styles.statBox}>
+              <Text style={styles.statValue}>{item.clientes.length}</Text>
+              <Text style={styles.statLabel}>Clientes</Text>
+           </View>
+           <View style={styles.statDivider} />
+           <View style={styles.statBox}>
+              <Text style={styles.statValue}>{item.visitados}</Text>
+              <Text style={styles.statLabel}>Visitados</Text>
+           </View>
+           <View style={styles.statDivider} />
+           <View style={styles.progressBox}>
+              <View style={styles.progressCircle}>
+                 <Text style={styles.progressText}>{progress}%</Text>
+              </View>
+           </View>
         </View>
       </TouchableOpacity>
-      
-      <View style={styles.clientMeta}>
-        <Text style={styles.deudaVal}>S/ {parseFloat(item.deuda_total).toFixed(2)}</Text>
-        <TouchableOpacity 
-          style={styles.navBtn} 
-          onPress={() => handleNavigate(item.latitud, item.longitud)}
-        >
-          <Text style={styles.navBtnText}>📍 Ir</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
-    <View style={[styles.container, { paddingTop: 50 }]}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mi Ruta de Hoy</Text>
-        <Text style={styles.sub}>{ruta.length} clientes asignados</Text>
+         <Text style={styles.headerTitle}>Mis Rutas</Text>
+         <TouchableOpacity onPress={() => { setLoading(true); fetchRutas(); }}>
+            <Ionicons name="refresh" size={24} color="#3b82f6" />
+         </TouchableOpacity>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#2563eb" style={{marginTop: 50}} />
+        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
       ) : (
         <FlatList
-          data={ruta}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
+          data={groupedRutas}
+          renderItem={renderRutaCard}
+          keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>No tienes rutas asignadas para hoy.</Text>}
+          refreshing={refreshing}
+          onRefresh={() => { setRefreshing(true); fetchRutas(); }}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+               <Ionicons name="map-outline" size={80} color="#cbd5e1" />
+               <Text style={styles.emptyText}>No tienes rutas asignadas para hoy.</Text>
+            </View>
+          }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d1117' },
-  header: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#30363d' },
-  title: { color: '#e6edf3', fontSize: 20, fontWeight: '700' },
-  sub: { color: '#7d8590', fontSize: 13, marginTop: 4 },
-  list: { padding: 15 },
-  clientCard: { 
-    backgroundColor: '#161b22', 
-    borderRadius: 12, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#30363d',
-    overflow: 'hidden'
-  },
-  clientInfoContainer: { 
-    flex: 1, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: 15 
-  },
-  orderBadge: { backgroundColor: '#21262d', width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  orderText: { color: '#2563eb', fontWeight: '700', fontSize: 13 },
-  clientInfo: { flex: 1 },
-  clientName: { color: '#e6edf3', fontWeight: '700', fontSize: 15 },
-  clientAddress: { color: '#7d8590', fontSize: 12, marginTop: 2 },
-  clientDistrito: { color: '#484f58', fontSize: 11, textTransform: 'uppercase', marginTop: 2 },
-  clientMeta: { 
-    padding: 12, 
-    borderLeftWidth: 1, 
-    borderLeftColor: '#30363d', 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    minWidth: 80
-  },
-  deudaVal: { color: '#e6edf3', fontWeight: '700', fontSize: 13, marginBottom: 8 },
-  navBtn: { backgroundColor: '#2563eb', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  navBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  statusPoint: { width: 8, height: 8, borderRadius: 4 },
-  bg_libre: { backgroundColor: '#2563eb' },
-  bg_visitado_pago: { backgroundColor: '#10b981' },
-  bg_reprogramado: { backgroundColor: '#f59e0b' },
-  empty: { color: '#7d8590', textAlign: 'center', marginTop: 40 },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
+  list: { padding: 20 },
+  rutaCard: { backgroundColor: '#fff', borderRadius: 24, marginBottom: 20, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, padding: 20 },
+  rutaCardCompleted: { opacity: 0.7 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  iconContainer: { width: 50, height: 50, borderRadius: 15, backgroundColor: '#eff6ff', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  rutaName: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
+  rutaDate: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 16, padding: 15 },
+  statBox: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
+  statLabel: { fontSize: 10, color: '#64748b', textTransform: 'uppercase', marginTop: 2 },
+  statDivider: { width: 1, height: 20, backgroundColor: '#e2e8f0' },
+  progressBox: { flex: 1, alignItems: 'center' },
+  progressCircle: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
+  progressText: { fontSize: 10, fontWeight: 'bold', color: '#10b981' },
+  emptyBox: { marginTop: 100, alignItems: 'center' },
+  emptyText: { color: '#94a3b8', marginTop: 15, fontSize: 16, fontWeight: '600' }
 });
+
+export default RutaScreen;

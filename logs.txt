@@ -1,0 +1,23 @@
+Android Bundling failed 12972ms index.js (1051 modules)
+Unable to resolve "@react-native-picker/picker" from "src\screens\HomeScreen.js"
+   7 | import { AuthContext } from '../context/AuthContext';
+   8 | import { Ionicons } from '@expo/vector-icons';
+>  9 | import { Picker } from '@react-native-picker/picker';
+     |                         ^
+  10 |
+  11 | const { width } = Dimensions.get('window');
+  12 |
+
+Import stack:
+
+ src\screens\HomeScreen.js
+ | import "@react-native-picker/picker"
+
+ App.js
+ | import "./src/screens/HomeScreen"
+
+ index.js
+ | import "./App"
+
+
+ | import "./index"

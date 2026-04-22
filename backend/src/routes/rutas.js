@@ -18,8 +18,8 @@ router.get('/', async (req, res) => {
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
                       adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido
                FROM rutas r
-               JOIN usuarios u ON u.id = r.worker_id
-               JOIN usuarios adm ON adm.id = r.creado_por
+               LEFT JOIN usuarios u ON u.id = r.worker_id
+               LEFT JOIN usuarios adm ON adm.id = r.creado_por
                ORDER BY r.fecha_asignacion DESC, r.nombre`;
       params = [];
     } else {
@@ -27,8 +27,8 @@ router.get('/', async (req, res) => {
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
                       adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido
                FROM rutas r
-               JOIN usuarios u ON u.id = r.worker_id
-               JOIN usuarios adm ON adm.id = r.creado_por
+               LEFT JOIN usuarios u ON u.id = r.worker_id
+               LEFT JOIN usuarios adm ON adm.id = r.creado_por
                WHERE r.worker_id = $1
                ORDER BY r.fecha_asignacion DESC, r.nombre`;
       params = [req.user.id];

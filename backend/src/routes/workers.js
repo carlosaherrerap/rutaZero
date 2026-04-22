@@ -161,13 +161,41 @@ router.post('/jornada/iniciar', async (req, res) => {
        RETURNING *`,
       [req.user.id]
     );
-    const io = req.app.get('io');
-    io.emit('journey_started', { worker_id: req.user.id, data: rows[0] });
-
     res.json({ data: rows[0] });
   } catch (err) {
-    console.error('Error al iniciar jornada:', err);
     res.status(500).json({ error: 'Error al iniciar jornada' });
+  }
+});
+
+// Iniciar Refrigerio
+router.post('/jornada/almuerzo/inicio', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `UPDATE jornadas SET estado = 'EN_REFRIGERIO', hora_inicio_almuerzo = NOW()
+       WHERE worker_id = $1 AND fecha = CURRENT_DATE AND estado = 'JORNADA_INICIADA'
+       RETURNING *`,
+      [req.user.id]
+    );
+    if (rows.length === 0) return res.status(400).json({ error: 'Debes iniciar jornada primero' });
+    res.json({ data: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al iniciar refrigerio' });
+  }
+});
+
+// Fin de Refrigerio
+router.post('/jornada/almuerzo/fin', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `UPDATE jornadas SET estado = 'JORNADA_INICIADA', hora_fin_almuerzo = NOW()
+       WHERE worker_id = $1 AND fecha = CURRENT_DATE AND estado = 'EN_REFRIGERIO'
+       RETURNING *`,
+      [req.user.id]
+    );
+    if (rows.length === 0) return res.status(400).json({ error: 'No estás en refrigerio' });
+    res.json({ data: rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al finalizar refrigerio' });
   }
 });
 
@@ -180,12 +208,8 @@ router.post('/jornada/finalizar', async (req, res) => {
        RETURNING *`,
       [req.user.id]
     );
-    const io = req.app.get('io');
-    io.emit('journey_finished', { worker_id: req.user.id, data: rows[0] });
-
     res.json({ data: rows[0] });
   } catch (err) {
-    console.error('Error al finalizar jornada:', err);
     res.status(500).json({ error: 'Error al finalizar jornada' });
   }
 });
@@ -194,17 +218,20 @@ router.post('/jornada/finalizar', async (req, res) => {
  * VISITAS Y GESTIÓN
  */
 
-// Obtener mi ruta de hoy
+// Obtener mis rutas activas (agrupadas o listadas)
 router.get('/me/ruta', async (req, res) => {
   try {
+    // Usamos LEFT JOIN para que la ruta aparezca aunque no tenga clientes asignados aún
     const { rows } = await db.query(
-      `SELECT rc.orden, c.*, ub.latitud, ub.longitud, ub.direccion, ub.distrito
+      `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion,
+              rc.orden, c.id as cliente_id, c.nombres, c.apellidos, ub.direccion as cliente_direccion, 
+              c.estado as cliente_estado, ub.latitud, ub.longitud, ub.distrito
        FROM rutas r
-       JOIN ruta_clientes rc ON rc.ruta_id = r.id
-       JOIN clientes c ON c.id = rc.cliente_id
+       LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
+       LEFT JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-       WHERE r.worker_id = $1 AND r.fecha_asignacion = CURRENT_DATE
-       ORDER BY rc.orden`,
+       WHERE r.worker_id = $1
+       ORDER BY r.fecha_asignacion DESC, r.id, rc.orden`,
       [req.user.id]
     );
     res.json({ data: rows });
@@ -217,13 +244,13 @@ router.get('/me/ruta', async (req, res) => {
 // Marcar inicio de visita (Bloquear cliente)
 router.post('/clientes/:id/visitar', async (req, res) => {
   try {
-    // Verificar si el worker ya tiene otro cliente bloqueado
+    // Verificar si el worker ya tiene OTRO cliente bloqueado (excluyendo el actual)
     const check = await db.query(
-      "SELECT id FROM clientes WHERE bloqueado_por = $1 AND estado = 'EN_VISITA'",
-      [req.user.id]
+      "SELECT id FROM clientes WHERE bloqueado_por = $1 AND estado = 'EN_VISITA' AND id != $2",
+      [req.user.id, req.params.id]
     );
     if (check.rows.length > 0) {
-      return res.status(403).json({ error: 'Ya tienes una visita en curso. Finalízala primero.' });
+      return res.status(403).json({ error: 'Ya tienes una visita en curso con otro cliente. Finalízala primero.' });
     }
 
     const { rows } = await db.query(
@@ -247,21 +274,72 @@ router.post('/clientes/:id/visitar', async (req, res) => {
   }
 });
 
+// Liberar cliente (Quitar bloqueo y volver a estado LIBRE)
+router.patch('/clientes/:id/liberar', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `UPDATE clientes SET estado = 'LIBRE', bloqueado_por = NULL, updated_at = NOW()
+       WHERE id = $1 AND bloqueado_por = $2
+       RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(403).json({ error: 'No puedes liberar un cliente que no tienes bloqueado' });
+    }
+
+    const io = req.app.get('io');
+    io.emit('visit_released', { worker_id: req.user.id, cliente_id: req.params.id });
+
+    res.json({ message: 'Cliente liberado correctamente', data: rows[0] });
+  } catch (err) {
+    console.error('Error al liberar cliente:', err);
+    res.status(500).json({ error: 'Error al liberar cliente' });
+  }
+});
+
 // Guardar ficha de gestión (Tipificar)
 router.post('/clientes/:id/ficha', async (req, res) => {
   const client = await db.pool.connect();
   try {
-    const { tipificacion, observacion, monto_cuota } = req.body;
+    const { 
+      tipificacion, observacion, monto_cuota,
+      tipo_credito, fecha_desembolso, monto_desembolso,
+      moneda, nro_cuotas, nro_cuotas_pagadas,
+      condicion_contable, saldo_capital, evidencias
+    } = req.body;
     const cliente_id = req.params.id;
 
     await client.query('BEGIN');
 
-    // 1. Crear ficha
+    // 1. Crear ficha con campos extendidos
     const fichaRes = await client.query(
-      `INSERT INTO fichas (cliente_id, worker_id, tipificacion, observacion, monto_cuota, estado, hora_cierre_ficha)
-       VALUES ($1, $2, $3, $4, $5, 'COMPLETADA', NOW()) RETURNING id`,
-      [cliente_id, req.user.id, tipificacion, observacion, monto_cuota]
+      `INSERT INTO fichas (
+        cliente_id, worker_id, tipificacion, observacion, monto_cuota, 
+        tipo_credito, fecha_desembolso, monto_desembolso, moneda, 
+        nro_cuotas, nro_cuotas_pagadas, condicion_contable, saldo_capital,
+        estado, hora_cierre_ficha
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'COMPLETADA', NOW()) 
+       RETURNING id`,
+      [
+        cliente_id, req.user.id, tipificacion, observacion, monto_cuota,
+        tipo_credito, fecha_desembolso, monto_desembolso, moneda || 'PEN',
+        nro_cuotas, nro_cuotas_pagadas, condicion_contable, saldo_capital
+      ]
     );
+
+    const fichaId = fichaRes.rows[0].id;
+
+    // 2. Guardar evidencias (URLs de fotos)
+    if (evidencias && Array.isArray(evidencias)) {
+      for (const url of evidencias) {
+        await client.query(
+          `INSERT INTO ficha_evidencias (ficha_id, url_archivo) VALUES ($1, $2)`,
+          [fichaId, url]
+        );
+      }
+    }
 
     // 2. Actualizar cliente
     let nuevoEstado = 'LIBRE';

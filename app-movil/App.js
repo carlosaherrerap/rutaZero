@@ -7,7 +7,9 @@ import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import RutaScreen from './src/screens/RutaScreen';
-import FichaScreen from './src/screens/FichaScreen';
+import RutaDetalleScreen from './src/screens/RutaDetalleScreen';
+import DetalleClienteScreen from './src/screens/DetalleClienteScreen';
+import FichaFormScreen from './src/screens/FichaFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -16,22 +18,29 @@ function NavigationStack() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0d1117', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'white' }}>Cargando...</Text>
+      <View style={{ flex: 1, backgroundColor: '#1F2937', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: 'white' }}>Iniciando Ruta Zero...</Text>
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false,
+          animation: 'slide_from_right'
+        }}
+      >
         {!user ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
           <>
             <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Ruta" component={RutaScreen} options={{ headerShown: true, title: 'Mi Ruta' }} />
-            <Stack.Screen name="Ficha" component={FichaScreen} options={{ headerShown: true, title: 'Gestión' }} />
+            <Stack.Screen name="Ruta" component={RutaScreen} />
+            <Stack.Screen name="RutaDetalle" component={RutaDetalleScreen} />
+            <Stack.Screen name="DetalleCliente" component={DetalleClienteScreen} />
+            <Stack.Screen name="FichaForm" component={FichaFormScreen} />
           </>
         )}
       </Stack.Navigator>
