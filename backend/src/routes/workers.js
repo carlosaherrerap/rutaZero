@@ -224,7 +224,7 @@ router.get('/me/ruta', async (req, res) => {
     // Usamos LEFT JOIN para que la ruta aparezca aunque no tenga clientes asignados aún
     const { rows } = await db.query(
       `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion,
-              rc.orden, c.id as cliente_id, c.nombres, c.apellidos, ub.direccion as cliente_direccion, 
+              rc.orden, c.id as cliente_id, c.nombres, c.apellidos, c.deuda_total, ub.direccion as cliente_direccion, 
               c.estado as cliente_estado, ub.latitud, ub.longitud, ub.distrito
        FROM rutas r
        LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
@@ -306,46 +306,105 @@ router.post('/clientes/:id/ficha', async (req, res) => {
       tipificacion, observacion, monto_cuota,
       tipo_credito, fecha_desembolso, monto_desembolso,
       moneda, nro_cuotas, nro_cuotas_pagadas,
-      condicion_contable, saldo_capital, evidencias
+      condicion_contable, saldo_capital,
+      hora_inicio_visita, hora_apertura_ficha, duracion_llenado_seg
     } = req.body;
     const cliente_id = req.params.id;
 
+    // Fotos subidas via multer (req.files)
+    const evidenciaUrls = req.files ? req.files.map(f => `/uploads/evidencias/${f.filename}`) : [];
+
+    // Helpers de sanitización
+    const safeNum   = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+    const safeInt   = v => { const n = parseInt(v);   return isNaN(n) ? 0 : n; };
+    const safeStr   = v => (v && String(v).trim() !== '' ? String(v).trim() : null);
+    const safeDate  = v => (v && String(v).trim() !== '' ? String(v).trim() : null);
+    const safeEnum  = (v, allowed) => (allowed.includes(String(v || '').trim()) ? String(v).trim() : null);
+
+    const cleanData = {
+      tipificacion:       safeEnum(tipificacion, ['PAGO', 'REPROGRAMARA', 'NO_ENCONTRADO']),
+      observacion:        safeStr(observacion) || '',
+      monto_cuota:        safeNum(monto_cuota),
+      tipo_credito:       safeStr(tipo_credito),
+      fecha_desembolso:   safeDate(fecha_desembolso),
+      monto_desembolso:   safeNum(monto_desembolso),
+      moneda:             safeStr(moneda) || 'PEN',
+      nro_cuotas:         safeInt(nro_cuotas),
+      nro_cuotas_pagadas: safeInt(nro_cuotas_pagadas),
+      condicion_contable: safeEnum(condicion_contable, ['MOROSO', 'RESPONSABLE']),
+      saldo_capital:      safeNum(saldo_capital),
+      hora_inicio_visita: safeDate(hora_inicio_visita),
+      hora_apertura_ficha:safeDate(hora_apertura_ficha),
+      duracion:           safeInt(duracion_llenado_seg)
+    };
+
+    // Log con posición de parámetro para depuración
+    console.log('📋 FICHA PARAMS:',
+      '\n  $1 cliente_id:', cliente_id,
+      '\n  $2 worker_id:', req.user.id,
+      '\n  $3 tipificacion:', cleanData.tipificacion,
+      '\n  $4 observacion:', cleanData.observacion,
+      '\n  $5 monto_cuota:', cleanData.monto_cuota,
+      '\n  $6 tipo_credito:', cleanData.tipo_credito,
+      '\n  $7 fecha_desembolso:', cleanData.fecha_desembolso,
+      '\n  $8 monto_desembolso:', cleanData.monto_desembolso,
+      '\n  $9 moneda:', cleanData.moneda,
+      '\n  $10 nro_cuotas:', cleanData.nro_cuotas,
+      '\n  $11 nro_cuotas_pagadas:', cleanData.nro_cuotas_pagadas,
+      '\n  $12 condicion_contable:', cleanData.condicion_contable,
+      '\n  $13 saldo_capital:', cleanData.saldo_capital,
+      '\n  $14 hora_inicio_visita:', cleanData.hora_inicio_visita,
+      '\n  $15 hora_apertura_ficha:', cleanData.hora_apertura_ficha,
+      '\n  $16 duracion:', cleanData.duracion
+    );
+
     await client.query('BEGIN');
 
-    // 1. Crear ficha con campos extendidos
+    // INSERT con 16 parámetros explícitos
     const fichaRes = await client.query(
       `INSERT INTO fichas (
-        cliente_id, worker_id, tipificacion, observacion, monto_cuota, 
-        tipo_credito, fecha_desembolso, monto_desembolso, moneda, 
+        cliente_id, worker_id, tipificacion, observacion, monto_cuota,
+        tipo_credito, fecha_desembolso, monto_desembolso, moneda,
         nro_cuotas, nro_cuotas_pagadas, condicion_contable, saldo_capital,
+        hora_inicio_visita, hora_apertura_ficha, duracion_llenado_seg,
         estado, hora_cierre_ficha
-      )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'COMPLETADA', NOW()) 
-       RETURNING id`,
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'COMPLETADA',NOW())
+      RETURNING id`,
       [
-        cliente_id, req.user.id, tipificacion, observacion, monto_cuota,
-        tipo_credito, fecha_desembolso, monto_desembolso, moneda || 'PEN',
-        nro_cuotas, nro_cuotas_pagadas, condicion_contable, saldo_capital
+        cliente_id,               // $1
+        req.user.id,              // $2
+        cleanData.tipificacion,   // $3
+        cleanData.observacion,    // $4
+        cleanData.monto_cuota,    // $5
+        cleanData.tipo_credito,   // $6
+        cleanData.fecha_desembolso, // $7
+        cleanData.monto_desembolso, // $8
+        cleanData.moneda,         // $9
+        cleanData.nro_cuotas,     // $10
+        cleanData.nro_cuotas_pagadas, // $11
+        cleanData.condicion_contable, // $12
+        cleanData.saldo_capital,  // $13
+        cleanData.hora_inicio_visita, // $14
+        cleanData.hora_apertura_ficha, // $15
+        cleanData.duracion        // $16
       ]
     );
 
     const fichaId = fichaRes.rows[0].id;
 
-    // 2. Guardar evidencias (URLs de fotos)
-    if (evidencias && Array.isArray(evidencias)) {
-      for (const url of evidencias) {
-        await client.query(
-          `INSERT INTO ficha_evidencias (ficha_id, url_archivo) VALUES ($1, $2)`,
-          [fichaId, url]
-        );
-      }
+    // Guardar evidencias
+    for (const url of evidenciaUrls) {
+      await client.query(
+        `INSERT INTO evidencias (ficha_id, url) VALUES ($1, $2)`,
+        [fichaId, url]
+      );
     }
 
-    // 2. Actualizar cliente
+    // 2. Actualizar cliente: estado basado en la tipificación limpia
     let nuevoEstado = 'LIBRE';
-    if (tipificacion === 'PAGO') nuevoEstado = 'VISITADO_PAGO';
-    if (tipificacion === 'REPROGRAMARA') nuevoEstado = 'REPROGRAMADO';
-    if (tipificacion === 'NO_ENCONTRADO') nuevoEstado = 'NO_ENCONTRADO';
+    if (cleanData.tipificacion === 'PAGO')           nuevoEstado = 'VISITADO_PAGO';
+    if (cleanData.tipificacion === 'REPROGRAMARA')   nuevoEstado = 'REPROGRAMADO';
+    if (cleanData.tipificacion === 'NO_ENCONTRADO')  nuevoEstado = 'NO_ENCONTRADO';
 
     await client.query(
       `UPDATE clientes SET 
@@ -361,7 +420,7 @@ router.post('/clientes/:id/ficha', async (req, res) => {
     await client.query(
       `INSERT INTO gestiones_historial (cliente_id, worker_id, ficha_id, tipificacion, estado_nuevo, observacion)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [cliente_id, req.user.id, fichaRes.rows[0].id, tipificacion, nuevoEstado, observacion]
+      [cliente_id, req.user.id, fichaRes.rows[0].id, cleanData.tipificacion, nuevoEstado, cleanData.observacion]
     );
 
     await client.query('COMMIT');

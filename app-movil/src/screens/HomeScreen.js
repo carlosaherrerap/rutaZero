@@ -1,9 +1,10 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, FlatList, 
-  Alert, ActivityIndicator, Dimensions, Modal, ScrollView
+  Alert, ActivityIndicator, Dimensions, Modal, ScrollView, Platform
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,21 +19,56 @@ const STATUS_OPTIONS = [
   { id: 'NO_ENCONTRADO', label: 'NO ENCONTRADOS', color: '#ef4444' },
 ];
 
+import { useFocusEffect } from '@react-navigation/native';
+
 export default function HomeScreen({ navigation }) {
-  const { api, user, logout, journey, setJourney } = useContext(AuthContext);
+  const { api, user, logout } = useContext(AuthContext);
+  const [journey, setJourney] = useState(null);
   const [allClients, setAllClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
+  // Detector de Conexión y Sincronización
+  useEffect(() => {
+    const { addEventListener } = require('@react-native-community/netinfo');
+    const { initOfflineDB, syncPendingFichas, clearOfflineCache } = require('../services/OfflineService');
+
+    // 1. Limpiar caché al iniciar app
+    clearOfflineCache();
+
+    // 2. Inicializar DB Local
+    initOfflineDB();
+
+    const unsubscribe = addEventListener(state => {
+      setIsOnline(state.isConnected);
+      // 3. Si vuelve el internet, sincronizar lo que esté pendiente
+      if (state.isConnected && api) {
+        syncPendingFichas(api);
+      }
+    });
+
+    // 4. Sincronización periódica cada 10 minutos por seguridad
+    const interval = setInterval(() => {
+      if (isOnline && api) syncPendingFichas(api);
+    }, 1000 * 60 * 10);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
+  }, [api, isOnline]);
   const [showJourneyModal, setShowJourneyModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('TODOS');
-
-  // Modo Pantalla Completa (Contexto: Quitar barra inferior)
+  
+  // MODO PANTALLA COMPLETA (Contexto Punto 28)
   useEffect(() => {
     if (Platform.OS === 'android') {
+      // Configuración inmersiva sin avisos de incompatibilidad
       NavigationBar.setVisibilityAsync('hidden');
-      NavigationBar.setBehaviorAsync('inset-touch');
+      NavigationBar.setBehaviorAsync('overlay-pan'); 
     }
   }, []);
 
@@ -47,7 +83,6 @@ export default function HomeScreen({ navigation }) {
       const resClients = await api.get('/api/clientes?limit=500');
       const data = resClients.data.data || [];
       setAllClients(data);
-      setFilteredClients(data);
     } catch (e) {
       console.log('[Home] Error fetching data', e);
     } finally {
@@ -56,9 +91,12 @@ export default function HomeScreen({ navigation }) {
     }
   }, [user, api]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  // Refresco automático al entrar a la pantalla (Punto 29 Contexto)
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   // Filtro por Spinner (Contexto punto 27)
   useEffect(() => {
@@ -69,15 +107,15 @@ export default function HomeScreen({ navigation }) {
     }
   }, [filterStatus, allClients]);
 
-  const handleAction = async (endpoint, msg) => {
+  const handleAction = async (endpoint, nextStatus, msg) => {
     setLoading(true);
     try {
-      const res = await api.post(`/api/workers/jornada/${endpoint}`);
-      setJourney(res.data.data);
+      await api.post(`/api/workers/jornada/${endpoint}`);
+      setJourney(prev => ({ ...prev, estado_jornada: nextStatus }));
       setShowJourneyModal(false);
-      Alert.alert('Asistencia', msg);
+      Alert.alert('Aviso', msg);
     } catch (e) {
-      Alert.alert('Error', e.response?.data?.error || 'Error de conexión');
+      Alert.alert('Error', 'No se pudo actualizar el estado.');
     } finally {
       setLoading(false);
     }
@@ -103,6 +141,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.clientInfo}>
           <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
           <Text style={styles.clientAddress} numberOfLines={1}>{item.direccion}</Text>
+          <Text style={styles.clientDebt}>Deuda: S/ {parseFloat(item.deuda_total || 0).toFixed(2)}</Text>
           <View style={styles.badgeRow}>
              <View style={[styles.statusBadge, { backgroundColor: cardColor + '15' }]}>
                 <Text style={[styles.statusText, { color: cardColor }]}>{item.estado}</Text>
@@ -128,7 +167,9 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
            <View>
               <Text style={styles.headerTitle}>Ruta Zero</Text>
-              <Text style={styles.headerUser}>{user?.nombres} (Online)</Text>
+              <Text style={[styles.headerUser, !isOnline && { color: '#ef4444' }]}>
+                {user?.nombres} ({isOnline ? 'Online' : 'Offline'})
+              </Text>
            </View>
            <View style={styles.headerIcons}>
               <TouchableOpacity style={styles.iconBtn} onPress={() => setShowJourneyModal(true)}>
@@ -194,37 +235,14 @@ export default function HomeScreen({ navigation }) {
                  <Text style={styles.modalTitle}>Control de Asistencia</Text>
                  <Text style={styles.statusCurrent}>Estado: {journey?.estado_jornada || 'INACTIVO'}</Text>
                  <View style={styles.modalBtns}>
-                    <TouchableOpacity 
-                       style={[styles.mBtn, { backgroundColor: '#10b981' }, journey?.estado_jornada && styles.btnDisabled]} 
-                       onPress={() => handleAction('iniciar', 'Día Iniciado')}
-                       disabled={!!journey?.estado_jornada}
-                    >
-                       <Text style={styles.mBtnText}>{journey?.estado_jornada ? 'DÍA YA INICIADO' : 'INICIAR DÍA'}</Text>
+                    <TouchableOpacity style={[styles.mBtn, { backgroundColor: '#10b981' }]} onPress={() => handleAction('iniciar', 'JORNADA_INICIADA', 'Iniciado')}>
+                       <Text style={styles.mBtnText}>INICIAR DÍA</Text>
                     </TouchableOpacity>
-
-                    {journey?.estado_jornada === 'EN_REFRIGERIO' ? (
-                       <TouchableOpacity 
-                          style={[styles.mBtn, { backgroundColor: '#3b82f6' }]} 
-                          onPress={() => handleAction('almuerzo/fin', 'Bienvenido de vuelta')}
-                       >
-                          <Text style={styles.mBtnText}>VOLVER DE ALMUERZO</Text>
-                       </TouchableOpacity>
-                    ) : (
-                       <TouchableOpacity 
-                          style={[styles.mBtn, { backgroundColor: '#f59e0b' }, journey?.estado_jornada !== 'JORNADA_INICIADA' && styles.btnDisabled]} 
-                          onPress={() => handleAction('almuerzo/inicio', 'Buen provecho')}
-                          disabled={journey?.estado_jornada !== 'JORNADA_INICIADA'}
-                       >
-                          <Text style={styles.mBtnText}>IR A ALMUERZO</Text>
-                       </TouchableOpacity>
-                    )}
-
-                    <TouchableOpacity 
-                       style={[styles.mBtn, { backgroundColor: '#ef4444' }, journey?.estado_jornada === 'JORNADA_FINALIZADA' && styles.btnDisabled]} 
-                       onPress={() => handleAction('finalizar', 'Jornada terminada')}
-                       disabled={journey?.estado_jornada === 'JORNADA_FINALIZADA'}
-                    >
-                       <Text style={styles.mBtnText}>FIN DE JORNADA</Text>
+                    <TouchableOpacity style={[styles.mBtn, { backgroundColor: '#f59e0b' }]} onPress={() => handleAction('almuerzo/inicio', 'EN_REFRIGERIO', 'Provecho')}>
+                       <Text style={styles.mBtnText}>ALMUERZO</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.mBtn, { backgroundColor: '#ef4444' }]} onPress={() => handleAction('finalizar', 'JORNADA_FINALIZADA', 'Terminado')}>
+                       <Text style={styles.mBtnText}>FIN DÍA</Text>
                     </TouchableOpacity>
                  </View>
                  <TouchableOpacity onPress={() => setShowJourneyModal(false)} style={styles.closeBtn}>

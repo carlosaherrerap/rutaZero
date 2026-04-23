@@ -101,6 +101,9 @@ export default function MapPage() {
               <Popup>
                 <div style={{minWidth: '150px'}}>
                   <strong style={{fontSize:'14px'}}>{c.nombres} {c.apellidos}</strong>
+                  <div style={{color: '#ef4444', fontWeight: 'bold', fontSize: '13px', margin: '3px 0'}}>
+                    DEUDA: S/ {parseFloat(c.deuda_total || 0).toFixed(2)}
+                  </div>
                   <div style={{color: '#64748b', fontSize:'11px', marginBottom:'5px'}}>{c.direccion}</div>
                   <div className={`badge badge-${c.estado.toLowerCase().replace(/_/g, '-')}`}>
                     {c.estado.replace('_', ' ')}
@@ -112,13 +115,13 @@ export default function MapPage() {
 
           {/* MARCADORES DE WORKERS */}
           {data.workers.map((w) => (
-            <Marker key={w.id} position={[parseFloat(w.latitud), parseFloat(w.longitud)]} icon={workerIcon}>
+            <Marker key={w.id} position={[parseFloat(w.latitud || 0), parseFloat(w.longitud || 0)]} icon={workerIcon}>
               <Popup>
                 <div style={{minWidth: '120px'}}>
                   <strong style={{color:'#1e293b'}}>{w.nombres} {w.apellidos}</strong>
                   <div style={{marginTop:'5px'}}>
-                     <span style={{fontSize:'10px', fontWeight:'bold', color: w.estado_jornada === 'EN_REFRIGERIO' ? '#f59e0b' : '#10b981'}}>
-                        {w.estado_jornada.replace('_', ' ')}
+                     <span style={{fontSize:'10px', fontWeight:'bold', color: w.estado_jornada === 'EN_REFRIGERIO' ? '#f59e0b' : '#64748b'}}>
+                        {w.estado_jornada ? w.estado_jornada.replace('_', ' ') : 'SIN INICIAR DÍA'}
                      </span>
                   </div>
                 </div>

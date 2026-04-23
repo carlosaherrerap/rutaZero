@@ -96,7 +96,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', adminOnly, async (req, res) => {
   const client = await db.pool.connect();
   try {
-    const { nombre, worker_id, cliente_ids } = req.body;
+    const { nombre, worker_id, cliente_ids, fecha_asignacion } = req.body;
 
     if (!nombre || !worker_id || !cliente_ids || !Array.isArray(cliente_ids) || cliente_ids.length === 0) {
       return res.status(400).json({ error: 'nombre, worker_id y cliente_ids (array no vacío) son requeridos' });
@@ -104,12 +104,12 @@ router.post('/', adminOnly, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Crear ruta
+    // Crear ruta con fecha opcional
     const rutaResult = await client.query(
-      `INSERT INTO rutas (nombre, worker_id, creado_por, total_clientes)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO rutas (nombre, worker_id, creado_por, total_clientes, fecha_asignacion)
+       VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE))
        RETURNING *`,
-      [nombre, worker_id, req.user.id, cliente_ids.length]
+      [nombre, worker_id, req.user.id, cliente_ids.length, fecha_asignacion]
     );
 
     const ruta = rutaResult.rows[0];

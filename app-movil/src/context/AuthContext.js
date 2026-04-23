@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [journey, setJourney] = useState(null);
 
   const BASE_URL = 'http://192.168.1.69:4000';
 
@@ -110,7 +109,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, api, journey, setJourney }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading, api }}>
       {children}
     </AuthContext.Provider>
   );

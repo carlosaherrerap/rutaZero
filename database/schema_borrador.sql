@@ -225,10 +225,10 @@ CREATE TABLE fichas (
     estado                  estado_ficha NOT NULL DEFAULT 'SIN_DATOS',
 
     -- Campos del formulario (Paso 2)
-    tipo_credito            INTEGER,
+    tipo_credito            VARCHAR(200),           -- Ej: "Personal", "Hipotecario"
     fecha_desembolso        DATE,
-    monto_desembolso        INTEGER,
-    moneda                  NUMERIC(12,4),
+    monto_desembolso        NUMERIC(15,2),           -- Con decimales
+    moneda                  VARCHAR(10) DEFAULT 'PEN', -- Codigo ISO: PEN, USD
     nro_cuotas              INTEGER,
     nro_cuotas_pagadas      INTEGER,
     monto_cuota             NUMERIC(12,2),

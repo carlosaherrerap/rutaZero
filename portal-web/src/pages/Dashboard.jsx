@@ -36,11 +36,11 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="stats-grid">
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
         <div className="stat-card">
           <span className="stat-label">Total Clientes</span>
           <span className="stat-value">{stats.totalClientes}</span>
-          <span className="stat-sub">Registrados en Lima</span>
+          <span className="stat-sub">Registrados</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Workers Activos</span>
@@ -54,8 +54,13 @@ export default function Dashboard() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Gestiones</span>
-          <span className="stat-value">{stats.gestionesHoy}</span>
+          <span className="stat-value" style={{ color: '#10b981' }}>{stats.gestionesHoy}</span>
           <span className="stat-sub">Realizadas hoy</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Reprogramados</span>
+          <span className="stat-value" style={{ color: '#f59e0b' }}>{stats.totalReprogramados}</span>
+          <span className="stat-sub">Volver a visitar</span>
         </div>
       </div>
 

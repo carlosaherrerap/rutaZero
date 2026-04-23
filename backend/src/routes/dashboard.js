@@ -53,6 +53,12 @@ router.get('/stats', async (req, res) => {
     );
     stats.gestionesHoy = parseInt(gestionesHoy.rows[0].count);
 
+    // Reprogramados hoy (clientes que pasaron a REPROGRAMADO hoy)
+    const reprogramados = await db.query(
+      "SELECT COUNT(*) FROM clientes WHERE estado = 'REPROGRAMADO' AND fecha_gestion = CURRENT_DATE"
+    );
+    stats.totalReprogramados = parseInt(reprogramados.rows[0].count);
+
     // Clientes por distrito (top 10)
     const porDistrito = await db.query(
       `SELECT ub.distrito, COUNT(c.id) AS total

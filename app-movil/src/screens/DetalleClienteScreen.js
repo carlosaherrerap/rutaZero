@@ -1,21 +1,50 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Dimensions, ScrollView, SafeAreaView, Linking, Platform } from 'react-native';
+import { 
+  View, Text, StyleSheet, TouchableOpacity, Alert, 
+  ActivityIndicator, Dimensions, ScrollView, Linking, Platform 
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import * as NavigationBar from 'expo-navigation-bar';
 
 const { width } = Dimensions.get('window');
 
 const DetalleClienteScreen = ({ route, navigation }) => {
-  const { cliente } = route.params || {};
-  const { api, user, journey } = useContext(AuthContext);
+  const { cliente: initialCliente } = route.params || {};
+  const { api, user } = useContext(AuthContext);
+  const [cliente, setCliente] = useState(initialCliente);
   const [loading, setLoading] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const [calculatingRoute, setCalculatingRoute] = useState(false);
 
-  // 1. Obtener ubicación actual y trazar ruta inicial
+  // 1. Cargar datos frescos del cliente al montar para asegurar estado actual y bloqueo
+  const fetchClientDetails = useCallback(async () => {
+    try {
+      // CORRECCIÓN: Usar /api/clientes/ en lugar de /api/workers/clientes/
+      const res = await api.get(`/api/clientes/${initialCliente.id || initialCliente.cliente_id}`);
+      setCliente(res.data.data);
+    } catch (e) {
+      console.log('Error fetching client fresh data:', e);
+    }
+  }, [initialCliente, api]);
+
+  useEffect(() => {
+    fetchClientDetails();
+  }, [fetchClientDetails]);
+
+  // 2. Obtener ubicación actual y trazar ruta inicial
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Configuración inmersiva total para ocultar barra inferior
+      NavigationBar.setVisibilityAsync('hidden');
+      NavigationBar.setBehaviorAsync('overlay-pan'); 
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -31,7 +60,7 @@ const DetalleClienteScreen = ({ route, navigation }) => {
         });
       }
     })();
-  }, [cliente]);
+  }, [cliente?.id]);
 
   const calculateOSRMRoute = async (start, end) => {
     setCalculatingRoute(true);
@@ -57,18 +86,16 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   if (!cliente) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Error: No se encontró la información del cliente.</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
-           <Text style={{ color: '#3b82f6' }}>Volver atrás</Text>
-        </TouchableOpacity>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={{ marginTop: 10 }}>Cargando información...</Text>
       </View>
     );
   }
 
-  const isOwner = cliente.bloqueado_por === user.id;
+  // Lógica de estados con comparación robusta de IDs (string vs number)
+  const isOwner = String(cliente.bloqueado_por) === String(user.id);
   const isEnVisita = cliente.estado === 'EN_VISITA';
   const isLockedByOther = isEnVisita && !isOwner;
-  const isJourneyActive = journey?.estado_jornada === 'JORNADA_INICIADA';
 
   const getStatusInfo = (estado) => {
     switch (estado) {
@@ -86,8 +113,9 @@ const DetalleClienteScreen = ({ route, navigation }) => {
     setLoading(true);
     try {
       await api.post(`/api/workers/clientes/${cliente.id}/visitar`);
+      // Actualizar localmente para ver cambios sin retroceder
+      setCliente(prev => ({ ...prev, estado: 'EN_VISITA', bloqueado_por: user.id }));
       Alert.alert('Éxito', 'Visita iniciada. El cliente ahora está EN CAMINO.');
-      navigation.goBack();
     } catch (err) {
       const msg = err.response?.data?.error || 'No se pudo iniciar la visita';
       Alert.alert('Aviso', msg);
@@ -112,8 +140,8 @@ const DetalleClienteScreen = ({ route, navigation }) => {
             setLoading(true);
             try {
               await api.patch(`/api/workers/clientes/${cliente.id}/liberar`);
+              setCliente(prev => ({ ...prev, estado: 'LIBRE', bloqueado_por: null }));
               Alert.alert('Liberado', 'Cliente disponible nuevamente.');
-              navigation.goBack();
             } catch (err) {
               Alert.alert('Error', 'No se pudo liberar.');
             } finally {
@@ -199,33 +227,38 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-         {isOwner && isEnVisita ? (
-            <>
-              <TouchableOpacity style={styles.releaseBtn} onPress={handleReleaseVisit} disabled={loading}>
-                <Text style={styles.releaseBtnText}>CANCELAR VISITA</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.mainBtn, { backgroundColor: '#10b981', flex: 1.5 }]} onPress={handleGoToFicha} disabled={loading}>
-                <Text style={styles.mainBtnText}>LLENAR FICHA</Text>
-              </TouchableOpacity>
-            </>
-         ) : (
+          {isOwner ? (
+            <View style={{ flexDirection: 'row', flex: 1, gap: 12 }}>
+               <TouchableOpacity 
+                 style={styles.releaseBtn} 
+                 onPress={handleReleaseVisit} 
+                 disabled={loading}
+               >
+                 <Ionicons name="close-circle-outline" size={20} color="#ef4444" />
+                 <Text style={styles.releaseBtnText}>CANCELAR</Text>
+               </TouchableOpacity>
+               
+               <TouchableOpacity 
+                 style={[styles.mainBtn, { backgroundColor: '#10b981', flex: 1.5 }]} 
+                 onPress={handleGoToFicha} 
+                 disabled={loading}
+               >
+                 <Ionicons name="document-text-outline" size={20} color="#fff" />
+                 <Text style={styles.mainBtnText}>LLENAR FICHA</Text>
+               </TouchableOpacity>
+            </View>
+          ) : (
             <TouchableOpacity 
-              style={[
-                styles.mainBtn, 
-                { backgroundColor: (isLockedByOther || !isJourneyActive) ? '#cbd5e1' : '#3b82f6', width: '100%' }
-              ]} 
+              style={[styles.mainBtn, { backgroundColor: isLockedByOther ? '#cbd5e1' : '#3b82f6', width: '100%' }]} 
               onPress={handleStartVisit}
-              disabled={loading || isLockedByOther || !isJourneyActive}
+              disabled={loading || isLockedByOther}
             >
+              <Ionicons name={isLockedByOther ? "lock-closed" : "play"} size={20} color="#fff" />
               <Text style={styles.mainBtnText}>
-                {!isJourneyActive 
-                  ? 'INICIA TU DÍA PRIMERO' 
-                  : isLockedByOther 
-                    ? 'CLIENTE OCUPADO' 
-                    : 'VISITAR'}
+                {isLockedByOther ? 'CLIENTE OCUPADO' : 'VISITAR'}
               </Text>
             </TouchableOpacity>
-         )}
+          )}
       </View>
     </SafeAreaView>
   );

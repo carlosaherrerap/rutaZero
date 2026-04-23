@@ -104,6 +104,9 @@ ENTIDAD:alertas
 - Pero suponiendo que el worker PEDRO no haya presionado el boton VISITAR al cliente y otro worker que estaba mas cerca visita a su cliente y llena su ficha entonces al worker PEDRO le llega una notificacion "El worker XXXXXXX ha registrado un cliente tuyo"
 
 
+NOTAS EXTRA:
+
+- La ficha que llena el worker en los tipos de datos como la informacion a guardar debe coincidir con los campos y tipos de datos de la tabla fichas.
 
 
 

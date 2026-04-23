@@ -1,10 +1,11 @@
 import React, { useState, useContext } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, TextInput, 
-  ScrollView, Alert, ActivityIndicator, Image, SafeAreaView, Dimensions
+  ScrollView, Alert, ActivityIndicator, Image, Dimensions, Platform
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Fallback seguro para ImagePicker
 let ImagePicker = null;
@@ -56,7 +57,7 @@ export default function FichaFormScreen({ route, navigation }) {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'], // Nueva API no deprecada
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5,
@@ -75,16 +76,43 @@ export default function FichaFormScreen({ route, navigation }) {
     
     setLoading(true);
     try {
-      await api.post(`/api/workers/clientes/${cliente.id}/ficha`, {
-        ...formData,
-        evidencias: fotos // En una app real, aquí se subirían a S3/Cloudinary primero
+      // Intentar envío normal
+      const data = new FormData();
+      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      
+      fotos.forEach((uri, index) => {
+        const fileName = uri.split('/').pop();
+        const fileType = fileName.split('.').pop();
+        data.append('evidencias', {
+          uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+          name: fileName || `evidencia_${index}.jpg`,
+          type: `image/${fileType === 'png' ? 'png' : 'jpeg'}`
+        });
+      });
+
+      await api.post(`/api/workers/clientes/${cliente.id}/ficha`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       
       Alert.alert('Éxito', 'Gestión guardada y sincronizada correctamente.', [
         { text: 'Finalizar', onPress: () => navigation.popToTop() }
       ]);
     } catch (err) {
-      Alert.alert('Error', 'No se pudo guardar la gestión. Reintenta.');
+      console.log('Error saving ficha, attempting offline storage:', err);
+      
+      // FALLBACK OFFLINE
+      const { saveFichaOffline } = require('../services/OfflineService');
+      const saved = await saveFichaOffline(cliente.id, formData, fotos);
+      
+      if (saved) {
+        Alert.alert(
+          'Modo Offline Activo', 
+          'No se pudo conectar con el servidor, pero la gestión se guardó LOCALMENTE en tu teléfono. Se sincronizará automáticamente cuando recuperes conexión.',
+          [{ text: 'Entendido', onPress: () => navigation.popToTop() }]
+        );
+      } else {
+        Alert.alert('Error Grave', 'No se pudo guardar ni siquiera de forma local. Verifica el espacio en tu teléfono.');
+      }
     } finally {
       setLoading(false);
     }

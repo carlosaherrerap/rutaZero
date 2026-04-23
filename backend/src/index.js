@@ -20,7 +20,14 @@ app.use(cors({
   origin: true, // Echoes the request origin back to allow any client
   credentials: true,
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use('/uploads', express.static('uploads'));
+
+// Crear carpeta de evidencias si no existe
+const fs = require('fs');
+if (!fs.existsSync('uploads/evidencias')) {
+  fs.mkdirSync('uploads/evidencias', { recursive: true });
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
