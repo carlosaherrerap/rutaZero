@@ -1,6 +1,29 @@
 const { Router } = require('express');
 const db = require('../config/db');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Configurar multer para evidencias de fichas
+const uploadDir = path.join(__dirname, '../../uploads/evidencias');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `ev_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB máx por imagen
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Solo se permiten imágenes'));
+  }
+});
 
 const router = Router();
 router.use(authMiddleware);
@@ -214,6 +237,40 @@ router.post('/jornada/finalizar', async (req, res) => {
   }
 });
 
+// Historial de jornadas del worker autenticado (para el calendario de asistencia)
+router.get('/me/jornadas', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        j.id, j.fecha, j.estado,
+        j.hora_inicio_sesion, j.hora_inicio_almuerzo, j.hora_fin_almuerzo, j.hora_fin_jornada,
+        j.validado,
+        -- Duracion refrigerio en minutos
+        CASE 
+          WHEN j.hora_inicio_almuerzo IS NOT NULL AND j.hora_fin_almuerzo IS NOT NULL
+          THEN ROUND(EXTRACT(EPOCH FROM (j.hora_fin_almuerzo - j.hora_inicio_almuerzo)) / 60)
+          ELSE 0
+        END AS duracion_refrigerio_min,
+        -- Horas trabajadas (descontando refrigerio)
+        CASE
+          WHEN j.hora_inicio_sesion IS NOT NULL AND j.hora_fin_jornada IS NOT NULL
+          THEN ROUND(
+            (EXTRACT(EPOCH FROM (j.hora_fin_jornada - j.hora_inicio_sesion)) / 3600 -
+             COALESCE(EXTRACT(EPOCH FROM (j.hora_fin_almuerzo - j.hora_inicio_almuerzo)) / 3600, 0))::numeric,
+          2)
+          ELSE NULL
+        END AS horas_trabajadas
+      FROM jornadas j
+      WHERE j.worker_id = $1
+      ORDER BY j.fecha DESC
+    `, [req.user.id]);
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error al obtener jornadas:', err);
+    res.status(500).json({ error: 'Error al obtener jornadas' });
+  }
+});
+
 /**
  * VISITAS Y GESTIÓN
  */
@@ -299,7 +356,8 @@ router.patch('/clientes/:id/liberar', async (req, res) => {
 });
 
 // Guardar ficha de gestión (Tipificar)
-router.post('/clientes/:id/ficha', async (req, res) => {
+// upload.array('evidencias', 5) procesa el multipart/form-data y deja los campos en req.body
+router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, res) => {
   const client = await db.pool.connect();
   try {
     const { 

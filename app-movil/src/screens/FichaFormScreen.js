@@ -38,6 +38,10 @@ export default function FichaFormScreen({ route, navigation }) {
     observacion: ''
   });
 
+  // Timestamps de monitoreo (se calculan automáticamente)
+  const horaInicioVisita = React.useRef(new Date().toISOString());
+  const horaAperturaFicha = React.useRef(null);
+
   // Step 3 state
   const [fotos, setFotos] = useState([]);
 
@@ -76,10 +80,18 @@ export default function FichaFormScreen({ route, navigation }) {
     
     setLoading(true);
     try {
+      const horaCierre = new Date().toISOString();
+      const inicio = horaInicioVisita.current;
+      const apertura = horaAperturaFicha.current || horaCierre;
+      const duracionSeg = Math.round((new Date(horaCierre) - new Date(apertura)) / 1000);
+
       // Intentar envío normal
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
-      
+      Object.keys(formData).forEach(key => data.append(key, formData[key] ?? ''));
+      data.append('hora_inicio_visita', inicio);
+      data.append('hora_apertura_ficha', apertura);
+      data.append('duracion_llenado_seg', String(duracionSeg));
+
       fotos.forEach((uri, index) => {
         const fileName = uri.split('/').pop();
         const fileType = fileName.split('.').pop();
@@ -149,15 +161,27 @@ export default function FichaFormScreen({ route, navigation }) {
         )}
 
         {/* PASO 2: FORMULARIO DE FICHA (DATOS DE NEGOCIO) */}
-        {step === 2 && (
+        {step === 2 && (() => {
+          // Registrar apertura de ficha al entrar al paso 2
+          if (!horaAperturaFicha.current) horaAperturaFicha.current = new Date().toISOString();
+          return (
           <View style={styles.stepContent}>
             <Text style={styles.stepTitle}>Información de Ficha</Text>
             <View style={styles.formGrid}>
-               <InputRow label="Tipo Crédito" value={formData.tipo_credito} onChange={(v) => updateField('tipo_credito', v)} placeholder="Ej. Personal" />
-               <InputRow label="Cuotas Totales" value={formData.nro_cuotas} onChange={(v) => updateField('nro_cuotas', v)} placeholder="0" keyboard="numeric" />
+               {/* Tipo de Crédito */}
+               <InputRow label="Tipo Crédito" value={formData.tipo_credito} onChange={(v) => updateField('tipo_credito', v)} placeholder="Ej. Personal, Hipotecario" />
+
+               {/* Fecha de Desembolso */}
+               <Text style={styles.inputLabel}>Fecha Desembolso</Text>
+               <View style={styles.dateDisplay}>
+                 <Ionicons name="calendar-outline" size={16} color="#64748b" />
+                 <Text style={styles.dateText}>{formData.fecha_desembolso}</Text>
+               </View>
+
+               {/* Monto + Moneda */}
                <View style={styles.row}>
                   <View style={{flex:1, marginRight:10}}>
-                     <InputRow label="Monto Desembolso" value={formData.monto_desembolso} onChange={(v) => updateField('monto_desembolso', v)} placeholder="0.00" keyboard="numeric" />
+                     <InputRow label="Monto Desembolso" value={formData.monto_desembolso} onChange={(v) => updateField('monto_desembolso', v)} placeholder="0.00" keyboard="decimal-pad" />
                   </View>
                   <View style={{flex:0.6}}>
                      <Text style={styles.inputLabel}>Moneda</Text>
@@ -167,8 +191,26 @@ export default function FichaFormScreen({ route, navigation }) {
                      </View>
                   </View>
                </View>
-               <InputRow label="Cuotas Pagadas" value={formData.nro_cuotas_pagadas} onChange={(v) => updateField('nro_cuotas_pagadas', v)} placeholder="0" keyboard="numeric" />
-               <InputRow label="Saldo Capital" value={formData.saldo_capital} onChange={(v) => updateField('saldo_capital', v)} placeholder="0.00" keyboard="numeric" />
+
+               {/* Cuotas */}
+               <View style={styles.row}>
+                 <View style={{flex:1, marginRight:6}}>
+                   <InputRow label="Cuotas Totales" value={formData.nro_cuotas} onChange={(v) => updateField('nro_cuotas', v)} placeholder="16" keyboard="numeric" />
+                 </View>
+                 <View style={{flex:1}}>
+                   <InputRow label="Cuotas Pagadas" value={formData.nro_cuotas_pagadas} onChange={(v) => updateField('nro_cuotas_pagadas', v)} placeholder="14" keyboard="numeric" />
+                 </View>
+               </View>
+
+               {/* Monto Cuota + Saldo */}
+               <View style={styles.row}>
+                 <View style={{flex:1, marginRight:6}}>
+                   <InputRow label="Monto Cuota" value={formData.monto_cuota} onChange={(v) => updateField('monto_cuota', v)} placeholder="150.50" keyboard="decimal-pad" />
+                 </View>
+                 <View style={{flex:1}}>
+                   <InputRow label="Saldo Capital" value={formData.saldo_capital} onChange={(v) => updateField('saldo_capital', v)} placeholder="1200.00" keyboard="decimal-pad" />
+                 </View>
+               </View>
                
                <Text style={styles.inputLabel}>Condición Contable</Text>
                <View style={styles.pickerRowMB}>
@@ -181,11 +223,12 @@ export default function FichaFormScreen({ route, navigation }) {
             </View>
 
             <View style={styles.btnRow}>
-               <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}><Text style={styles.backBtnText}>VOLVAR</Text></TouchableOpacity>
+               <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}><Text style={styles.backBtnText}>VOLVER</Text></TouchableOpacity>
                <TouchableOpacity style={styles.nextBtn} onPress={() => setStep(3)}><Text style={styles.nextBtnText}>CONTINUAR</Text></TouchableOpacity>
             </View>
           </View>
-        )}
+          );
+        })()}
 
         {/* PASO 3: EVIDENCIA Y CIERRE */}
         {step === 3 && (
@@ -323,5 +366,7 @@ const styles = StyleSheet.create({
   textArea: { backgroundColor: '#fff', padding: 15, borderRadius: 16, textAlignVertical: 'top', height: 100, marginBottom: 25, borderWidth: 1, borderColor: '#e2e8f0' },
   saveBtn: { flex: 1, backgroundColor: '#1e293b', height: 55, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  btnDisabled: { opacity: 0.7 }
+  btnDisabled: { opacity: 0.7 },
+  dateDisplay: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f1f5f9', borderRadius: 12, padding: 14, marginBottom: 15 },
+  dateText: { fontSize: 14, color: '#334155', fontWeight: '600' }
 });

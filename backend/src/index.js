@@ -40,6 +40,7 @@ app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/workers', require('./routes/workers'));
 app.use('/api/rutas', require('./routes/rutas'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/asistencia', require('./routes/asistencia'));
 
 // Socket.io events
 io.on('connection', (socket) => {

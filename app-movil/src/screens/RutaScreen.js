@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 
 const RutaScreen = ({ navigation }) => {
   const { api } = useContext(AuthContext);
@@ -29,7 +30,6 @@ const RutaScreen = ({ navigation }) => {
           };
         }
 
-        // Solo agregamos el cliente si realmente existe (evitar nulos del LEFT JOIN)
         if (item.cliente_id) {
           acc[key].clientes.push(item);
           if (item.cliente_estado && item.cliente_estado !== 'LIBRE') {
@@ -48,13 +48,19 @@ const RutaScreen = ({ navigation }) => {
     }
   }, [api]);
 
-  useEffect(() => {
-    fetchRutas();
-  }, [fetchRutas]);
+  // Refrescar cada vez que esta pantalla recibe foco (ej: al volver de FichaForm)
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchRutas();
+    }, [fetchRutas])
+  );
+
+  // useEffect original ya no necesario — useFocusEffect lo reemplaza
 
   const renderRutaCard = ({ item }) => {
-    const progress = Math.round((item.visitados / item.clientes.length) * 100);
-    const isCompleted = item.visitados === item.clientes.length;
+    const progress = item.clientes.length > 0 ? Math.round((item.visitados / item.clientes.length) * 100) : 0;
+    const isCompleted = item.clientes.length > 0 && item.visitados === item.clientes.length;
 
     return (
       <TouchableOpacity 
@@ -85,8 +91,8 @@ const RutaScreen = ({ navigation }) => {
            </View>
            <View style={styles.statDivider} />
            <View style={styles.progressBox}>
-              <View style={styles.progressCircle}>
-                 <Text style={styles.progressText}>{progress}%</Text>
+              <View style={[styles.progressCircle, isCompleted && { borderColor: '#10b981' }]}>
+                 <Text style={[styles.progressText, isCompleted && { color: '#10b981' }]}>{progress}%</Text>
               </View>
            </View>
         </View>
@@ -121,6 +127,22 @@ const RutaScreen = ({ navigation }) => {
           }
         />
       )}
+
+      {/* BARRA INFERIOR — igual que HomeScreen */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
+          <Ionicons name="people" size={24} color="#94a3b8" />
+          <Text style={styles.tabLabel}>CLIENTES</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem}>
+          <Ionicons name="map" size={24} color="#3b82f6" />
+          <Text style={[styles.tabLabel, { color: '#3b82f6' }]}>MIS RUTAS</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
+          <Ionicons name="alert-circle" size={24} color="#94a3b8" />
+          <Text style={styles.tabLabel}>NO ENCONTRADOS</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -129,7 +151,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
-  list: { padding: 20 },
+  list: { padding: 20, paddingBottom: 100 },
   rutaCard: { backgroundColor: '#fff', borderRadius: 24, marginBottom: 20, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, padding: 20 },
   rutaCardCompleted: { opacity: 0.7 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
@@ -142,10 +164,14 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 10, color: '#64748b', textTransform: 'uppercase', marginTop: 2 },
   statDivider: { width: 1, height: 20, backgroundColor: '#e2e8f0' },
   progressBox: { flex: 1, alignItems: 'center' },
-  progressCircle: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: '#10b981', justifyContent: 'center', alignItems: 'center' },
-  progressText: { fontSize: 10, fontWeight: 'bold', color: '#10b981' },
+  progressCircle: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' },
+  progressText: { fontSize: 10, fontWeight: 'bold', color: '#3b82f6' },
   emptyBox: { marginTop: 100, alignItems: 'center' },
-  emptyText: { color: '#94a3b8', marginTop: 15, fontSize: 16, fontWeight: '600' }
+  emptyText: { color: '#94a3b8', marginTop: 15, fontSize: 16, fontWeight: '600' },
+  // BARRA INFERIOR
+  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
+  tabItem: { alignItems: 'center' },
+  tabLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', marginTop: 4 },
 });
 
 export default RutaScreen;

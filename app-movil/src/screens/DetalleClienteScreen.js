@@ -12,6 +12,8 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width } = Dimensions.get('window');
 
+const ESTADOS_GESTIONADOS = ['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'];
+
 const DetalleClienteScreen = ({ route, navigation }) => {
   const { cliente: initialCliente } = route.params || {};
   const { api, user } = useContext(AuthContext);
@@ -41,7 +43,6 @@ const DetalleClienteScreen = ({ route, navigation }) => {
     if (Platform.OS === 'android') {
       // Configuración inmersiva total para ocultar barra inferior
       NavigationBar.setVisibilityAsync('hidden');
-      NavigationBar.setBehaviorAsync('overlay-pan'); 
     }
   }, []);
 
@@ -227,7 +228,12 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.footer}>
-          {isOwner ? (
+          {ESTADOS_GESTIONADOS.includes(cliente.estado) ? (
+            <View style={[styles.mainBtn, { backgroundColor: '#f1f5f9', width: '100%', elevation: 0 }]}>
+               <Ionicons name="checkmark-done-circle" size={20} color="#94a3b8" />
+               <Text style={[styles.mainBtnText, { color: '#94a3b8' }]}>CLIENTE YA GESTIONADO</Text>
+            </View>
+          ) : isOwner ? (
             <View style={{ flexDirection: 'row', flex: 1, gap: 12 }}>
                <TouchableOpacity 
                  style={styles.releaseBtn} 

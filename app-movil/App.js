@@ -10,6 +10,7 @@ import RutaScreen from './src/screens/RutaScreen';
 import RutaDetalleScreen from './src/screens/RutaDetalleScreen';
 import DetalleClienteScreen from './src/screens/DetalleClienteScreen';
 import FichaFormScreen from './src/screens/FichaFormScreen';
+import AsistenciaScreen from './src/screens/AsistenciaScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,7 @@ function NavigationStack() {
             <Stack.Screen name="RutaDetalle" component={RutaDetalleScreen} />
             <Stack.Screen name="DetalleCliente" component={DetalleClienteScreen} />
             <Stack.Screen name="FichaForm" component={FichaFormScreen} />
+            <Stack.Screen name="Asistencia" component={AsistenciaScreen} />
           </>
         )}
       </Stack.Navigator>

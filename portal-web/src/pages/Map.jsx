@@ -95,8 +95,10 @@ export default function MapPage() {
         <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
-          {/* MARCADORES DE CLIENTES */}
-          {data.clientes.map((c) => (
+          {/* MARCADORES DE CLIENTES — Solo los no gestionados */}
+          {data.clientes
+            .filter(c => !['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'].includes(c.estado))
+            .map((c) => (
             <Marker key={c.id} position={[parseFloat(c.latitud), parseFloat(c.longitud)]} icon={getClientIcon(c.estado)}>
               <Popup>
                 <div style={{minWidth: '150px'}}>
