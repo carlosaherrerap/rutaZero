@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Navigation, Clock, FileText, Calendar, User } from 'lucide-react';
 import L from 'leaflet';
@@ -12,6 +12,18 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Subcomponente para ajustar los límites del mapa automáticamente
+function MapBounds({ points }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points && points.length > 0) {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  }, [points, map]);
+  return null;
+}
 
 export default function Stats() {
   const { api } = useContext(AuthContext);
@@ -130,6 +142,7 @@ export default function Stats() {
             <div className="card" style={{ height: '500px', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--c-border)', background: 'var(--c-surface)' }}>
                <MapContainer center={polylinePoints[0] || [-12.046374, -77.042793]} zoom={13} style={{ height: '100%', width: '100%' }}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapBounds points={polylinePoints} />
                 {polylinePoints.length > 0 && <Polyline positions={polylinePoints} color="var(--c-info)" weight={4} opacity={0.6} dashArray="10, 10" />}
                 {getMarkers()}
               </MapContainer>

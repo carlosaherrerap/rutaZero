@@ -42,7 +42,7 @@ export default function Rutas() {
   });
 
   const [creating, setCreating] = useState(false);
-  const [filterPago, setFilterPago] = useState('');
+  const [filterPago, setFilterPago] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     fetchData();

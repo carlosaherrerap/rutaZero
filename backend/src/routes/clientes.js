@@ -93,14 +93,35 @@ router.get('/', async (req, res) => {
 
 router.get('/mapa', async (req, res) => {
   try {
-    // 1. Obtener Clientes con su estado, ubicación y DEUDA
-    const clientesRes = await db.query(`
-      SELECT c.id, c.nombres, c.apellidos, c.estado, c.deuda_total,
+    const { fecha_pago, tipo_gestion, en_ruta } = req.query;
+
+    let queryClientes = `
+      SELECT DISTINCT c.id, c.nombres, c.apellidos, c.estado, c.deuda_total, c.fecha_pago,
              ub.latitud, ub.longitud, ub.direccion, ub.distrito, 
              c.bloqueado_por as worker_id
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-    `);
+      LEFT JOIN ruta_clientes rc ON rc.cliente_id = c.id
+      WHERE 1=1
+    `;
+    const params = [];
+    let paramIdx = 1;
+
+    if (fecha_pago) {
+      queryClientes += ` AND c.fecha_pago = $${paramIdx++}`;
+      params.push(fecha_pago);
+    }
+    
+    if (tipo_gestion && tipo_gestion !== 'TODOS') {
+      queryClientes += ` AND c.estado = $${paramIdx++}`;
+      params.push(tipo_gestion);
+    }
+
+    if (en_ruta === 'true') {
+      queryClientes += ` AND rc.id IS NOT NULL`;
+    }
+
+    const clientesRes = await db.query(queryClientes, params);
 
     // 2. Obtener Workers con jornada activa hoy
     const workersRes = await db.query(`

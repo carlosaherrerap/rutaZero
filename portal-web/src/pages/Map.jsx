@@ -20,25 +20,37 @@ export default function MapPage() {
   const [data, setData] = useState({ clientes: [], workers: [] });
   const [loading, setLoading] = useState(true);
 
+  // Filtros
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [fechaPago, setFechaPago] = useState(todayStr);
+  const [tipoGestion, setTipoGestion] = useState('TODOS');
+
+  const fetchMapData = async () => {
+    try {
+      const res = await api.get('/api/clientes/mapa', {
+        params: {
+          fecha_pago: fechaPago,
+          tipo_gestion: tipoGestion,
+          en_ruta: true
+        }
+      });
+      setData(res.data.data || { clientes: [], workers: [] });
+    } catch (e) {
+      console.error('Error loading map data', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMapData = async () => {
-      try {
-        const res = await api.get('/api/clientes/mapa');
-        setData(res.data.data || { clientes: [], workers: [] });
-      } catch (e) {
-        console.error('Error loading map data', e);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchMapData();
     const interval = setInterval(fetchMapData, 30000); // Auto-refresh cada 30s
     return () => clearInterval(interval);
-  }, [api]);
+  }, [api, fechaPago, tipoGestion]);
 
   // Iconos Personalizados - PINES GRANDES
   const getClientIcon = (estado) => {
-    let color = 'var(--c-info)'; // Azul por defecto (GRANDE)
+    let color = 'var(--c-info)'; // Azul por defecto (LIBRE)
     if (estado === 'EN_VISITA') color = 'var(--c-accent)';
     if (estado === 'VISITADO_PAGO') color = 'var(--c-success)';
     if (estado === 'REPROGRAMADO') color = 'var(--c-warn)';
@@ -76,18 +88,39 @@ export default function MapPage() {
   const center = [-12.0464, -77.0428];
 
   return (
-    <div className="map-page" style={{ height: 'calc(100vh - 110px)', margin: '-24px' }}>
-      <div className="map-topbar">
+    <div className="map-page" style={{ height: 'calc(100vh - 110px)', margin: '-24px', display: 'flex', flexDirection: 'column' }}>
+      <div className="map-topbar" style={{ display: 'flex', alignItems: 'center', padding: '10px 15px', backgroundColor: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', gap: '15px', flexWrap: 'wrap' }}>
         <div className="map-stat">
           <span className="badge badge-activo" style={{backgroundColor:'var(--c-info)'}}></span>
           <span>{data.clientes.length} Clientes</span>
         </div>
-        <div className="map-stat" style={{marginLeft: '15px'}}>
+        <div className="map-stat">
           <span className="badge" style={{backgroundColor:'var(--c-text)'}}></span>
-          <span>{data.workers.length} Workers Activos</span>
+          <span>{data.workers.length} Workers</span>
         </div>
-        <div className="text-muted text-sm" style={{marginLeft: 'auto'}}>
-          Mapa en tiempo real (Auto-refresh 30s)
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginLeft: 'auto' }}>
+          <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Filtros:</label>
+          <input 
+            type="date" 
+            className="input" 
+            value={fechaPago} 
+            onChange={(e) => setFechaPago(e.target.value)} 
+            style={{ padding: '5px' }}
+          />
+          <select 
+            className="input" 
+            value={tipoGestion} 
+            onChange={(e) => setTipoGestion(e.target.value)}
+            style={{ padding: '5px' }}
+          >
+            <option value="TODOS">Todas las Gestiones</option>
+            <option value="LIBRE">LIBRE</option>
+            <option value="EN_VISITA">EN VISITA</option>
+            <option value="VISITADO_PAGO">GESTIONADO (PAGO)</option>
+            <option value="REPROGRAMADO">REPROGRAMADO</option>
+            <option value="NO_ENCONTRADO">NO ENCONTRADO</option>
+          </select>
         </div>
       </div>
       
@@ -95,10 +128,8 @@ export default function MapPage() {
         <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
-          {/* MARCADORES DE CLIENTES — Solo los no gestionados */}
-          {data.clientes
-            .filter(c => !['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'].includes(c.estado))
-            .map((c) => (
+          {/* MARCADORES DE CLIENTES */}
+          {data.clientes.map((c) => (
             <Marker key={c.id} position={[parseFloat(c.latitud), parseFloat(c.longitud)]} icon={getClientIcon(c.estado)}>
               <Popup>
                 <div style={{minWidth: '150px'}}>

@@ -86,16 +86,29 @@ export default function HomeScreen({ navigation }) {
     if (Platform.OS === 'android') NavigationBar.setVisibilityAsync('hidden');
   }, []);
 
-  const fetchData = useCallback(async () => {
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchData = useCallback(async (pageNum = 1, shouldRefresh = false) => {
     if (!user) return;
     try {
-      const [resWorker, resClients] = await Promise.all([
-        api.get(`/api/workers/${user.id}`),
-        api.get('/api/clientes?limit=500&estado_excluir=VISITADO_PAGO,REPROGRAMADO,NO_ENCONTRADO')
-      ]);
-      setJourney(resWorker.data.data);
-      const data = resClients.data.data || [];
-      setAllClients(data);
+      if (pageNum === 1) {
+        const resWorker = await api.get(`/api/workers/${user.id}`);
+        setJourney(resWorker.data.data);
+      }
+      
+      const limit = 50;
+      const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}`);
+      const newData = resClients.data.data || [];
+      
+      setHasMore(newData.length === limit);
+      
+      if (shouldRefresh || pageNum === 1) {
+        setAllClients(newData);
+      } else {
+        setAllClients(prev => [...prev, ...newData]);
+      }
+      setPage(pageNum);
     } catch (e) {
       console.log('[Home] Error fetching data', e);
     } finally {
@@ -104,12 +117,21 @@ export default function HomeScreen({ navigation }) {
     }
   }, [user, api]);
 
-  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
+  useFocusEffect(useCallback(() => { 
+    setLoading(true);
+    fetchData(1, true); 
+  }, [fetchData]));
 
   useEffect(() => {
     if (filterStatus === 'TODOS') setFilteredClients(allClients);
     else setFilteredClients(allClients.filter(c => c.estado === filterStatus));
   }, [filterStatus, allClients]);
+
+  const loadMore = () => {
+    if (hasMore && !loading && !refreshing) {
+      fetchData(page + 1);
+    }
+  };
 
   // ── LÓGICA DE JORNADA ───────────────────────────────────────
   const jornadaEstado = journey?.estado_jornada || null;
@@ -305,7 +327,10 @@ export default function HomeScreen({ navigation }) {
             keyExtractor={item => item.id.toString()}
             contentContainerStyle={styles.list}
             refreshing={refreshing}
-            onRefresh={() => { setRefreshing(true); fetchData(); }}
+            onRefresh={() => { setRefreshing(true); fetchData(1, true); }}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={hasMore ? <ActivityIndicator size="small" color="#3b82f6" /> : null}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="search-outline" size={50} color="#cbd5e1" />
@@ -319,15 +344,15 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.tabBar}>
           <TouchableOpacity style={styles.tabItem} onPress={() => setFilterStatus('TODOS')}>
             <Ionicons name="people" size={24} color={filterStatus === 'TODOS' ? '#3b82f6' : '#94a3b8'} />
-            <Text style={[styles.tabLabel, filterStatus === 'TODOS' && { color: '#3b82f6' }]}>{stats.total}</Text>
+            <Text style={[styles.tabLabel, filterStatus === 'TODOS' && { color: '#3b82f6' }]}>TODOS ({stats.total})</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Ruta')}>
             <Ionicons name="map" size={24} color="#94a3b8" />
             <Text style={styles.tabLabel}>MIS RUTAS</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Asistencia')}>
-            <Ionicons name="calendar" size={24} color="#94a3b8" />
-            <Text style={styles.tabLabel}>ASISTENCIA</Text>
+          <TouchableOpacity style={styles.tabItem} onPress={() => setFilterStatus('NO_ENCONTRADO')}>
+            <Ionicons name="close-circle" size={24} color={filterStatus === 'NO_ENCONTRADO' ? '#ef4444' : '#94a3b8'} />
+            <Text style={[styles.tabLabel, filterStatus === 'NO_ENCONTRADO' && { color: '#ef4444' }]}>NO ENCONTRADOS ({stats.noEncontrados})</Text>
           </TouchableOpacity>
         </View>
 
