@@ -153,14 +153,14 @@ export default function Rutas() {
             height: '94vh', 
             display: 'grid', 
             gridTemplateRows: 'auto 1fr',
-            backgroundColor: '#0f172a', 
-            border: '1px solid #334155',
+            backgroundColor: 'var(--c-surface)', 
+            border: '1px solid var(--c-border)',
             overflow: 'hidden'
           }}>
             {/* HEADER FIJO */}
             <div className="modal-header" style={{ borderBottom: '1px solid #1e293b', padding: '15px 25px' }}>
-              <span className="modal-title" style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '800' }}>CENTRO DE PLANIFICACIÓN DE RUTAS</span>
-              <button className="btn-ghost" style={{ color: '#94a3b8' }} onClick={() => setShowModal(false)}>✕</button>
+              <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.2rem', fontWeight: '800' }}>CENTRO DE PLANIFICACIÓN DE RUTAS</span>
+              <button className="btn-ghost" style={{ color: 'var(--c-muted)' }} onClick={() => setShowModal(false)}>✕</button>
             </div>
             
             {/* BODY USANDO GRID PARA EVITAR DESBORDAMIENTOS */}
@@ -168,8 +168,8 @@ export default function Rutas() {
               
               {/* LADO IZQUIERDO: CONTROLES */}
               <div style={{ 
-                backgroundColor: '#1e293b', 
-                borderRight: '1px solid #334155', 
+                backgroundColor: 'var(--c-surface)', 
+                borderRight: '1px solid var(--c-border)', 
                 padding: '25px', 
                 display: 'flex', 
                 flexDirection: 'column',
@@ -178,10 +178,10 @@ export default function Rutas() {
                 overflowY: 'auto'
               }}>
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem', letterSpacing: '1px' }}>NOMBRE DE LA RUTA</label>
+                  <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>NOMBRE DE LA RUTA</label>
                   <input 
                     className="form-input" 
-                    style={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
                     placeholder="Ej: Ruta Sur - Lunes" 
                     value={newRuta.nombre} 
                     onChange={e => setNewRuta({...newRuta, nombre: e.target.value})} 
@@ -189,10 +189,10 @@ export default function Rutas() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem', letterSpacing: '1px' }}>WORKER ASIGNADO</label>
+                  <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>WORKER ASIGNADO</label>
                   <select 
                     className="form-input" 
-                    style={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
                     value={newRuta.worker_id} 
                     onChange={e => setNewRuta({...newRuta, worker_id: e.target.value})}
                   >
@@ -202,22 +202,22 @@ export default function Rutas() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ color: '#94a3b8', fontSize: '0.75rem', letterSpacing: '1px' }}>FECHA DE VISITA</label>
+                  <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>FECHA DE VISITA</label>
                   <input 
                     type="date" 
                     className="form-input" 
-                    style={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
                     value={newRuta.fecha_asignacion} 
                     onChange={e => setNewRuta({...newRuta, fecha_asignacion: e.target.value})} 
                   />
                 </div>
 
-                <div style={{ marginTop: '10px', padding: '15px', backgroundColor: '#334155', borderRadius: '12px', border: '1px solid #475569' }}>
-                   <label className="form-label" style={{ color: '#cbd5e1', fontSize: '0.75rem', fontWeight: 'bold' }}>FILTRAR POR FECHA DE PAGO (CLIENTE)</label>
+                 <div style={{ marginTop: '10px', padding: '15px', backgroundColor: 'var(--c-surface-2)', borderRadius: '12px', border: '1px solid var(--c-border)' }}>
+                   <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', fontWeight: 'bold' }}>FILTRAR POR FECHA DE PAGO (CLIENTE)</label>
                    <input 
                      type="date" 
                      className="form-input" 
-                     style={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff', marginTop: '10px' }} 
+                     style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', marginTop: '10px' }} 
                      value={filterPago} 
                      onChange={e => setFilterPago(e.target.value)} 
                    />
@@ -225,12 +225,12 @@ export default function Rutas() {
 
                 <div style={{ flex: 1 }} />
 
-                <div style={{ padding: '15px', backgroundColor: '#0f172a', borderRadius: '12px', border: '1px dashed #334155' }}>
+                 <div style={{ padding: '15px', backgroundColor: 'var(--c-surface-2)', borderRadius: '12px', border: '1px dashed var(--c-border)' }}>
                    <div className="flex justify-between items-center">
-                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Seleccionados:</span>
-                      <span style={{ color: '#3b82f6', fontWeight: 'bold', fontSize: '1.2rem' }}>{newRuta.cliente_ids.length}</span>
+                     <span style={{ color: 'var(--c-muted)', fontSize: '0.8rem' }}>Seleccionados:</span>
+                     <span style={{ color: 'var(--c-info)', fontWeight: 'bold', fontSize: '1.2rem' }}>{newRuta.cliente_ids.length}</span>
                    </div>
-                </div>
+                 </div>
 
                 <div className="flex flex-col gap-2">
                    <button 
@@ -277,10 +277,10 @@ export default function Rutas() {
                       className: 'worker-pin',
                       html: `
                         <div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); position: relative;">
-                           <svg viewBox="0 0 24 24" width="48" height="48" fill="#10b981" stroke="white" stroke-width="1.5">
+                           <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--c-success)" stroke="var(--c-on-primary)" stroke-width="1.5">
                               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
                            </svg>
-                           <div style="background: #10b981; color: white; padding: 2px 6px; border-radius: 8px; font-size: 9px; font-weight: 800; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); border: 1.5px solid white; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                           <div style="background: var(--c-success); color: var(--c-on-primary); padding: 2px 6px; border-radius: 8px; font-size: 9px; font-weight: 800; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); border: 1.5px solid var(--c-on-primary); white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                              ${selectedWorker.nombres.split(' ')[0].toUpperCase()}
                            </div>
                         </div>
@@ -298,8 +298,8 @@ export default function Rutas() {
                       >
                         <Popup>
                           <div style={{ textAlign: 'center', padding: '5px' }}>
-                            <strong style={{ display: 'block', fontSize: '14px', color: '#1e293b' }}>{selectedWorker.nombres} {selectedWorker.apellidos}</strong>
-                            <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '11px' }}>Worker Seleccionado</span>
+                            <strong style={{ display: 'block', fontSize: '14px', color: 'var(--c-text)' }}>{selectedWorker.nombres} {selectedWorker.apellidos}</strong>
+                            <span style={{ color: 'var(--c-success)', fontWeight: 'bold', fontSize: '11px' }}>Worker Seleccionado</span>
                           </div>
                         </Popup>
                       </Marker>
@@ -309,13 +309,16 @@ export default function Rutas() {
                     const isSelected = newRuta.cliente_ids.includes(c.id);
                     const isOccupied = c.estado !== 'LIBRE';
                     
+                    const fillColor = isSelected ? 'var(--c-info)' : (isOccupied ? 'var(--c-muted-2)' : 'var(--c-muted)');
+                    const opacity = (isOccupied && !isSelected) ? '0.6' : '1';
+
                     const pinIcon = L.divIcon({
                       className: 'custom-pin',
                       html: `
-                        <div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); opacity: ${isOccupied && !isSelected ? '0.6' : '1'}">
-                           <svg viewBox="0 0 24 24" width="42" height="42" fill="${isSelected ? '#3b82f6' : (isOccupied ? '#94a3b8' : '#64748b')}" stroke="white" stroke-width="1.2">
-                              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                           </svg>
+                        <div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); opacity: ${opacity}">
+                          <svg viewBox="0 0 24 24" width="42" height="42" fill="${fillColor}" stroke="var(--c-on-primary)" stroke-width="1.2">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                          </svg>
                         </div>
                       `,
                       iconSize: [42, 42],
@@ -336,7 +339,7 @@ export default function Rutas() {
                            <div style={{ minWidth: '180px', padding: '10px' }}>
                               <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>{c.nombres}</h4>
                               <p style={{ margin: '4px 0', fontSize: '12px' }}>Deuda: <b>S/ {c.deuda_total}</b></p>
-                              <p style={{ margin: '4px 0', fontSize: '12px' }}>Estado: <b style={{ color: isOccupied ? '#ef4444' : '#10b981' }}>{c.estado}</b></p>
+                              <p style={{ margin: '4px 0', fontSize: '12px' }}>Estado: <b style={{ color: isOccupied ? 'var(--c-danger)' : 'var(--c-success)' }}>{c.estado}</b></p>
                               {!isOccupied ? (
                                 <button 
                                   className={`btn btn-sm ${isSelected ? 'btn-danger' : 'btn-primary'}`} 
@@ -346,7 +349,7 @@ export default function Rutas() {
                                   {isSelected ? 'QUITAR' : 'ASIGNAR'}
                                 </button>
                               ) : (
-                                <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', marginTop: '10px' }}>Cliente ya tiene gestión o ruta activa.</div>
+                                <div style={{ fontSize: '10px', color: 'var(--c-muted)', textAlign: 'center', marginTop: '10px' }}>Cliente ya tiene gestión o ruta activa.</div>
                               )}
                            </div>
                         </Popup>
@@ -356,19 +359,19 @@ export default function Rutas() {
                 </MapContainer>
 
                 {/* LEYENDA FLOTANTE */}
-                <div style={{ 
+                 <div style={{ 
                   position: 'absolute', top: '20px', right: '20px', zIndex: 1000, 
-                  backgroundColor: 'rgba(15, 23, 42, 0.9)', padding: '12px', borderRadius: '10px', border: '1px solid #334155'
-                }}>
+                  backgroundColor: 'var(--c-surface-2)', padding: '12px', borderRadius: '10px', border: '1px solid var(--c-border)'
+                 }}>
                    <div className="flex items-center gap-3 mb-2">
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#3b82f6' }}></div>
-                      <span style={{ color: '#f8fafc', fontSize: '0.7rem' }}>SELECCIONADO</span>
+                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--c-info)' }}></div>
+                     <span style={{ color: 'var(--c-on-primary)', fontSize: '0.7rem' }}>SELECCIONADO</span>
                    </div>
                    <div className="flex items-center gap-3">
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#64748b' }}></div>
-                      <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>DISPONIBLE</span>
+                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--c-muted)' }}></div>
+                     <span style={{ color: 'var(--c-muted-2)', fontSize: '0.7rem' }}>DISPONIBLE</span>
                    </div>
-                </div>
+                 </div>
               </div>
 
             </div>

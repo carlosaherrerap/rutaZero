@@ -6,13 +6,18 @@ const jwt = require('jsonwebtoken');
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('[-] Auth Fail: No Bearer token in header');
-    return res.status(401).json({ error: 'Token no proporcionado' });
+  let token = null;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query.token) {
+    token = req.query.token;
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    console.log('[-] Auth Fail: No Bearer token in header or query');
+    return res.status(401).json({ error: 'Token no proporcionado' });
+  }
   try {
     const decoded = jwt.verify(token, SECRET);
     // console.log(`[+] Auth Success: User ${decoded.username} (${decoded.rol})`); // Silenciado para evitar spam

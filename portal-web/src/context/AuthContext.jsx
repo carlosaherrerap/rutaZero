@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   // configure axios instance
   const api = axios.create({
-    baseURL: 'http://localhost:4000',
+    baseURL: 'http://192.168.1.69:4000',
     headers: { Authorization: token ? `Bearer ${token}` : undefined },
   });
 

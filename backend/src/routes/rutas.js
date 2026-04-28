@@ -43,6 +43,26 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/rutas/worker/:workerId
+ * Lista rutas de un worker específico (admin)
+ */
+router.get('/worker/:workerId', adminOnly, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      `SELECT id, nombre, fecha_asignacion, total_clientes 
+       FROM rutas 
+       WHERE worker_id = $1 
+       ORDER BY fecha_asignacion DESC`,
+      [req.params.workerId]
+    );
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error al obtener rutas por worker:', err);
+    res.status(500).json({ error: 'Error al obtener rutas' });
+  }
+});
+
+/**
  * GET /api/rutas/:id
  * Detalle de una ruta con sus clientes
  */

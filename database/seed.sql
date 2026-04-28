@@ -269,14 +269,14 @@ INSERT INTO ubicaciones (id, latitud, longitud, direccion, departamento, provinc
 
 INSERT INTO usuarios (id, username, password_hash, rol, nombres, apellidos, dni, telefono, email, foto_perfil_url, ubicacion_id, estado) VALUES
 -- Admin
-('c0000001-0001-0001-0001-000000000001', 'admin', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'ADMIN', 'Carlos', 'Mendoza Ríos', '72345678', '999888001', 'admin@rutazero.pe', NULL, NULL, 'ACTIVO'),
+('c0000001-0001-0001-0001-000000000001', 'admin', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'ADMIN', 'Carlos', 'Mendoza Ríos', '72345678', '999888001', 'admin@rutazero.pe', NULL, NULL, 'ACTIVO'),
 
 -- Workers
-('c0000001-0001-0001-0002-000000000001', 'pedro.gutierrez', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'WORKER', 'Pedro', 'Gutiérrez Vargas', '71234501', '999888101', 'pedro@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000001', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000002', 'daniel.flores', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'WORKER', 'Daniel', 'Flores Huamán', '71234502', '999888102', 'daniel@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000002', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000003', 'maria.lopez', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'WORKER', 'María', 'López Torres', '71234503', '999888103', 'maria@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000003', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000004', 'jose.ramirez', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'WORKER', 'José', 'Ramírez Soto', '71234504', '999888104', 'jose@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000004', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000005', 'ana.castro', '$2b$10$eYhaWyen1mw5c4i4OtbtMejfiG/TI.GWaLsjgFtVvoQXEBdqoSTxa', 'WORKER', 'Ana', 'Castro Mejía', '71234505', '999888105', 'ana@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000005', 'ACTIVO');
+('c0000001-0001-0001-0002-000000000001', 'pedro.gutierrez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Pedro', 'Gutiérrez Vargas', '71234501', '999888101', 'pedro@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000001', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000002', 'daniel.flores', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Daniel', 'Flores Huamán', '71234502', '999888102', 'daniel@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000002', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000003', 'maria.lopez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'María', 'López Torres', '71234503', '999888103', 'maria@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000003', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000004', 'jose.ramirez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'José', 'Ramírez Soto', '71234504', '999888104', 'jose@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000004', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000005', 'ana.castro', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Ana', 'Castro Mejía', '71234505', '999888105', 'ana@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000005', 'ACTIVO');
 
 
 -- ────────────────────────────────────────────────────────────────────────────

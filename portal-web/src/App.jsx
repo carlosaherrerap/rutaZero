@@ -9,6 +9,7 @@ import Workers from './pages/Workers.jsx';
 import Rutas from './pages/Rutas.jsx';
 import Asistencia from './pages/Asistencia.jsx';
 import Ciclos from './pages/Ciclos.jsx';
+import Stats from './pages/Stats.jsx';
 import NotificationCenter from './components/NotificationCenter.jsx';
 import './index.css';
 import './App.css';
@@ -51,6 +52,7 @@ function Sidebar() {
         <li><NavLink to="/workers" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers"/>Workers</NavLink></li>
         <li><NavLink to="/rutas" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="routes"/>Rutas</NavLink></li>
         <li><NavLink to="/asistencia" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance"/>Asistencia</NavLink></li>
+        <li><NavLink to="/stats" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard"/>Stats</NavLink></li>
         <li><NavLink to="/ciclos" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="cycles"/>Ciclos</NavLink></li>
       </ul>
       <div className="sidebar-bottom">
@@ -69,14 +71,33 @@ function Sidebar() {
   );
 }
 
+// ─── Theme Toggle ────────────────────────────────────────────
+function ThemeToggle() {
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('theme') || 'light');
+  React.useEffect(() => {
+    try { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); } catch (e) {}
+  }, [theme]);
+  return (
+    <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme">
+      {theme === 'dark' ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      )}
+    </button>
+  );
+}
+
 // ─── Protected layout ─────────────────────────────────────────
 function AppLayout({ children, title }) {
   return (
     <div className="app-shell">
+      <div className="grid-bg" aria-hidden="true" />
       <Sidebar />
       <div className="main-area">
         <header className="topbar">
           <span className="topbar-title">{title}</span>
+          <ThemeToggle />
         </header>
         <main className="page-content">{children}</main>
       </div>
@@ -103,6 +124,7 @@ export default function App() {
         <Route path="/workers" element={<ProtectedRoute title="Workers"><Workers /></ProtectedRoute>} />
         <Route path="/rutas" element={<ProtectedRoute title="Rutas"><Rutas /></ProtectedRoute>} />
         <Route path="/asistencia" element={<ProtectedRoute title="Asistencia"><Asistencia /></ProtectedRoute>} />
+        <Route path="/stats" element={<ProtectedRoute title="Estadísticas de Trabajadores"><Stats /></ProtectedRoute>} />
         <Route path="/ciclos" element={<ProtectedRoute title="Ciclos — Liberación"><Ciclos /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

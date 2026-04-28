@@ -6,16 +6,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 const RutaScreen = ({ navigation }) => {
-  const { api } = useContext(AuthContext);
+  const { api, user } = useContext(AuthContext);
   const [groupedRutas, setGroupedRutas] = useState([]);
+  const [jornadaEstado, setJornadaEstado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchRutas = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await api.get('/api/workers/me/ruta');
-      const rawData = res.data.data || [];
+      const [resWorker, resRutas] = await Promise.all([
+        api.get(`/api/workers/${user.id}`),
+        api.get('/api/workers/me/ruta')
+      ]);
+      setJornadaEstado(resWorker.data.data.estado_jornada);
       
+      const rawData = resRutas.data.data || [];
       const groups = rawData.reduce((acc, item) => {
         const key = item.ruta_id;
         if (!key) return acc;
@@ -46,17 +51,17 @@ const RutaScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [api]);
+  }, [api, user]);
 
-  // Refrescar cada vez que esta pantalla recibe foco (ej: al volver de FichaForm)
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchRutas();
-    }, [fetchRutas])
+      fetchData();
+    }, [fetchData])
   );
 
-  // useEffect original ya no necesario — useFocusEffect lo reemplaza
+  const puedeTrabajar = jornadaEstado === 'JORNADA_INICIADA' || jornadaEstado === 'EN_REFRIGERIO';
+  const finalizado = jornadaEstado === 'JORNADA_FINALIZADA';
 
   const renderRutaCard = ({ item }) => {
     const progress = item.clientes.length > 0 ? Math.round((item.visitados / item.clientes.length) * 100) : 0;
@@ -104,13 +109,19 @@ const RutaScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
          <Text style={styles.headerTitle}>Mis Rutas</Text>
-         <TouchableOpacity onPress={() => { setLoading(true); fetchRutas(); }}>
+         <TouchableOpacity onPress={() => { setLoading(true); fetchData(); }}>
             <Ionicons name="refresh" size={24} color="#3b82f6" />
          </TouchableOpacity>
       </View>
 
       {loading ? (
         <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+      ) : !jornadaEstado || finalizado ? (
+        <View style={styles.lockBanner}>
+          <Ionicons name="lock-closed" size={50} color="#cbd5e1" />
+          <Text style={styles.lockTitle}>Jornada no iniciada</Text>
+          <Text style={styles.lockSub}>Ve a Clientes e INICIA DÍA para ver tus rutas.</Text>
+        </View>
       ) : (
         <FlatList
           data={groupedRutas}
@@ -118,7 +129,7 @@ const RutaScreen = ({ navigation }) => {
           keyExtractor={item => item.id.toString()}
           contentContainerStyle={styles.list}
           refreshing={refreshing}
-          onRefresh={() => { setRefreshing(true); fetchRutas(); }}
+          onRefresh={() => { setRefreshing(true); fetchData(); }}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
                <Ionicons name="map-outline" size={80} color="#cbd5e1" />
@@ -128,7 +139,7 @@ const RutaScreen = ({ navigation }) => {
         />
       )}
 
-      {/* BARRA INFERIOR — igual que HomeScreen */}
+      {/* BARRA INFERIOR */}
       <View style={styles.tabBar}>
         <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
           <Ionicons name="people" size={24} color="#94a3b8" />
@@ -138,9 +149,9 @@ const RutaScreen = ({ navigation }) => {
           <Ionicons name="map" size={24} color="#3b82f6" />
           <Text style={[styles.tabLabel, { color: '#3b82f6' }]}>MIS RUTAS</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
-          <Ionicons name="alert-circle" size={24} color="#94a3b8" />
-          <Text style={styles.tabLabel}>NO ENCONTRADOS</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Asistencia')}>
+          <Ionicons name="calendar" size={24} color="#94a3b8" />
+          <Text style={styles.tabLabel}>ASISTENCIA</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

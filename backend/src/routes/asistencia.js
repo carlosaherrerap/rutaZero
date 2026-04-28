@@ -209,4 +209,92 @@ router.post('/ciclos/importar-excel', uploadExcel.single('archivo'), async (req,
   }
 });
 
+// ─── AGGREGATE SUMMARY ──────────────────────────────────────────────────────
+/**
+ * GET /api/asistencia/workers-summary
+ * Lista workers con conteos acumulados de asistencia
+ */
+router.get('/workers-summary', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        u.id, u.nombres, u.apellidos, u.dni,
+        COUNT(j.id) AS total_asistencias,
+        COUNT(j.id) FILTER (WHERE j.estado = 'JORNADA_FINALIZADA') AS dias_completos,
+        COUNT(j.id) FILTER (WHERE j.validado = TRUE) AS dias_validados
+      FROM usuarios u
+      LEFT JOIN jornadas j ON j.worker_id = u.id
+      WHERE u.rol = 'WORKER'
+      GROUP BY u.id
+      ORDER BY u.apellidos, u.nombres
+    `);
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error al obtener resumen de asistencia:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// ─── EXPORT ──────────────────────────────────────────────────────────────────
+/**
+ * GET /api/asistencia/export
+ * Exporta asistencia a CSV
+ */
+router.get('/export', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        j.fecha, u.dni, u.nombres || ' ' || u.apellidos AS worker,
+        j.estado, j.hora_inicio_sesion, j.hora_fin_jornada,
+        j.validado
+      FROM jornadas j
+      JOIN usuarios u ON u.id = j.worker_id
+      ORDER BY j.fecha DESC
+    `);
+
+    let csv = 'Fecha,DNI,Worker,Estado,Inicio,Fin,Validado\n';
+    rows.forEach(r => {
+      csv += `${r.fecha.toISOString().split('T')[0]},${r.dni},"${r.worker}",${r.estado},${r.hora_inicio_sesion || ''},${r.hora_fin_jornada || ''},${r.validado ? 'SI' : 'NO'}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=asistencia.csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al exportar' });
+  }
+});
+
+/**
+ * GET /api/asistencia/ciclos/export
+ * Exporta ciclos (clientes gestionados) a CSV
+ */
+router.get('/ciclos/export', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+      SELECT 
+        c.dni, c.nombres || ' ' || c.apellidos AS cliente, c.estado,
+        c.deuda_total, ub.distrito, gh.tipificacion, gh.created_at AS fecha_gestion
+      FROM clientes c
+      LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
+      LEFT JOIN LATERAL (
+        SELECT tipificacion, created_at FROM gestiones_historial 
+        WHERE cliente_id = c.id ORDER BY created_at DESC LIMIT 1
+      ) gh ON true
+      WHERE c.estado IN ('VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO')
+    `);
+
+    let csv = 'DNI,Cliente,Estado,Deuda,Distrito,Tipificacion,Fecha Gestion\n';
+    rows.forEach(r => {
+      csv += `${r.dni},"${r.cliente}",${r.estado},${r.deuda_total},"${r.distrito}",${r.tipificacion},${r.fecha_gestion?.toISOString() || ''}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=ciclos.csv');
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al exportar ciclos' });
+  }
+});
+
 module.exports = router;

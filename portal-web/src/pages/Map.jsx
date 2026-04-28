@@ -38,19 +38,19 @@ export default function MapPage() {
 
   // Iconos Personalizados - PINES GRANDES
   const getClientIcon = (estado) => {
-    let color = '#3b82f6'; // Azul por defecto (GRANDE)
-    if (estado === 'EN_VISITA') color = '#a855f7';
-    if (estado === 'VISITADO_PAGO') color = '#10b981';
-    if (estado === 'REPROGRAMADO') color = '#f59e0b';
-    if (estado === 'NO_ENCONTRADO') color = '#ef4444';
+    let color = 'var(--c-info)'; // Azul por defecto (GRANDE)
+    if (estado === 'EN_VISITA') color = 'var(--c-accent)';
+    if (estado === 'VISITADO_PAGO') color = 'var(--c-success)';
+    if (estado === 'REPROGRAMADO') color = 'var(--c-warn)';
+    if (estado === 'NO_ENCONTRADO') color = 'var(--c-danger)';
 
     return L.divIcon({
       className: 'custom-div-icon',
       html: `
         <div style="position: relative; width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;">
           <svg viewBox="0 0 24 24" width="30" height="30" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));">
-            <path fill="${color}" stroke="white" stroke-width="1.5" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
-            <circle cx="12" cy="8" r="3" fill="white" />
+            <path fill="${color}" stroke="var(--c-on-primary)" stroke-width="1.5" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
+            <circle cx="12" cy="8" r="3" fill="var(--c-on-primary)" />
           </svg>
         </div>`,
       iconSize: [30, 30],
@@ -64,8 +64,8 @@ export default function MapPage() {
     html: `
       <div style="position: relative; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">
         <svg viewBox="0 0 24 24" width="32" height="32" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-          <path fill="#1e293b" stroke="white" stroke-width="1.5" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
-          <path fill="white" d="M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-4 8a4 4 0 0 1 8 0v1H8v-1z" />
+          <path fill="var(--c-text)" stroke="var(--c-on-primary)" stroke-width="1.5" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
+          <path fill="var(--c-on-primary)" d="M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-4 8a4 4 0 0 1 8 0v1H8v-1z" />
         </svg>
       </div>`,
     iconSize: [32, 32],
@@ -79,11 +79,11 @@ export default function MapPage() {
     <div className="map-page" style={{ height: 'calc(100vh - 110px)', margin: '-24px' }}>
       <div className="map-topbar">
         <div className="map-stat">
-          <span className="badge badge-activo" style={{backgroundColor:'#3b82f6'}}></span>
+          <span className="badge badge-activo" style={{backgroundColor:'var(--c-info)'}}></span>
           <span>{data.clientes.length} Clientes</span>
         </div>
         <div className="map-stat" style={{marginLeft: '15px'}}>
-          <span className="badge" style={{backgroundColor:'#1e293b'}}></span>
+          <span className="badge" style={{backgroundColor:'var(--c-text)'}}></span>
           <span>{data.workers.length} Workers Activos</span>
         </div>
         <div className="text-muted text-sm" style={{marginLeft: 'auto'}}>
@@ -103,10 +103,10 @@ export default function MapPage() {
               <Popup>
                 <div style={{minWidth: '150px'}}>
                   <strong style={{fontSize:'14px'}}>{c.nombres} {c.apellidos}</strong>
-                  <div style={{color: '#ef4444', fontWeight: 'bold', fontSize: '13px', margin: '3px 0'}}>
+                  <div style={{color: 'var(--c-danger)', fontWeight: 'bold', fontSize: '13px', margin: '3px 0'}}>
                     DEUDA: S/ {parseFloat(c.deuda_total || 0).toFixed(2)}
                   </div>
-                  <div style={{color: '#64748b', fontSize:'11px', marginBottom:'5px'}}>{c.direccion}</div>
+                  <div style={{color: 'var(--c-muted)', fontSize:'11px', marginBottom:'5px'}}>{c.direccion}</div>
                   <div className={`badge badge-${c.estado.toLowerCase().replace(/_/g, '-')}`}>
                     {c.estado.replace('_', ' ')}
                   </div>
@@ -120,9 +120,9 @@ export default function MapPage() {
             <Marker key={w.id} position={[parseFloat(w.latitud || 0), parseFloat(w.longitud || 0)]} icon={workerIcon}>
               <Popup>
                 <div style={{minWidth: '120px'}}>
-                  <strong style={{color:'#1e293b'}}>{w.nombres} {w.apellidos}</strong>
+                  <strong style={{color:'var(--c-text)'}}>{w.nombres} {w.apellidos}</strong>
                   <div style={{marginTop:'5px'}}>
-                     <span style={{fontSize:'10px', fontWeight:'bold', color: w.estado_jornada === 'EN_REFRIGERIO' ? '#f59e0b' : '#64748b'}}>
+                    <span style={{fontSize:'10px', fontWeight:'bold', color: w.estado_jornada === 'EN_REFRIGERIO' ? 'var(--c-warn)' : 'var(--c-muted)'}}>
                         {w.estado_jornada ? w.estado_jornada.replace('_', ' ') : 'SIN INICIAR DÍA'}
                      </span>
                   </div>

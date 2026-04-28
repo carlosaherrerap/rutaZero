@@ -11,8 +11,10 @@ router.use(authMiddleware);
  */
 router.get('/', async (req, res) => {
   try {
-    const { search, distrito, estado, page = 1, limit = 12 } = req.query;
-    const offset = (page - 1) * limit;
+    const { search, distrito, estado, worker_id, ruta_id } = req.query;
+    const pageNum = parseInt(req.query.page) || 1;
+    const limitNum = parseInt(req.query.limit) || 12;
+    const offsetNum = (pageNum - 1) * limitNum;
 
     let whereClause = 'WHERE 1=1';
     const params = [];
@@ -30,6 +32,24 @@ router.get('/', async (req, res) => {
     if (estado) {
       params.push(estado);
       whereClause += ` AND c.estado = $${params.length}`;
+    }
+
+    if (worker_id) {
+      params.push(worker_id);
+      // Filtramos clientes que pertenezcan a alguna ruta del worker
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM ruta_clientes rc 
+        JOIN rutas r ON r.id = rc.ruta_id 
+        WHERE rc.cliente_id = c.id AND r.worker_id = $${params.length}
+      )`;
+    }
+
+    if (ruta_id) {
+      params.push(ruta_id);
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM ruta_clientes rc 
+        WHERE rc.cliente_id = c.id AND rc.ruta_id = $${params.length}
+      )`;
     }
 
 
@@ -54,15 +74,15 @@ router.get('/', async (req, res) => {
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `;
 
-    const { rows } = await db.query(dataQuery, [...params, limit, offset]);
+    const { rows } = await db.query(dataQuery, [...params, limitNum, offsetNum]);
 
     res.json({
       data: rows,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
         totalItems,
-        totalPages: Math.ceil(totalItems / limit)
+        totalPages: Math.ceil(totalItems / limitNum)
       }
     });
   } catch (err) {

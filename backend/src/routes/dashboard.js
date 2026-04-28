@@ -84,17 +84,64 @@ router.get('/stats', async (req, res) => {
 // Obtener actividad reciente
 router.get('/actividad', async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = parseInt(req.query.offset) || 0;
+    
     const { rows } = await db.query(
       `SELECT gh.*, u.nombres as worker_nombre, c.nombres as cliente_nombre, c.apellidos as cliente_apellido
        FROM gestiones_historial gh
        JOIN usuarios u ON u.id = gh.worker_id
        JOIN clientes c ON c.id = gh.cliente_id
        ORDER BY gh.timestamp_at DESC
-       LIMIT 10`
+       LIMIT $1 OFFSET $2`,
+       [limit, offset]
     );
     res.json({ data: rows });
   } catch (err) {
     console.error('Error al obtener actividad:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Exportar actividad (CSV)
+router.get('/export_actividad', async (req, res) => {
+  try {
+    const { fecha_inicio, fecha_fin } = req.query;
+    
+    let query = `
+       SELECT gh.id, u.nombres as worker, c.nombres as cliente, c.apellidos as apellido_cliente, gh.tipificacion, gh.estado_nuevo, gh.observacion, gh.timestamp_at
+       FROM gestiones_historial gh
+       JOIN usuarios u ON u.id = gh.worker_id
+       JOIN clientes c ON c.id = gh.cliente_id
+       WHERE 1=1
+    `;
+    const params = [];
+    
+    if (fecha_inicio) {
+      params.push(fecha_inicio);
+      query += ` AND gh.fecha >= $${params.length}`;
+    }
+    if (fecha_fin) {
+      params.push(fecha_fin);
+      query += ` AND gh.fecha <= $${params.length}`;
+    }
+    
+    query += ` ORDER BY gh.timestamp_at DESC`;
+    
+    const { rows } = await db.query(query, params);
+    
+    let csv = "ID,Worker,Cliente,Tipificacion,Estado Nuevo,Observacion,Fecha Hora\n";
+    rows.forEach(r => {
+      const fecha = new Date(r.timestamp_at).toLocaleString('es-PE', {timeZone: 'America/Lima'});
+      const cleanObs = r.observacion ? r.observacion.replace(/"/g, '""').replace(/\n/g, ' ') : '';
+      csv += `${r.id},"${r.worker}","${r.cliente} ${r.apellido_cliente}",${r.tipificacion},${r.estado_nuevo},"${cleanObs}","${fecha}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=actividad_historica.csv');
+    res.send(Buffer.from('\uFEFF' + csv, 'utf-8'));
+  } catch (err) {
+    console.error('Error al exportar actividad:', err);
     res.status(500).json({ error: 'Error interno' });
   }
 });

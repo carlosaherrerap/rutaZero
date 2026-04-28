@@ -62,8 +62,6 @@ export default function FichaFormScreen({ route, navigation }) {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'], // Nueva API no deprecada
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 0.5,
     });
 

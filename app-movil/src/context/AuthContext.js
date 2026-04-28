@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const savedToken = await storage.getItem('token');
         const savedUser = await storage.getItem('user');
-        
+
         if (isMounted && savedToken && savedUser) {
           setToken(savedToken);
           setUser(JSON.parse(savedUser));
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
 
   const api = useMemo(() => {
     const instance = axios.create({ baseURL: BASE_URL });
-    
+
     // INTERCEPTOR: Inyecta el token en cada petición automáticamente
     instance.interceptors.request.use(
       async (config) => {

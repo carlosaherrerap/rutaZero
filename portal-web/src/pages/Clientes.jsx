@@ -3,15 +3,15 @@ import { AuthContext } from '../context/AuthContext.jsx';
 
 // Mapa de estado → color (mismo que la app)
 const ESTADO_COLORS = {
-  LIBRE:         { bg: '#dbeafe', text: '#1d4ed8', label: 'LIBRE' },
-  EN_VISITA:     { bg: '#f3e8ff', text: '#7c3aed', label: 'EN CAMINO' },
-  VISITADO_PAGO: { bg: '#d1fae5', text: '#065f46', label: 'GESTIONADO' },
-  REPROGRAMADO:  { bg: '#fef3c7', text: '#92400e', label: 'REPROGRAMADO' },
-  NO_ENCONTRADO: { bg: '#fee2e2', text: '#991b1b', label: 'NO ENCONTRADO' },
+  LIBRE:         { bg: 'var(--c-surface-2)', text: 'var(--c-info)', label: 'LIBRE' },
+  EN_VISITA:     { bg: 'var(--c-surface-2)', text: 'var(--c-accent)', label: 'EN CAMINO' },
+  VISITADO_PAGO: { bg: 'var(--c-surface-2)', text: 'var(--c-success)', label: 'GESTIONADO' },
+  REPROGRAMADO:  { bg: 'var(--c-surface-2)', text: 'var(--c-warn)', label: 'REPROGRAMADO' },
+  NO_ENCONTRADO: { bg: 'var(--c-surface-2)', text: 'var(--c-danger)', label: 'NO ENCONTRADO' },
 };
 
 function EstadoBadge({ estado }) {
-  const cfg = ESTADO_COLORS[estado] || { bg: '#f1f5f9', text: '#64748b', label: estado };
+  const cfg = ESTADO_COLORS[estado] || { bg: 'var(--c-surface-2)', text: 'var(--c-muted)', label: estado };
   return (
     <span style={{
       background: cfg.bg,
@@ -35,7 +35,7 @@ function FichaDetallePanel({ g }) {
   const fmtDate = v => v ? new Date(v).toLocaleDateString('es-PE') : '—';
 
   return (
-    <div style={{ background: 'var(--c-bg-light)', borderRadius: '12px', padding: '14px', marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px' }}>
+    <div style={{ background: 'var(--c-surface-2)', borderRadius: '12px', padding: '14px', marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px' }}>
       <div><span style={{ color: 'var(--c-text-muted)' }}>Tipo Crédito</span><br /><b>{fmt(g.tipo_credito)}</b></div>
       <div><span style={{ color: 'var(--c-text-muted)' }}>Fecha Desembolso</span><br /><b>{fmtDate(g.fecha_desembolso)}</b></div>
       <div><span style={{ color: 'var(--c-text-muted)' }}>Monto Desembolso</span><br /><b>{g.moneda || 'PEN'} {fmtNum(g.monto_desembolso)}</b></div>
@@ -73,24 +73,47 @@ function FichaDetallePanel({ g }) {
 }
 
 const getTipColor = (tip) => {
-  if (tip === 'PAGO') return '#10b981';
-  if (tip === 'REPROGRAMARA') return '#f59e0b';
-  if (tip === 'NO_ENCONTRADO') return '#ef4444';
-  return '#6b7280';
+  if (tip === 'PAGO') return 'var(--c-success)';
+  if (tip === 'REPROGRAMARA') return 'var(--c-warn)';
+  if (tip === 'NO_ENCONTRADO') return 'var(--c-danger)';
+  return 'var(--c-muted)';
 };
 
 export default function Clientes() {
   const { api } = useContext(AuthContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [workers, setWorkers] = useState([]);
+  const [routes, setRoutes] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 12, totalPages: 0 });
-  const [filters, setFilters] = useState({ search: '', distrito: '', estado: '' });
+  const [filters, setFilters] = useState({ search: '', distrito: '', estado: '', worker_id: '', ruta_id: '' });
   const [selectedClient, setSelectedClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [expandedGestion, setExpandedGestion] = useState(null);
 
-  useEffect(() => { fetchClientes(); }, [api, pagination.page, filters]);
+  useEffect(() => { 
+    fetchWorkers();
+    fetchClientes(); 
+  }, [api, pagination.page, filters]);
+
+  const fetchWorkers = async () => {
+    try {
+      const res = await api.get('/api/workers');
+      setWorkers(res.data.data || []);
+    } catch (e) { console.error('Error fetching workers', e); }
+  };
+
+  const fetchRoutesByWorker = async (workerId) => {
+    if (!workerId) {
+      setRoutes([]);
+      return;
+    }
+    try {
+      const res = await api.get(`/api/rutas/worker/${workerId}`);
+      setRoutes(res.data.data || []);
+    } catch (e) { console.error('Error fetching routes', e); }
+  };
 
   const fetchClientes = async () => {
     setLoading(true);
@@ -105,7 +128,14 @@ export default function Clientes() {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'worker_id') {
+      fetchRoutesByWorker(value);
+      setFilters(prev => ({ ...prev, [name]: value, ruta_id: '' })); // Reset ruta if worker changes
+    } else {
+      setFilters(prev => ({ ...prev, [name]: value }));
+    }
+    
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -124,24 +154,40 @@ export default function Clientes() {
   return (
     <div>
       {/* FILTROS */}
-      <div className="filter-bar">
-        <div className="search-bar">
+      <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '10px' }}>
+        <div className="search-bar" style={{ flex: '1', minWidth: '300px' }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" name="search" placeholder="Buscar por nombre, apellidos o DNI..." value={filters.search} onChange={handleFilterChange} />
         </div>
-        <select name="distrito" className="form-input" style={{ width: '180px' }} value={filters.distrito} onChange={handleFilterChange}>
-          <option value="">Todos los distritos</option>
-          {['LIMA','SANTIAGO DE SURCO','SAN BORJA','MIRAFLORES','LA MOLINA','SAN ISIDRO','PUENTE PIEDRA','CARABAYLLO','INDEPENDENCIA','LOS OLIVOS','SAN MARTIN DE PORRES'].map(d => (
-            <option key={d} value={d}>{d}</option>
+        
+        <select name="worker_id" className="form-input" style={{ width: '180px' }} value={filters.worker_id} onChange={handleFilterChange}>
+          <option value="">[Worker] Todos</option>
+          {workers.map(w => (
+            <option key={w.id} value={w.id}>{w.nombres} {w.apellidos}</option>
           ))}
         </select>
+
+        <select name="ruta_id" className="form-input" style={{ width: '180px' }} value={filters.ruta_id} onChange={handleFilterChange} disabled={!filters.worker_id}>
+          <option value="">[RUTAS] Todas</option>
+          {routes.map(r => (
+            <option key={r.id} value={r.id}>{r.nombre}</option>
+          ))}
+        </select>
+
         <select name="estado" className="form-input" style={{ width: '160px' }} value={filters.estado} onChange={handleFilterChange}>
-          <option value="">Todos los estados</option>
+          <option value="">[ESTADOS] Todos</option>
           <option value="LIBRE">LIBRE</option>
           <option value="EN_VISITA">EN VISITA</option>
           <option value="VISITADO_PAGO">GESTIONADO</option>
           <option value="REPROGRAMADO">REPROGRAMADO</option>
           <option value="NO_ENCONTRADO">NO ENCONTRADO</option>
+        </select>
+
+        <select name="distrito" className="form-input" style={{ width: '180px' }} value={filters.distrito} onChange={handleFilterChange}>
+          <option value="">Distritos</option>
+          {['LIMA','SANTIAGO DE SURCO','SAN BORJA','MIRAFLORES','LA MOLINA','SAN ISIDRO','PUENTE PIEDRA','CARABAYLLO','INDEPENDENCIA','LOS OLIVOS','SAN MARTIN DE PORRES'].map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
         </select>
       </div>
 
@@ -238,7 +284,7 @@ export default function Clientes() {
                           onClick={() => setExpandedGestion(expandedGestion === idx ? null : idx)}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ background: getTipColor(g.tipificacion), color: '#fff', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', fontWeight: '800' }}>
+                            <span style={{ background: getTipColor(g.tipificacion), color: 'var(--c-on-primary)', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', fontWeight: '800' }}>
                               {g.tipificacion}
                             </span>
                             <b style={{ fontSize: '13px' }}>{g.worker_nombre}</b>

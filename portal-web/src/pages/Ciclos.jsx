@@ -2,22 +2,22 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const ESTADO_COLORS = {
-  VISITADO_PAGO: { bg: '#d1fae5', text: '#065f46', label: 'GESTIONADO' },
-  REPROGRAMADO:  { bg: '#fef3c7', text: '#92400e', label: 'REPROGRAMADO' },
-  NO_ENCONTRADO: { bg: '#fee2e2', text: '#991b1b', label: 'NO ENCONTRADO' },
+  VISITADO_PAGO: { bg: 'var(--c-surface-2)', text: 'var(--c-success)', label: 'GESTIONADO' },
+  REPROGRAMADO:  { bg: 'var(--c-surface-2)', text: 'var(--c-warn)', label: 'REPROGRAMADO' },
+  NO_ENCONTRADO: { bg: 'var(--c-surface-2)', text: 'var(--c-danger)', label: 'NO ENCONTRADO' },
 };
 
 function EstadoBadge({ estado }) {
-  const cfg = ESTADO_COLORS[estado] || { bg: '#f1f5f9', text: '#64748b', label: estado };
+  const cfg = ESTADO_COLORS[estado] || { bg: 'var(--c-surface-2)', text: 'var(--c-muted)', label: estado };
   return (
-    <span style={{ background: cfg.bg, color: cfg.text, fontWeight: 800, fontSize: 10, padding: '3px 10px', borderRadius: 20 }}>
+    <span className="estado-badge" style={{ background: cfg.bg, color: cfg.text }}>
       {cfg.label}
     </span>
   );
 }
 
 export default function Ciclos() {
-  const { api } = useContext(AuthContext);
+  const { api, token } = useContext(AuthContext);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liberando, setLiberando] = useState(null);
@@ -55,6 +55,11 @@ export default function Ciclos() {
     } catch (e) {
       alert('Error al liberar el cliente');
     } finally { setLiberando(null); }
+  };
+
+  const handleDownload = () => {
+    const API_BASE = api.defaults.baseURL || 'http://localhost:4000';
+    window.open(`${API_BASE}/api/asistencia/ciclos/export?token=${token}`, '_blank');
   };
 
   // ── EXCEL ────────────────────────────────────────────────────
@@ -96,12 +101,15 @@ export default function Ciclos() {
           <h3 style={{ margin: 0, color: 'var(--c-text)' }}>
             Clientes Gestionados — Ciclo de Liberación
           </h3>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--c-text-muted)' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--c-muted)' }}>
             {clientes.length} clientes pendientes de liberar para el siguiente ciclo
           </p>
         </div>
+        <button className="btn btn-primary btn-sm" onClick={handleDownload} style={{ background: 'var(--c-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+           ⬇️ Descargar Ciclos (CSV)
+        </button>
         <button className="btn btn-ghost btn-sm" onClick={handleDescargarPlantilla}>
-          ⬇️ Descargar Plantilla Excel
+          ⬇️ Plantilla Excel
         </button>
         <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           {importing ? '⏳ Cargando...' : '📤 Importar Excel'}
@@ -111,14 +119,14 @@ export default function Ciclos() {
 
       {/* RESULTADO IMPORT */}
       {importResult && (
-        <div className="card" style={{ padding: '14px 18px', marginBottom: 16, borderLeft: `4px solid ${importResult.errores?.length > 0 ? '#f59e0b' : '#10b981'}` }}>
+          <div className="card" style={{ padding: '14px 18px', marginBottom: 16, borderLeft: `4px solid ${importResult.errores?.length > 0 ? 'var(--c-warn)' : 'var(--c-primary)'}` }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>{importResult.message}</div>
           {importResult.errores?.length > 0 && (
-            <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: 12, color: '#ef4444' }}>
+            <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: 12, color: 'var(--c-danger)' }}>
               {importResult.errores.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           )}
-          <button style={{ marginTop: 8, fontSize: 11, background: 'none', border: 'none', color: 'var(--c-text-muted)', cursor: 'pointer' }} onClick={() => setImportResult(null)}>✕ Cerrar</button>
+          <button style={{ marginTop: 8, fontSize: 11, background: 'none', border: 'none', color: 'var(--c-muted)', cursor: 'pointer' }} onClick={() => setImportResult(null)}>✕ Cerrar</button>
         </div>
       )}
 
@@ -126,7 +134,7 @@ export default function Ciclos() {
       {loading ? (
         <div className="text-center" style={{ padding: 40 }}><div className="spinner"></div></div>
       ) : clientes.length === 0 ? (
-        <div className="card text-center" style={{ padding: 40, color: 'var(--c-text-muted)' }}>
+        <div className="card text-center" style={{ padding: 40, color: 'var(--c-muted)' }}>
           🎉 No hay clientes gestionados pendientes de liberar
         </div>
       ) : (
@@ -153,7 +161,7 @@ export default function Ciclos() {
                   <td>
                     <span style={{
                       fontWeight: 800, fontSize: 11,
-                      color: c.tipificacion === 'PAGO' ? '#10b981' : c.tipificacion === 'REPROGRAMARA' ? '#f59e0b' : '#ef4444'
+                      color: c.tipificacion === 'PAGO' ? 'var(--c-primary)' : c.tipificacion === 'REPROGRAMARA' ? 'var(--c-warn)' : 'var(--c-danger)'
                     }}>
                       {c.tipificacion || '—'}
                     </span>
@@ -180,12 +188,12 @@ export default function Ciclos() {
               <button className="btn-ghost" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <div className="card" style={{ padding: '12px 16px', background: 'var(--c-bg-light)', marginBottom: 16, fontSize: 13 }}>
+              <div className="card" style={{ padding: '12px 16px', background: 'var(--c-surface-2)', marginBottom: 16, fontSize: 13 }}>
                 <div className="font-bold" style={{ fontSize: 15, marginBottom: 4 }}>
                   {selectedCliente.nombres} {selectedCliente.apellidos}
                 </div>
                 <div className="text-muted">DNI: {selectedCliente.dni}</div>
-                <div className="text-muted">Estado actual: <EstadoBadge estado={selectedCliente.estado} /></div>
+                  <div className="text-muted">Estado actual: <EstadoBadge estado={selectedCliente.estado} /></div>
               </div>
               <label className="form-label">Nueva Fecha de Pago</label>
               <input
@@ -195,7 +203,7 @@ export default function Ciclos() {
                 onChange={e => setNuevaFecha(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
               />
-              <p style={{ fontSize: 12, color: 'var(--c-text-muted)', marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: 'var(--c-muted)', marginTop: 8 }}>
                 Al confirmar, el estado del cliente cambiará a <strong>LIBRE</strong> y su fecha de pago será actualizada. El cliente volverá a estar disponible para ser asignado en rutas.
               </p>
             </div>

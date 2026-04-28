@@ -179,7 +179,7 @@ router.post('/jornada/iniciar', async (req, res) => {
   try {
     const { rows } = await db.query(
       `INSERT INTO jornadas (worker_id, fecha, estado, hora_inicio_sesion)
-       VALUES ($1, CURRENT_DATE, 'JORNADA_INICIADA', NOW())
+       VALUES ($1, (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date, 'JORNADA_INICIADA', CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
        ON CONFLICT (worker_id, fecha) DO UPDATE SET estado = 'JORNADA_INICIADA'
        RETURNING *`,
       [req.user.id]
@@ -194,8 +194,8 @@ router.post('/jornada/iniciar', async (req, res) => {
 router.post('/jornada/almuerzo/inicio', async (req, res) => {
   try {
     const { rows } = await db.query(
-      `UPDATE jornadas SET estado = 'EN_REFRIGERIO', hora_inicio_almuerzo = NOW()
-       WHERE worker_id = $1 AND fecha = CURRENT_DATE AND estado = 'JORNADA_INICIADA'
+      `UPDATE jornadas SET estado = 'EN_REFRIGERIO', hora_inicio_almuerzo = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima'
+       WHERE worker_id = $1 AND fecha = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date AND estado = 'JORNADA_INICIADA'
        RETURNING *`,
       [req.user.id]
     );
@@ -210,8 +210,8 @@ router.post('/jornada/almuerzo/inicio', async (req, res) => {
 router.post('/jornada/almuerzo/fin', async (req, res) => {
   try {
     const { rows } = await db.query(
-      `UPDATE jornadas SET estado = 'JORNADA_INICIADA', hora_fin_almuerzo = NOW()
-       WHERE worker_id = $1 AND fecha = CURRENT_DATE AND estado = 'EN_REFRIGERIO'
+      `UPDATE jornadas SET estado = 'JORNADA_INICIADA', hora_fin_almuerzo = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima'
+       WHERE worker_id = $1 AND fecha = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date AND estado = 'EN_REFRIGERIO'
        RETURNING *`,
       [req.user.id]
     );
@@ -226,8 +226,8 @@ router.post('/jornada/almuerzo/fin', async (req, res) => {
 router.post('/jornada/finalizar', async (req, res) => {
   try {
     const { rows } = await db.query(
-      `UPDATE jornadas SET estado = 'JORNADA_FINALIZADA', hora_fin_jornada = NOW()
-       WHERE worker_id = $1 AND fecha = CURRENT_DATE
+      `UPDATE jornadas SET estado = 'JORNADA_FINALIZADA', hora_fin_jornada = CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima'
+       WHERE worker_id = $1 AND fecha = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date
        RETURNING *`,
       [req.user.id]
     );
@@ -287,7 +287,7 @@ router.get('/me/ruta', async (req, res) => {
        LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
        LEFT JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-       WHERE r.worker_id = $1
+       WHERE r.worker_id = $1 AND r.fecha_asignacion = (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::date
        ORDER BY r.fecha_asignacion DESC, r.id, rc.orden`,
       [req.user.id]
     );

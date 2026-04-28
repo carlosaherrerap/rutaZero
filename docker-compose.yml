@@ -12,8 +12,9 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/schema_borrador.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./database/seed_masivo.sql:/docker-entrypoint-initdb.d/03_seed_masivo.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d rutazero"]
       interval: 5s

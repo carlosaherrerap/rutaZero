@@ -1,42 +1,96 @@
 /* ============================================================
    RUTA ZERO — Portal Web Design System
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;600&display=swap');
 
-/* ─── Tokens ─────────────────────────────────────────────── */
+/* ─── Tokens (Scandinavian light) ───────────────────────── */
 :root {
-  --c-bg:         #0d1117;
-  --c-surface:    #161b22;
-  --c-surface-2:  #21262d;
-  --c-border:     #30363d;
-  --c-primary:    #2563eb;
-  --c-primary-h:  #1d4ed8;
-  --c-accent:     #10b981;
+  --c-bg:         #F7F8F9; /* warm off-white */
+  --c-surface:    #FFFFFF;
+  --c-surface-2:  #F1F3F5;
+  --c-border:     rgba(16,24,32,0.06);
+  --c-primary:    #2B8A9B; /* soft teal */
+  --c-primary-h:  #236f7a;
+  --c-accent:     #F2B880; /* warm accent */
   --c-warn:       #f59e0b;
   --c-danger:     #ef4444;
-  --c-text:       #e6edf3;
-  --c-muted:      #7d8590;
-  --c-muted-2:    #484f58;
-  --radius-sm:    6px;
-  --radius:       10px;
-  --radius-lg:    16px;
-  --shadow:       0 4px 16px rgba(0,0,0,0.4);
-  --shadow-lg:    0 8px 32px rgba(0,0,0,0.5);
-  --transition:   0.18s ease;
-  --sidebar-w:    240px;
-  --topbar-h:     60px;
+  --c-success:    #10b981;
+  --c-info:       #3b82f6;
+  --c-on-primary: #ffffff;
+  --c-text:       #0f1724; /* charcoal */
+  --c-muted:      #6b7280;
+  --c-muted-2:    #9ca3af;
+
+  --radius-sm:    8px;
+  --radius:       12px;
+  --radius-lg:    20px;
+
+  --shadow:       0 6px 18px rgba(16,24,32,0.06);
+  --shadow-lg:    0 20px 40px rgba(16,24,32,0.08);
+
+  --transition:   0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --sidebar-w:    260px;
+  --topbar-h:     64px;
+
+  /* Glass Utilities */
+  --glass-bg:     rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(16,24,32,0.04);
+  --glass-blur:   blur(8px);
+}
+
+/* ─── Dark mode tokens (applied when [data-theme="dark"]) ─── */
+[data-theme="dark"] {
+  --c-bg:         #0b0d0f;
+  --c-surface:    #0f1316;
+  --c-surface-2:  #14171a;
+  --c-border:     rgba(255,255,255,0.04);
+  --c-primary:    #00a9bc;
+  --c-primary-h:  #008ca0;
+  --c-accent:     #2b8a9b;
+  --c-success:    #10b981;
+  --c-info:       #3b82f6;
+  --c-on-primary: #ffffff;
+  --c-text:       #e6eef0;
+  --c-muted:      #9ca3af;
+  --grid-line:    rgba(255,255,255,0.03);
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; }
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Poppins', Inter, system-ui, sans-serif;
   background: var(--c-bg);
   color: var(--c-text);
-  line-height: 1.5;
-  font-size: 14px;
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
 }
+h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', Inter, sans-serif; font-weight: 600; }
+
+/* Render-style Grid Background */
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--c-border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--c-border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.45) 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.45) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.6;
+}
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+
 a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: inherit; }
+button { cursor: pointer; font-family: inherit; outline: none; }
 input, select, textarea { font-family: inherit; }

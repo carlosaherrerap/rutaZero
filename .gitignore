@@ -39,3 +39,8 @@ yarn-error.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# Ignorar todas las carpetas que empiezan con punto
+.*/
+skills/
+skills-lock.json

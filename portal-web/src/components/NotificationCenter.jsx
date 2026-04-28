@@ -54,8 +54,8 @@ export default function NotificationCenter() {
         <div key={n.id} className={`toast toast-${n.type}`} style={{
           padding: '12px 20px',
           borderRadius: '12px',
-          background: n.type === 'success' ? '#10b981' : n.type === 'warning' ? '#f59e0b' : '#3b82f6',
-          color: 'white',
+          background: n.type === 'success' ? 'var(--c-success)' : n.type === 'warning' ? 'var(--c-warn)' : 'var(--c-info)',
+          color: 'var(--c-on-primary)',
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           animation: 'slideIn 0.3s ease-out',
           fontSize: '14px',
@@ -67,7 +67,7 @@ export default function NotificationCenter() {
           {n.text}
           <button 
             onClick={() => setNotifications(prev => prev.filter(x => x.id !== n.id))}
-            style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '16px', opacity: 0.7 }}
+            style={{ background: 'none', border: 'none', color: 'var(--c-on-primary)', cursor: 'pointer', fontSize: '16px', opacity: 0.7 }}
           >✕</button>
         </div>
       ))}

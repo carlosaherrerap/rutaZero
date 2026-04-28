@@ -1,0 +1,213 @@
+/* ============================================================
+   ROUTING — Total Visibility Edition (Final Stability Fix)
+   ============================================================ */
+
+.login-page {
+  position: relative;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #050505 !important;
+  /* GRID / MALLA (Render Style) */
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.12) 1px, transparent 1px);
+  background-size: 45px 45px;
+  color: white !important;
+  display: flex !important;
+  flex-direction: column !important;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  z-index: 0;
+}
+
+/* Efecto de degradado radial (Asegurando que no tape nada) */
+.login-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 10%, #050505 90%);
+  pointer-events: none;
+  z-index: -1; /* Forzado al fondo absoluto */
+}
+
+/* NAVBAR */
+.navbar {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-start;
+  padding: 40px 60px;
+  width: 100%;
+}
+
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.routing-logo-img {
+  height: 44px;
+  width: auto;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.9;
+}
+
+.brand-name {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: white;
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+}
+
+.brand-sub {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 3px;
+  margin: 2px 0 0 2px;
+  text-transform: uppercase;
+}
+
+/* TOP RIGHT ACTIONS */
+.top-right-actions {
+  position: absolute;
+  top: 40px;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  z-index: 100;
+}
+
+.btn-feedback {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.interactive-corner-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 12px);
+  gap: 4px;
+}
+
+.grid-cell {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+/* HERO CONTAINER */
+.hero-container {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 80px;
+}
+
+.hero-text { flex: 1.2; }
+
+.slogan {
+  font-size: 82px;
+  font-weight: 900;
+  line-height: 1;
+  color: white;
+  letter-spacing: -3px;
+}
+
+.highlight {
+  background: #00A9BC;
+  color: white;
+  padding: 0 15px;
+  display: inline-block;
+  transform: skewX(-5deg);
+}
+
+/* LOGIN CARD */
+.login-section {
+  flex: 0.8;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.login-card {
+  background: #111;
+  padding: 56px;
+  border-radius: 32px;
+  width: 100%;
+  max-width: 440px;
+  border: 1px solid #222;
+  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9);
+}
+
+.form-group { margin-bottom: 24px; }
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 11px;
+  margin-bottom: 10px;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 18px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 14px;
+  color: white;
+  font-size: 16px;
+  outline: none;
+}
+
+.btn-login {
+  width: 100%;
+  padding: 20px;
+  background: #00A9BC;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.error-msg {
+  color: #ff4d4d;
+  background: rgba(255, 77, 77, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .hero-container { flex-direction: column; text-align: center; padding: 40px 20px; }
+  .login-section { justify-content: center; width: 100%; }
+  .slogan { font-size: 48px; }
+  .top-right-actions { display: none; }
+  .navbar { padding: 30px; justify-content: center; }
+}
