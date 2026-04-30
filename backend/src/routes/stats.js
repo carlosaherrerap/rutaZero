@@ -45,6 +45,8 @@ router.get('/worker/:workerId', async (req, res) => {
 
     // Función Haversine para distancia en KM
     const getDist = (lat1, lon1, lat2, lon2) => {
+      if (lat1 === null || lon1 === null || lat2 === null || lon2 === null) return 0;
+      if (lat1 === undefined || lon1 === undefined || lat2 === undefined || lon2 === undefined) return 0;
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -57,35 +59,52 @@ router.get('/worker/:workerId', async (req, res) => {
 
     let totalDist = 0;
     for (let i = 0; i < tracking.length - 1; i++) {
-      totalDist += getDist(
+      const d = getDist(
         parseFloat(tracking[i].latitud), parseFloat(tracking[i].longitud),
         parseFloat(tracking[i + 1].latitud), parseFloat(tracking[i + 1].longitud)
       );
+      if (!isNaN(d)) totalDist += d;
     }
 
     // Calcular segmentos
     const segmentos = [];
-    if (home && gestiones.length > 0) {
+    if (home && home.latitud && home.longitud && gestiones.length > 0) {
       // Segmento 1: Casa -> Cliente 1
-      segmentos.push({
-        razon: `De casa a ${gestiones[0].cliente}`,
-        distancia: getDist(home.latitud, home.longitud, gestiones[0].latitud, gestiones[0].longitud),
-        puntos: [
-          { lat: home.latitud, lng: home.longitud, label: 'Casa' },
-          { lat: gestiones[0].latitud, lng: gestiones[0].longitud, label: gestiones[0].cliente }
-        ]
-      });
+      const firstGestionTime = new Date(gestiones[0].timestamp_at);
+      const pts1 = tracking.filter(t => new Date(t.timestamp_at) <= firstGestionTime);
+      
+      if (gestiones[0].latitud && gestiones[0].longitud) {
+        segmentos.push({
+          razon: `De casa a ${gestiones[0].cliente}`,
+          distancia: getDist(parseFloat(home.latitud), parseFloat(home.longitud), parseFloat(gestiones[0].latitud), parseFloat(gestiones[0].longitud)),
+          puntos: [
+            { lat: home.latitud, lng: home.longitud, label: 'Casa' },
+            ...pts1.map(t => ({ lat: t.latitud, lng: t.longitud, label: 'Tracking' })),
+            { lat: gestiones[0].latitud, lng: gestiones[0].longitud, label: gestiones[0].cliente }
+          ].filter(p => p.lat && p.lng)
+        });
+      }
 
       // Segmentos entre clientes
       for (let i = 0; i < gestiones.length - 1; i++) {
-        segmentos.push({
-          razon: `De ${gestiones[i].cliente} a ${gestiones[i+1].cliente}`,
-          distancia: getDist(gestiones[i].latitud, gestiones[i].longitud, gestiones[i+1].latitud, gestiones[i+1].longitud),
-          puntos: [
-            { lat: gestiones[i].latitud, lng: gestiones[i].longitud, label: gestiones[i].cliente },
-            { lat: gestiones[i+1].latitud, lng: gestiones[i+1].longitud, label: gestiones[i+1].cliente }
-          ]
+        const startTime = new Date(gestiones[i].timestamp_at);
+        const endTime = new Date(gestiones[i+1].timestamp_at);
+        const pts = tracking.filter(t => {
+          const tTime = new Date(t.timestamp_at);
+          return tTime > startTime && tTime <= endTime;
         });
+
+        if (gestiones[i].latitud && gestiones[i].longitud && gestiones[i+1].latitud && gestiones[i+1].longitud) {
+          segmentos.push({
+            razon: `De ${gestiones[i].cliente} a ${gestiones[i+1].cliente}`,
+            distancia: getDist(parseFloat(gestiones[i].latitud), parseFloat(gestiones[i].longitud), parseFloat(gestiones[i+1].latitud), parseFloat(gestiones[i+1].longitud)),
+            puntos: [
+              { lat: gestiones[i].latitud, lng: gestiones[i].longitud, label: gestiones[i].cliente },
+              ...pts.map(t => ({ lat: t.latitud, lng: t.longitud, label: 'Tracking' })),
+              { lat: gestiones[i+1].latitud, lng: gestiones[i+1].longitud, label: gestiones[i+1].cliente }
+            ].filter(p => p.lat && p.lng)
+          });
+        }
       }
     }
 

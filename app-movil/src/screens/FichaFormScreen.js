@@ -105,6 +105,12 @@ export default function FichaFormScreen({ route, navigation }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
+      // SINCRONIZACIÓN LOCAL: Asegurar que el estado local coincida con el servidor
+      const { updateLocalClientStatus } = require('../services/OfflineService');
+      const finalStatus = formData.tipificacion === 'PAGO' ? 'VISITADO_PAGO' : 
+                          formData.tipificacion === 'REPROGRAMARA' ? 'REPROGRAMADO' : 'NO_ENCONTRADO';
+      await updateLocalClientStatus(cliente.id, finalStatus);
+
       Alert.alert('Éxito', 'Gestión guardada y sincronizada correctamente.', [
         { text: 'Finalizar', onPress: () => navigation.popToTop() }
       ]);

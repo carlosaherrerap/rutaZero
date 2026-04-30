@@ -7,6 +7,34 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 
 const QUEUE_KEY = 'rz_pending_fichas';
+const DAY_DATA_KEY = 'rz_day_data';
+const JOURNEY_ACTIONS_KEY = 'rz_journey_actions';
+const SYNC_LOG_KEY = 'rz_sync_log';
+
+/**
+ * Registra el estado de conexión con timestamp.
+ */
+export const logConnectionStatus = async (status) => {
+  try {
+    const time = new Date().toLocaleTimeString('es-PE', { hour12: false });
+    const entry = `${status}-${time}`;
+    await AsyncStorage.setItem(SYNC_LOG_KEY, entry);
+    console.log(`📡 Estado registrado: ${entry}`);
+  } catch (e) {
+    console.error('Error logging connection status', e);
+  }
+};
+
+/**
+ * Obtiene el último estado de conexión registrado.
+ */
+export const getLastConnectionStatus = async () => {
+  try {
+    return await AsyncStorage.getItem(SYNC_LOG_KEY);
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Inicialización: muestra cuántos items hay pendientes en cola
@@ -22,18 +50,135 @@ export const initOfflineDB = async () => {
 };
 
 /**
- * Limpia TODA la cola offline (útil al reiniciar la app)
+ * Guarda los datos del día (clientes, rutas, estado de jornada)
+ */
+export const saveDayData = async (data) => {
+  try {
+    console.log('💾 [Offline] Guardando DAY_DATA...', {
+      hasJourney: !!data.journey,
+      clientsCount: data.clients?.length,
+      rutasCount: data.rutas?.length
+    });
+    await AsyncStorage.setItem(DAY_DATA_KEY, JSON.stringify({
+      ...data,
+      savedAt: new Date().toISOString()
+    }));
+    console.log('✅ [Offline] DAY_DATA guardado con éxito');
+  } catch (err) {
+    console.error('❌ [Offline] Error saving day data:', err);
+  }
+};
+
+/**
+ * Obtiene los datos del día guardados localmente
+ */
+export const getDayData = async () => {
+  try {
+    console.log('📂 [Offline] Intentando leer DAY_DATA...');
+    const raw = await AsyncStorage.getItem(DAY_DATA_KEY);
+    if (!raw) {
+      console.log('⚠️ [Offline] No se encontró DAY_DATA en AsyncStorage');
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    console.log('✅ [Offline] DAY_DATA recuperado:', {
+      savedAt: parsed.savedAt,
+      hasJourney: !!parsed.journey,
+      clients: parsed.clients?.length
+    });
+    return parsed;
+  } catch (err) {
+    console.error('❌ [Offline] Error leyendo DAY_DATA:', err);
+    return null;
+  }
+};
+
+/**
+ * Limpia TODA la caché local (al final del día)
  */
 export const clearOfflineCache = async () => {
   await AsyncStorage.removeItem(QUEUE_KEY);
-  console.log('🧹 Caché offline limpiada');
+  await AsyncStorage.removeItem(DAY_DATA_KEY);
+  await AsyncStorage.removeItem(JOURNEY_ACTIONS_KEY);
+  console.log('🧹 Caché offline totalmente limpiada');
+};
+
+/**
+ * Actualiza el estado de la jornada en el caché local (DAY_DATA)
+ */
+export const updateLocalJourneyStatus = async (status, extraData = {}) => {
+  try {
+    const dayData = (await getDayData()) || { journey: {} };
+    if (!dayData.journey) dayData.journey = {};
+    
+    dayData.journey.estado_jornada = status;
+    dayData.journey = { ...dayData.journey, ...extraData };
+    
+    await saveDayData(dayData);
+    console.log(`🏠 Caché local actualizado: ${status}`);
+    return true;
+  } catch (err) {
+    console.error('Error actualizando estado local:', err);
+    return false;
+  }
+};
+
+/**
+ * Guarda una acción de jornada (iniciar, almuerzo, etc) en cola
+ */
+export const saveJourneyActionOffline = async (endpoint) => {
+  try {
+    const raw = await AsyncStorage.getItem(JOURNEY_ACTIONS_KEY);
+    const queue = raw ? JSON.parse(raw) : [];
+    queue.push({ endpoint, savedAt: new Date().toISOString() });
+    await AsyncStorage.setItem(JOURNEY_ACTIONS_KEY, JSON.stringify(queue));
+    
+    // Mapear endpoint a estado
+    let status = 'JORNADA_INICIADA';
+    let extra = {};
+    if (endpoint.includes('iniciar')) status = 'JORNADA_INICIADA';
+    if (endpoint.includes('almuerzo/inicio')) {
+      status = 'EN_REFRIGERIO';
+      extra = { hora_inicio_almuerzo: new Date().toISOString() };
+    }
+    if (endpoint.includes('almuerzo/fin')) status = 'JORNADA_INICIADA';
+    if (endpoint.includes('finalizar')) status = 'JORNADA_FINALIZADA';
+
+    await updateLocalJourneyStatus(status, extra);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+/**
+ * Actualiza el estado de un cliente específico en el caché local
+ */
+export const updateLocalClientStatus = async (clienteId, status) => {
+  try {
+    const dayData = await getDayData();
+    if (!dayData || !dayData.clients) return false;
+
+    const idx = dayData.clients.findIndex(c => String(c.id) === String(clienteId));
+    if (idx !== -1) {
+      dayData.clients[idx].estado = status;
+      // Si el estado es LIBRE, también limpiamos quién lo bloqueó
+      if (status === 'LIBRE') {
+        dayData.clients[idx].bloqueado_por = null;
+      }
+      await saveDayData(dayData);
+      console.log(`📦 Cliente ${clienteId} actualizado localmente a ${status}`);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error('Error actualizando cliente local:', err);
+    return false;
+  }
 };
 
 /**
  * Guarda una ficha en la cola local cuando el servidor no está disponible.
- * @param {string} clienteId - UUID del cliente
- * @param {object} formData  - Datos del formulario
- * @param {string[]} fotos   - Array de URIs de las fotos (no se copian, se referencian)
  */
 export const saveFichaOffline = async (clienteId, formData, fotos) => {
   try {
@@ -44,11 +189,18 @@ export const saveFichaOffline = async (clienteId, formData, fotos) => {
       id: Date.now().toString(),
       clienteId,
       formData,
-      fotos,          // URIs del teléfono - válidos hasta que el OS los limpie
+      fotos,
       savedAt: new Date().toISOString()
     });
 
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    
+    // Marcar cliente como gestionado localmente
+    const status = formData.tipificacion === 'PAGO' ? 'VISITADO_PAGO' : 
+                   formData.tipificacion === 'REPROGRAMARA' ? 'REPROGRAMADO' : 'NO_ENCONTRADO';
+    
+    await updateLocalClientStatus(clienteId, status);
+
     console.log(`📦 Ficha guardada offline. Total en cola: ${queue.length}`);
     return true;
   } catch (err) {
@@ -57,15 +209,52 @@ export const saveFichaOffline = async (clienteId, formData, fotos) => {
   }
 };
 
+let isSyncing = false;
+
 /**
- * Sincroniza las fichas pendientes cuando hay internet.
- * @param {AxiosInstance} api - Instancia de axios del contexto
+ * Sincroniza todo lo pendiente (acciones de jornada y fichas)
  */
-export const syncPendingFichas = async (api) => {
+export const syncAllOfflineData = async (api) => {
+  if (isSyncing) {
+    console.log('⏳ Sincronización en curso. Esperando...');
+    return;
+  }
+
   const state = await NetInfo.fetch();
   if (!state.isConnected) return;
 
+  const lastStatus = await getLastConnectionStatus();
+  // Si la última gestión fue ONLINE y seguimos con internet, no intentamos resincronizar
+  if (lastStatus && lastStatus.startsWith('ONLINE')) {
+    const rawActions = await AsyncStorage.getItem(JOURNEY_ACTIONS_KEY);
+    const rawFichas = await AsyncStorage.getItem(QUEUE_KEY);
+    const actions = rawActions ? JSON.parse(rawActions) : [];
+    const fichas = rawFichas ? JSON.parse(rawFichas) : [];
+    
+    if (actions.length === 0 && fichas.length === 0) {
+      console.log('📶 Todo está al día. Saltando revisión de cola.');
+      return;
+    }
+  }
+
+  isSyncing = true;
+  console.log('🔄 Iniciando sincronización de datos pendientes...');
   try {
+    // 1. Sincronizar acciones de jornada
+    const rawActions = await AsyncStorage.getItem(JOURNEY_ACTIONS_KEY);
+    if (rawActions) {
+      const actions = JSON.parse(rawActions);
+      for (const action of actions) {
+        try {
+          await api.post(action.endpoint);
+        } catch (e) {
+          console.log(`Error sync action ${action.endpoint}:`, e.message);
+        }
+      }
+      await AsyncStorage.removeItem(JOURNEY_ACTIONS_KEY);
+    }
+
+    // 2. Sincronizar fichas
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
     if (!raw) return;
 
@@ -80,7 +269,6 @@ export const syncPendingFichas = async (api) => {
         const data = new FormData();
         Object.keys(item.formData).forEach(key => data.append(key, item.formData[key]));
 
-        // Adjuntar fotos (si los URIs todavía son válidos)
         item.fotos.forEach((uri, index) => {
           const fileName = uri.split('/').pop() || `evidencia_${index}.jpg`;
           const ext = fileName.split('.').pop();
@@ -96,33 +284,30 @@ export const syncPendingFichas = async (api) => {
         });
 
         console.log(`✅ Ficha ${item.id} sincronizada correctamente`);
-        // No la añadimos a remainingQueue → queda eliminada
       } catch (e) {
         console.error(`❌ No se pudo sincronizar ficha ${item.id}:`, e.message);
-        remainingQueue.push(item); // Reintentar después
+        remainingQueue.push(item);
       }
     }
 
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(remainingQueue));
-
     if (remainingQueue.length === 0) {
-      console.log('🎉 Todas las fichas offline sincronizadas');
-    } else {
-      console.log(`⏳ ${remainingQueue.length} fichas pendientes para el próximo intento`);
+      await logConnectionStatus('ONLINE');
     }
   } catch (err) {
-    console.error('Error en syncPendingFichas:', err);
+    console.error('❌ Error en syncAllOfflineData:', err);
+  } finally {
+    isSyncing = false;
+    console.log('🏁 Proceso de sincronización finalizado');
   }
 };
 
-/**
- * Devuelve cuántas fichas hay pendientes de sincronizar
- */
-export const getPendingCount = async () => {
+export const getPendingClientIds = async () => {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    return raw ? JSON.parse(raw).length : 0;
+    const queue = raw ? JSON.parse(raw) : [];
+    return queue.map(item => String(item.clienteId));
   } catch {
-    return 0;
+    return [];
   }
 };

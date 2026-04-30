@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { Calendar, User, CheckCircle, Clock, Download, ChevronRight, Search } from 'lucide-react';
+import { Calendar, User, CheckCircle, Clock, Download, ChevronRight, ChevronLeft, Search } from 'lucide-react';
 
 export default function Asistencia() {
   const { api, token } = useContext(AuthContext);
@@ -10,6 +10,8 @@ export default function Asistencia() {
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [search, setSearch] = useState('');
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     fetchSummary();
@@ -24,14 +26,20 @@ export default function Asistencia() {
     finally { setLoading(false); }
   };
 
-  const handleSelectWorker = async (worker) => {
+  const handleSelectWorker = async (worker, month = currentMonth, year = currentYear) => {
     setSelectedWorker(worker);
     setLoadingHistory(true);
     try {
-      const res = await api.get(`/api/asistencia?worker_id=${worker.id}`);
+      const res = await api.get(`/api/asistencia?worker_id=${worker.id}&mes=${month}&anio=${year}`);
       setHistory(res.data.data || []);
     } catch (e) { console.error(e); }
     finally { setLoadingHistory(false); }
+  };
+
+  const handleMonthChange = (e) => {
+    const val = parseInt(e.target.value);
+    setCurrentMonth(val);
+    if (selectedWorker) handleSelectWorker(selectedWorker, val, currentYear);
   };
 
   const handleValidar = async (jornadaId) => {
@@ -39,7 +47,7 @@ export default function Asistencia() {
     try {
       await api.patch(`/api/asistencia/${jornadaId}/validar`);
       // Refresh history
-      const res = await api.get(`/api/asistencia?worker_id=${selectedWorker.id}`);
+      const res = await api.get(`/api/asistencia?worker_id=${selectedWorker.id}&mes=${currentMonth}&anio=${currentYear}`);
       setHistory(res.data.data || []);
       fetchSummary(); // Refresh counts in list
     } catch (e) { console.error(e); }
@@ -134,71 +142,110 @@ export default function Asistencia() {
         {selectedWorker ? (
           <div className="card" style={{ background: 'var(--c-surface)', borderRadius: '20px', border: '1px solid var(--c-border)', padding: '32px', boxShadow: 'var(--shadow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-              <div>
-                <h2 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--c-text)' }}>Historial de Asistencia</h2>
-                <div style={{ color: 'var(--c-muted)', fontSize: '14px', marginTop: '4px' }}>Worker: <b>{selectedWorker.nombres} {selectedWorker.apellidos}</b></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <button className="btn btn-ghost" onClick={() => setSelectedWorker(null)} style={{ color: 'var(--c-danger)', alignSelf: 'flex-end' }}>Cerrar Detalle</button>
+                
+                {/* MONTH NAVIGATION */}
+                <div style={{ backgroundColor: 'var(--c-surface-2)', padding: '16px', borderRadius: '15px', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => {
+                      const newMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+                      const newYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+                      setCurrentMonth(newMonth);
+                      setCurrentYear(newYear);
+                      if (selectedWorker) handleSelectWorker(selectedWorker, newMonth, newYear);
+                    }}
+                  >
+                    <ChevronLeft size={20}/>
+                  </button>
+                  
+                  <div style={{ textAlign: 'center' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-text)', textTransform: 'uppercase' }}>
+                      {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][currentMonth - 1]} {currentYear}
+                    </span>
+                  </div>
+
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => {
+                      const newMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+                      const newYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+                      setCurrentMonth(newMonth);
+                      setCurrentYear(newYear);
+                      if (selectedWorker) handleSelectWorker(selectedWorker, newMonth, newYear);
+                    }}
+                  >
+                    <ChevronRight size={20}/>
+                  </button>
+                </div>
               </div>
-              <button className="btn btn-ghost" onClick={() => setSelectedWorker(null)} style={{ color: 'var(--c-danger)' }}>Cerrar Detalle</button>
             </div>
 
             {loadingHistory ? (
               <div style={{ textAlign: 'center', padding: '60px' }}>Obteniendo registros...</div>
             ) : history.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px', color: 'var(--c-muted)', background: 'var(--c-surface-2)', borderRadius: '16px', border: '2px dashed var(--c-border)' }}>
-                Este trabajador aún no tiene registros de asistencia.
+                Este trabajador aún no tiene registros en este mes.
               </div>
             ) : (
-              <div className="table-wrap" style={{ border: '1px solid var(--c-border)', borderRadius: '12px' }}>
-                <table style={{ borderCollapse: 'collapse' }}>
+              <div className="table-container" style={{ 
+                border: '1px solid var(--c-border)', 
+                borderRadius: '16px', 
+                overflowX: 'auto', 
+                background: 'var(--c-surface)',
+                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.1)'
+              }}>
+                <table style={{ borderCollapse: 'collapse', minWidth: '1000px', width: '100%' }}>
                   <thead>
                     <tr style={{ background: 'var(--c-surface-2)' }}>
-                      <th style={{ padding: '16px' }}>Fecha</th>
-                      <th>Estado</th>
-                      <th>Entrada</th>
-                      <th>Salida</th>
-                      <th>Horas</th>
-                      <th>Refrigerio</th>
-                      <th>Gestiones</th>
-                      <th>Validación</th>
+                      <th style={{ padding: '20px 16px', textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Día / Fecha</th>
+                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Estado</th>
+                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Entrada</th>
+                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Salida</th>
+                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Horas Efec.</th>
+                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Refrigerio</th>
+                      <th style={{ textAlign: 'center', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Gestiones</th>
+                      <th style={{ textAlign: 'right', paddingRight: '24px', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Acción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {history.map(j => (
-                      <tr key={j.id} style={{ borderBottom: '1px solid var(--c-border)' }}>
-                        <td style={{ padding: '16px', fontWeight: '700' }}>
-                          {new Date(j.fecha).toLocaleDateString('es-PE', { weekday: 'short', day: '2-digit', month: 'short' })}
+                      <tr key={j.id} style={{ borderBottom: '1px solid var(--c-border)', transition: 'background 0.2s' }}>
+                        <td style={{ padding: '24px 16px' }}>
+                          <div style={{ fontWeight: '900', color: 'var(--c-primary)', fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {new Date(j.fecha).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric' }).replace(',', '').toUpperCase()}
+                          </div>
                         </td>
-                        <td>
-                          <span style={{ 
-                            fontSize: '10px', fontWeight: '800', padding: '4px 10px', borderRadius: '20px',
-                            background: j.estado === 'JORNADA_FINALIZADA' ? 'var(--c-success)' : 'var(--c-warn)',
-                            color: 'var(--c-on-primary)',
-                            display: 'inline-block', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                          }}>
+                        <td style={{ padding: '8px' }}>
+                          <span className={`badge badge-${j.estado.toLowerCase().replace(/_/g, '-')}`} style={{ fontSize: '10px' }}>
                             {j.estado.replace('_', ' ')}
                           </span>
                         </td>
-                        <td style={{ color: 'var(--c-muted)' }}>{j.hora_inicio_sesion?.substring(11, 16) || '—'}</td>
-                        <td style={{ color: 'var(--c-muted)' }}>{j.hora_fin_jornada?.substring(11, 16) || '—'}</td>
-                        <td><b style={{ color: 'var(--c-text)' }}>{j.horas_trabajadas || '0'}h</b></td>
-                        <td style={{ color: 'var(--c-muted)', fontSize: '13px' }}>{j.duracion_refrigerio_min ? `${j.duracion_refrigerio_min} min` : '—'}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span style={{ background: 'var(--c-surface-2)', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: '800', color:'var(--c-muted)' }}>
-                            {j.clientes_gestionados}
-                          </span>
+                        <td style={{ color: 'var(--c-text)', fontWeight: '600', padding: '8px' }}>
+                          {j.hora_inicio_sesion ? new Date(j.hora_inicio_sesion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
                         </td>
-                        <td>
+                        <td style={{ color: 'var(--c-text)', fontWeight: '600', padding: '8px' }}>
+                          {j.hora_fin_jornada ? new Date(j.hora_fin_jornada).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
+                        </td>
+                        <td style={{ padding: '8px' }}><b style={{ color: 'var(--c-info)', fontSize: '15px' }}>{j.horas_trabajadas || '0'}h</b></td>
+                        <td style={{ color: 'var(--c-muted)', fontSize: '13px', padding: '8px' }}>{j.duracion_refrigerio_min ? `${j.duracion_refrigerio_min} min` : '—'}</td>
+                        <td style={{ textAlign: 'center', padding: '8px' }}>
+                          <div style={{ background: 'var(--c-surface-2)', display: 'inline-flex', padding: '6px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: '900', color:'var(--c-text)', border: '1px solid var(--c-border)' }}>
+                            {j.clientes_gestionados || 0}
+                          </div>
+                        </td>
+                        <td style={{ padding: '8px', textAlign: 'right', paddingRight: '24px' }}>
                           {j.validado ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--c-primary)', fontWeight: '800', fontSize: '13px' }}>
-                              <CheckCircle size={16}/> Validado
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', color: 'var(--c-success)', fontWeight: '900', fontSize: '12px' }}>
+                              <CheckCircle size={16}/> VALIDADO
                             </div>
                           ) : (
                             <button 
                               className="btn btn-primary btn-sm" 
                               onClick={() => handleValidar(j.id)}
-                              style={{ padding: '6px 12px', background: 'var(--c-primary)', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px' }}
                             >
-                              Validar Día
+                              VALIDAR
                             </button>
                           )}
                         </td>

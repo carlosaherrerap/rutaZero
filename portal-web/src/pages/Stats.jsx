@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Navigation, Clock, FileText, Calendar, User } from 'lucide-react';
 import L from 'leaflet';
+import pinmanIcon from '../assets/PINMAN.png';
 
 // Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -24,6 +25,24 @@ function MapBounds({ points }) {
   }, [points, map]);
   return null;
 }
+
+const workerIcon = L.icon({
+  iconUrl: pinmanIcon,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40]
+});
+
+// Icono por defecto para evitar errores de 'createIcon'
+const defaultIcon = L.icon({
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
 export default function Stats() {
   const { api } = useContext(AuthContext);
@@ -61,23 +80,28 @@ export default function Stats() {
 
   const getPolylinePoints = () => {
     if (selectedSegment !== null && stats?.segmentos[selectedSegment]) {
-      return stats.segmentos[selectedSegment].puntos.map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
+      return stats.segmentos[selectedSegment].puntos
+        .filter(p => p.lat && p.lng && !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng)))
+        .map(p => [parseFloat(p.lat), parseFloat(p.lng)]);
     }
-    return stats?.puntos_ruta?.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]) || [];
+    return stats?.puntos_ruta?.filter(p => p.latitud && p.longitud).map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]) || [];
   };
 
   const getMarkers = () => {
     if (selectedSegment !== null && stats?.segmentos[selectedSegment]) {
-      return stats.segmentos[selectedSegment].puntos.map((p, j) => (
-        <Marker key={j} position={[parseFloat(p.lat), parseFloat(p.lng)]}>
-          <Popup><b>{p.label}</b><br/>{stats.segmentos[selectedSegment].razon}</Popup>
-        </Marker>
-      ));
+      return stats.segmentos[selectedSegment].puntos
+        .filter(p => p.lat && p.lng && p.label !== 'Tracking')
+        .map((p, j) => (
+          <Marker key={`seg-${selectedSegment}-${j}-${p.lat}-${p.lng}`} position={[parseFloat(p.lat), parseFloat(p.lng)]} icon={p.label === 'Casa' ? workerIcon : defaultIcon}>
+            <Popup><b>{p.label}</b><br/>{stats.segmentos[selectedSegment].razon}</Popup>
+          </Marker>
+        ));
     }
+    // Si no hay segmento seleccionado, mostrar solo los puntos de inicio/fin de cada segmento
     return stats?.segmentos?.map((s, i) => (
-      <React.Fragment key={i}>
-        {s.puntos.map((p, j) => (
-          <Marker key={`${i}-${j}`} position={[parseFloat(p.lat), parseFloat(p.lng)]}>
+      <React.Fragment key={`frag-${i}`}>
+        {s.puntos.filter(p => p.lat && p.lng && p.label !== 'Tracking').map((p, j) => (
+          <Marker key={`all-${i}-${j}-${p.lat}-${p.lng}`} position={[parseFloat(p.lat), parseFloat(p.lng)]} icon={p.label === 'Casa' ? workerIcon : defaultIcon}>
             <Popup><b>{p.label}</b><br/>{s.razon}</Popup>
           </Marker>
         ))}
@@ -115,81 +139,105 @@ export default function Stats() {
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '50px' }}>Calculando métricas...</div>
-      ) : stats ? (
-        <>
-          {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
-            <div className="card" style={{ padding: '24px', background: 'var(--c-surface)', borderRadius: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ background: 'var(--c-surface-2)', color: 'var(--c-primary)', padding: '12px', borderRadius: '12px' }}><Navigation size={24}/></div>
-              <div>
-                <div style={{ fontSize: '12px', color: 'var(--c-muted)', fontWeight: 'bold' }}>DISTANCIA TOTAL</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--c-text)' }}>{stats.distancia_total} km</div>
-              </div>
+      {/* Map and Content Area */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', flex: 1 }}>
+        {/* Map Column */}
+        <div className="card" style={{ height: '600px', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--c-border)', background: 'var(--c-surface)', position: 'relative' }}>
+          {loading && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--c-primary)' }}>
+              Cargando trayectos...
             </div>
-            <div className="card" style={{ padding: '24px', background: 'var(--c-surface)', borderRadius: '16px', display: 'flex', gap: '16px', alignItems: 'center' }}>
-              <div style={{ background: 'var(--c-surface-2)', color: 'var(--c-primary)', padding: '12px', borderRadius: '12px' }}><FileText size={24}/></div>
-              <div>
-                <div style={{ fontSize: '12px', color: 'var(--c-muted)', fontWeight: 'bold' }}>LLENADO PROMEDIO</div>
-                <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--c-text)' }}>{Math.floor(stats.tiempo_llenado_avg / 60)}m {stats.tiempo_llenado_avg % 60}s</div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-            {/* Map */}
-            <div className="card" style={{ height: '500px', borderRadius: '24px', overflow: 'hidden', border: '1px solid var(--c-border)', background: 'var(--c-surface)' }}>
-               <MapContainer center={polylinePoints[0] || [-12.046374, -77.042793]} zoom={13} style={{ height: '100%', width: '100%' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          )}
+          
+          <MapContainer 
+            center={[-12.046374, -77.042793]} 
+            zoom={13} 
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            
+            {stats && (
+              <React.Fragment key={`${selectedWorker}-${fecha}-${selectedSegment}`}>
                 <MapBounds points={polylinePoints} />
-                {polylinePoints.length > 0 && <Polyline positions={polylinePoints} color="var(--c-info)" weight={4} opacity={0.6} dashArray="10, 10" />}
+                {polylinePoints.length > 0 && (
+                  <Polyline positions={polylinePoints} color="var(--c-primary)" weight={5} opacity={0.8} />
+                )}
                 {getMarkers()}
-              </MapContainer>
-            </div>
+              </React.Fragment>
+            )}
+          </MapContainer>
+        </div>
 
-            {/* Segments List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--c-text)' }}>Razón de Trayectos</h3>
-                {selectedSegment !== null && (
-                  <button onClick={() => setSelectedSegment(null)} className="btn btn-ghost" style={{ fontSize: '12px', color: 'var(--c-primary)' }}>Ver Todo</button>
+        {/* Info Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {stats ? (
+            <>
+              {/* Mini Stats */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="card" style={{ padding: '16px', background: 'var(--c-surface)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <Navigation size={20} color="var(--c-primary)"/>
+                  <div>
+                    <div style={{ fontSize: '10px', color: 'var(--c-muted)', fontWeight: 'bold' }}>DISTANCIA</div>
+                    <div style={{ fontSize: '16px', fontWeight: '800' }}>{stats.distancia_total} km</div>
+                  </div>
+                </div>
+                <div className="card" style={{ padding: '16px', background: 'var(--c-surface)', borderRadius: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <Clock size={20} color="var(--c-primary)"/>
+                  <div>
+                    <div style={{ fontSize: '10px', color: 'var(--c-muted)', fontWeight: 'bold' }}>LLENADO AVG</div>
+                    <div style={{ fontSize: '16px', fontWeight: '800' }}>{Math.floor(stats.tiempo_llenado_avg / 60)}m {stats.tiempo_llenado_avg % 60}s</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Segments List */}
+              <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Trayectos</h3>
+                  {selectedSegment !== null && (
+                    <button onClick={() => setSelectedSegment(null)} style={{ fontSize: '12px', color: 'var(--c-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Ver Todo</button>
+                  )}
+                </div>
+                
+                {stats.segmentos.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--c-muted)', background: 'var(--c-surface)', borderRadius: '12px', border: '1px dashed var(--c-border)' }}>
+                     Sin gestiones registradas.
+                  </div>
+                ) : (
+                  stats.segmentos.map((s, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => setSelectedSegment(i)}
+                      className="card" 
+                      style={{ 
+                        padding: '12px', 
+                        background: selectedSegment === i ? 'var(--c-surface-2)' : 'var(--c-surface)', 
+                        borderRadius: '12px', 
+                        borderLeft: selectedSegment === i ? '4px solid var(--c-primary)' : '4px solid transparent',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        boxShadow: 'var(--shadow)'
+                      }}
+                    >
+                      <div style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--c-primary)', marginBottom: '4px' }}>TRAYECTO {i+1}</div>
+                      <div style={{ fontSize: '13px', fontWeight: '700' }}>{s.razon}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'var(--c-muted)' }}>
+                        <span><Navigation size={12}/> {s.distancia.toFixed(2)} km</span>
+                        <span><Clock size={12}/> ~{Math.round(s.distancia * 15)} min</span>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-              {stats.segmentos.length === 0 ? (
-                <div className="card" style={{ padding: '20px', textAlign: 'center', color: 'var(--c-muted)', background: 'var(--c-surface)' }}>
-                   No hay gestiones registradas este día para trazar segmentos.
-                </div>
-              ) : (
-                stats.segmentos.map((s, i) => (
-                  <div 
-                    key={i} 
-                    onClick={() => setSelectedSegment(i)}
-                    className="card" 
-                    style={{ 
-                      padding: '16px', 
-                      background: selectedSegment === i ? 'var(--c-surface-2)' : 'var(--c-surface)', 
-                      borderRadius: '12px', 
-                      borderLeft: selectedSegment === i ? '4px solid var(--c-primary)' : '4px solid var(--c-info)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: selectedSegment === i ? 'var(--c-primary)' : 'var(--c-info)', marginBottom: '4px' }}>TRAYECTO {i+1}</div>
-                    <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--c-text)' }}>{s.razon}</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '13px' }}>
-                      <span style={{ color: 'var(--c-muted)' }}><Navigation size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> {s.distancia.toFixed(2)} km</span>
-                      <span style={{ color: 'var(--c-muted)' }}><Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }}/> {Math.round(s.distancia * 15)} min aprox.</span>
-                    </div>
-                  </div>
-                ))
-              )}
+            </>
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--c-muted)', background: 'var(--c-surface-2)', borderRadius: '24px', border: '2px dashed var(--c-border)' }}>
+              <User size={40} style={{ opacity: 0.2, marginBottom: '12px' }}/>
+              <p style={{ fontSize: '13px', textAlign: 'center', padding: '0 20px' }}>Selecciona un trabajador para ver el análisis de sus rutas.</p>
             </div>
-          </div>
-        </>
-      ) : (
-        <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Selecciona un worker para ver su actividad.</div>
-      )}
+          )}
+        </div>
+      </div>
 
       <style>{`
         .form-input:focus { outline: none; border-color: var(--c-primary) !important; box-shadow: 0 4px 12px rgba(16,24,32,0.06); }

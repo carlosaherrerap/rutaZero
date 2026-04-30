@@ -22,6 +22,8 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [routeCoords, setRouteCoords] = useState([]);
   const [calculatingRoute, setCalculatingRoute] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   // 1. Cargar datos frescos del cliente al montar para asegurar estado actual y bloqueo
   const fetchClientDetails = useCallback(async () => {
@@ -44,6 +46,14 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       // Configuración inmersiva total para ocultar barra inferior
       NavigationBar.setVisibilityAsync('hidden');
     }
+  }, []);
+
+  useEffect(() => {
+    const { addEventListener } = require('@react-native-community/netinfo');
+    const unsubscribe = addEventListener(state => {
+      setIsOnline(state.isConnected);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -100,11 +110,11 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   const getStatusInfo = (estado) => {
     switch (estado) {
-      case 'EN_VISITA': return { color: '#a855f7', label: 'EN CAMINO (MORADO)' };
-      case 'VISITADO_PAGO': return { color: '#10b981', label: 'GESTIONADO (VERDE)' };
-      case 'REPROGRAMADO': return { color: '#f59e0b', label: 'REPROGRAMADO (AMARILLO)' };
-      case 'NO_ENCONTRADO': return { color: '#ef4444', label: 'NO ENCONTRADO (ROJO)' };
-      default: return { color: '#3b82f6', label: 'LIBRE (AZUL)' };
+      case 'EN_VISITA': return { color: '#a855f7', label: 'EN CAMINO' };
+      case 'VISITADO_PAGO': return { color: '#10b981', label: 'GESTIONADO' };
+      case 'REPROGRAMADO': return { color: '#f59e0b', label: 'REPROGRAMADO' };
+      case 'NO_ENCONTRADO': return { color: '#ef4444', label: 'NO ENCONTRADO' };
+      default: return { color: '#3b82f6', label: 'LIBRE' };
     }
   };
 
@@ -112,12 +122,25 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   const handleStartVisit = async () => {
     setLoading(true);
+    const { updateLocalClientStatus } = require('../services/OfflineService');
     try {
+      if (!isOnline) {
+        console.log('📵 [Visit] Iniciando visita en modo OFFLINE');
+        await updateLocalClientStatus(cliente.id, 'EN_VISITA');
+        setCliente(prev => ({ ...prev, estado: 'EN_VISITA', bloqueado_por: user.id }));
+        Alert.alert('Modo Offline', 'Visita iniciada localmente. Podrás llenar la ficha ahora.');
+        setLoading(false);
+        return;
+      }
+
       await api.post(`/api/workers/clientes/${cliente.id}/visitar`);
-      // Actualizar localmente para ver cambios sin retroceder
+      // Sincronizar localmente para que persista si se va el internet
+      await updateLocalClientStatus(cliente.id, 'EN_VISITA');
+      
       setCliente(prev => ({ ...prev, estado: 'EN_VISITA', bloqueado_por: user.id }));
       Alert.alert('Éxito', 'Visita iniciada. El cliente ahora está EN CAMINO.');
     } catch (err) {
+      console.log('❌ [Visit] Error al iniciar visita:', err.message);
       const msg = err.response?.data?.error || 'No se pudo iniciar la visita';
       Alert.alert('Aviso', msg);
     } finally {
@@ -130,6 +153,7 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   };
 
   const handleReleaseVisit = async () => {
+    const { updateLocalClientStatus } = require('../services/OfflineService');
     Alert.alert(
       'Cancelar Visita',
       '¿Deseas cancelar el camino hacia este cliente y liberarlo?',
@@ -141,6 +165,9 @@ const DetalleClienteScreen = ({ route, navigation }) => {
             setLoading(true);
             try {
               await api.patch(`/api/workers/clientes/${cliente.id}/liberar`);
+              // Sincronizar localmente
+              await updateLocalClientStatus(cliente.id, 'LIBRE');
+              
               setCliente(prev => ({ ...prev, estado: 'LIBRE', bloqueado_por: null }));
               Alert.alert('Liberado', 'Cliente disponible nuevamente.');
             } catch (err) {
@@ -166,8 +193,11 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.mapContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.scroll} 
+        scrollEnabled={!isMapFullscreen}
+      >
+        <View style={[styles.mapContainer, isMapFullscreen && styles.mapContainerFullscreen]}>
            <MapView
              style={styles.map}
              initialRegion={{
@@ -177,33 +207,53 @@ const DetalleClienteScreen = ({ route, navigation }) => {
                longitudeDelta: 0.015,
              }}
            >
-             <Marker
-               coordinate={{
-                 latitude: parseFloat(cliente.latitud) || -12.046374,
-                 longitude: parseFloat(cliente.longitud) || -77.042793,
-               }}
-             >
-                <Ionicons name="location" size={35} color={statusInfo.color} />
-             </Marker>
+             {isOnline && (
+               <>
+                 <Marker
+                   coordinate={{
+                     latitude: parseFloat(cliente.latitud) || -12.046374,
+                     longitude: parseFloat(cliente.longitud) || -77.042793,
+                   }}
+                 >
+                    <Ionicons name="location" size={35} color={statusInfo.color} />
+                 </Marker>
 
-             {userLocation && (
-               <Marker coordinate={userLocation} title="Tu ubicación">
-                  <View style={styles.workerMarker}>
-                     <Ionicons name="bicycle" size={20} color="#fff" />
-                  </View>
-               </Marker>
-             )}
+                 {userLocation && (
+                   <Marker coordinate={userLocation} title="Tu ubicación">
+                      <View style={styles.workerMarker}>
+                         <Ionicons name="bicycle" size={20} color="#fff" />
+                      </View>
+                   </Marker>
+                 )}
 
-             {routeCoords.length > 0 && (
-               <Polyline
-                 coordinates={routeCoords}
-                 strokeWidth={5}
-                 strokeColor="#a855f7"
-               />
+                 {routeCoords.length > 0 && (
+                   <Polyline
+                     coordinates={routeCoords}
+                     strokeWidth={5}
+                     strokeColor="#a855f7"
+                   />
+                 )}
+               </>
              )}
            </MapView>
 
-           <View style={styles.mapActions}>
+           {!isOnline && (
+             <View style={styles.offlineOverlay}>
+                <Ionicons name="wifi-outline" size={40} color="#fff" />
+                <Text style={styles.offlineText}>NO TIENES SEÑAL AQUÍ</Text>
+                <Text style={styles.offlineSub}>El mapa no está disponible offline</Text>
+             </View>
+           )}
+
+            <View style={styles.mapActions}>
+              <TouchableOpacity 
+                style={[styles.mapBtn, { marginBottom: 8 }]} 
+                onPress={() => setIsMapFullscreen(!isMapFullscreen)}
+              >
+                 <Ionicons name={isMapFullscreen ? "contract" : "expand"} size={22} color="#3b82f6" />
+                 <Text style={styles.mapBtnText}>{isMapFullscreen ? "Reducir" : "Agrandar"}</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.mapBtn} onPress={openExternalMaps}>
                  <Ionicons name="navigate-circle" size={24} color="#3b82f6" />
                  <Text style={styles.mapBtnText}>Waze / Google</Text>
@@ -283,7 +333,8 @@ const InfoRow = ({ icon, label, value }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   scroll: { paddingBottom: 100 },
-  mapContainer: { width: width, height: 300, backgroundColor: '#e2e8f0' },
+  mapContainer: { width: width, height: 300, backgroundColor: '#e2e8f0', zIndex: 10 },
+  mapContainerFullscreen: { position: 'absolute', top: 0, left: 0, width: width, height: Dimensions.get('window').height, zIndex: 1000 },
   map: { width: '100%', height: '100%' },
   mapActions: { position: 'absolute', bottom: 15, right: 15 },
   mapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12, elevation: 5 },
@@ -307,7 +358,10 @@ const styles = StyleSheet.create({
   mainBtn: { height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', elevation: 3 },
   mainBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
   releaseBtn: { flex: 1, height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ef4444', backgroundColor: '#fff' },
-  releaseBtnText: { color: '#ef4444', fontSize: 14, fontWeight: 'bold', marginLeft: 5 }
+  releaseBtnText: { color: '#ef4444', fontSize: 14, fontWeight: 'bold', marginLeft: 5 },
+  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
+  offlineText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginTop: 10 },
+  offlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }
 });
 
 export default DetalleClienteScreen;

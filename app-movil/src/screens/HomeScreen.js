@@ -17,7 +17,6 @@ const STATUS_OPTIONS = [
   { id: 'EN_VISITA', label: 'EN CAMINO', color: '#a855f7' },
   { id: 'VISITADO_PAGO', label: 'GESTIONADOS', color: '#10b981' },
   { id: 'REPROGRAMADO', label: 'REPROGRAMADOS', color: '#f59e0b' },
-  { id: 'NO_ENCONTRADO', label: 'NO ENCONTRADOS', color: '#ef4444' },
 ];
 
 // Cronómetro: cuenta hh:mm:ss desde un timestamp de inicio
@@ -32,9 +31,14 @@ function useCronometro(startTime) {
       return;
     }
     const tick = () => {
-      const now = Date.now();
-      const start = new Date(startTime).getTime();
-      const diff = Math.max(0, Math.floor((now - start) / 1000));
+      if (!startTime) return;
+      const now = new Date();
+      const start = new Date(startTime);
+      
+      // Si el inicio es mayor que ahora (por desfase de segundos/ms), ponemos 0
+      let diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+      if (diff < 0) diff = 0;
+
       const h = String(Math.floor(diff / 3600)).padStart(2, '0');
       const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
       const s = String(diff % 60).padStart(2, '0');
@@ -67,18 +71,32 @@ export default function HomeScreen({ navigation }) {
 
   // Detector de conexión
   useEffect(() => {
+    console.log('🔌 [Home] Iniciando detector de conexión...');
     const { addEventListener } = require('@react-native-community/netinfo');
-    const { initOfflineDB, syncPendingFichas, clearOfflineCache } = require('../services/OfflineService');
-    clearOfflineCache();
+    const { initOfflineDB, syncAllOfflineData } = require('../services/OfflineService');
+    
     initOfflineDB();
     const unsubscribe = addEventListener(state => {
+      console.log(`📶 [NetInfo] Conectado: ${state.isConnected}, Tipo: ${state.type}`);
       setIsOnline(state.isConnected);
-      if (state.isConnected && api) syncPendingFichas(api);
+      if (state.isConnected && api) {
+        console.log('🔄 [Home] Internet recuperado, intentando sync...');
+        syncAllOfflineData(api);
+      }
     });
+
     const interval = setInterval(() => {
-      if (isOnline && api) syncPendingFichas(api);
+      if (isOnline && api) {
+        console.log('⏰ [Home] Sync periódico (10min)');
+        syncAllOfflineData(api);
+      }
     }, 1000 * 60 * 10);
-    return () => { unsubscribe(); clearInterval(interval); };
+
+    return () => { 
+      console.log('🔌 [Home] Limpiando detector de conexión');
+      unsubscribe(); 
+      clearInterval(interval); 
+    };
   }, [api, isOnline]);
 
   // Pantalla completa Android
@@ -86,36 +104,81 @@ export default function HomeScreen({ navigation }) {
     if (Platform.OS === 'android') NavigationBar.setVisibilityAsync('hidden');
   }, []);
 
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [pendingOfflineIds, setPendingOfflineIds] = useState([]);
 
   const fetchData = useCallback(async (pageNum = 1, shouldRefresh = false) => {
     if (!user) return;
+    const { 
+      saveDayData, getDayData, logConnectionStatus, getPendingClientIds 
+    } = require('../services/OfflineService');
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    console.log(`📡 [Home] fetchData(page=${pageNum}) - Solo hoy: ${todayStr} - Online: ${isOnline}`);
+    
     try {
-      if (pageNum === 1) {
+      // Siempre obtener pendientes para marcar en la lista
+      const pending = await getPendingClientIds();
+      setPendingOfflineIds(pending);
+
+      if (!isOnline) {
+        const localData = await getDayData();
+        if (localData) {
+          if (pageNum === 1) setJourney(localData.journey);
+          // Filtrar por si acaso el cache tiene de otros días (aunque guardamos solo hoy)
+          const todayClients = (localData.clients || []).filter(c => 
+            c.fecha_pago?.split('T')[0] === todayStr || pending.includes(String(c.id))
+          );
+          setAllClients(todayClients);
+        }
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      // MODO ONLINE
+      if (pageNum === 1 || shouldRefresh) {
         const resWorker = await api.get(`/api/workers/${user.id}`);
-        setJourney(resWorker.data.data);
-      }
-      
-      const limit = 50;
-      const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}`);
-      const newData = resClients.data.data || [];
-      
-      setHasMore(newData.length === limit);
-      
-      if (shouldRefresh || pageNum === 1) {
+        const freshJourney = resWorker.data.data;
+        setJourney(freshJourney);
+
+        const resRutas = await api.get('/api/workers/me/ruta');
+        const rutasData = resRutas.data.data || [];
+        
+        // FILTRAR POR HOY EN LA API
+        const limit = 100;
+        const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}&fecha_pago=${todayStr}`);
+        const newData = resClients.data.data || [];
+        
+        setHasMore(newData.length === limit);
         setAllClients(newData);
+        setPage(pageNum);
+
+        await saveDayData({
+          journey: freshJourney, 
+          clients: newData,
+          rutas: rutasData
+        });
+        await logConnectionStatus('ONLINE');
       } else {
+        const limit = 100;
+        const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}&fecha_pago=${todayStr}`);
+        const newData = resClients.data.data || [];
+        setHasMore(newData.length === limit);
         setAllClients(prev => [...prev, ...newData]);
+        setPage(pageNum);
       }
-      setPage(pageNum);
     } catch (e) {
-      console.log('[Home] Error fetching data', e);
+      console.log('❌ [Home] Error en fetchData:', e.message);
+      const localData = await getDayData();
+      if (localData) {
+        if (pageNum === 1) setJourney(localData.journey);
+        setAllClients(localData.clients || []);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user, api]);
+  }, [user, api, isOnline]);
 
   useFocusEffect(useCallback(() => { 
     setLoading(true);
@@ -149,8 +212,17 @@ export default function HomeScreen({ navigation }) {
   const handleIniciarDia = () => {
     confirmarAccion('Iniciar Día', '¿Deseas iniciar tu jornada laboral?', async () => {
       setActionLoading(true);
+      const { saveJourneyActionOffline, updateLocalJourneyStatus } = require('../services/OfflineService');
       try {
+        if (!isOnline) {
+          await saveJourneyActionOffline('/api/workers/jornada/iniciar');
+          await fetchData();
+          setShowJourneyModal(false);
+          Alert.alert('Modo Offline', 'Jornada iniciada localmente. Se sincronizará al recuperar señal.');
+          return;
+        }
         await api.post('/api/workers/jornada/iniciar');
+        await updateLocalJourneyStatus('JORNADA_INICIADA'); 
         await fetchData();
         setShowJourneyModal(false);
         Alert.alert('¡Listo!', 'Jornada iniciada. ¡Buen día!');
@@ -163,8 +235,15 @@ export default function HomeScreen({ navigation }) {
   const handleIniciarAlmuerzo = () => {
     confirmarAccion('Receso', '¿Deseas empezar tu receso?', async () => {
       setActionLoading(true);
+      const { saveJourneyActionOffline, updateLocalJourneyStatus } = require('../services/OfflineService');
       try {
+        if (!isOnline) {
+          await saveJourneyActionOffline('/api/workers/jornada/almuerzo/inicio');
+          await fetchData();
+          return;
+        }
         await api.post('/api/workers/jornada/almuerzo/inicio');
+        await updateLocalJourneyStatus('EN_REFRIGERIO', { hora_inicio_almuerzo: new Date().toISOString() });
         await fetchData();
       } catch (e) {
         Alert.alert('Error', 'No se pudo iniciar el receso.');
@@ -175,8 +254,15 @@ export default function HomeScreen({ navigation }) {
   const handleFinAlmuerzo = () => {
     confirmarAccion('Fin de Receso', '¿Deseas finalizar tu receso?', async () => {
       setActionLoading(true);
+      const { saveJourneyActionOffline, updateLocalJourneyStatus } = require('../services/OfflineService');
       try {
+        if (!isOnline) {
+          await saveJourneyActionOffline('/api/workers/jornada/almuerzo/fin');
+          await fetchData();
+          return;
+        }
         await api.post('/api/workers/jornada/almuerzo/fin');
+        await updateLocalJourneyStatus('JORNADA_INICIADA');
         await fetchData();
       } catch (e) {
         Alert.alert('Error', 'No se pudo finalizar el receso.');
@@ -187,8 +273,18 @@ export default function HomeScreen({ navigation }) {
   const handleFinalizarDia = () => {
     confirmarAccion('Finalizar Día', '¿Deseas finalizar tu día laboral?', async () => {
       setActionLoading(true);
+      const { saveJourneyActionOffline, clearOfflineCache, updateLocalJourneyStatus } = require('../services/OfflineService');
       try {
+        if (!isOnline) {
+          await saveJourneyActionOffline('/api/workers/jornada/finalizar');
+          await fetchData();
+          setShowJourneyModal(false);
+          Alert.alert('Modo Offline', 'Día finalizado localmente.');
+          return;
+        }
         await api.post('/api/workers/jornada/finalizar');
+        await updateLocalJourneyStatus('JORNADA_FINALIZADA');
+        await clearOfflineCache(); 
         await fetchData();
         setShowJourneyModal(false);
         Alert.alert('¡Hasta mañana!', 'Jornada finalizada correctamente.');
@@ -211,6 +307,8 @@ export default function HomeScreen({ navigation }) {
 
   const renderClient = ({ item }) => {
     const cardColor = getStatusColor(item.estado);
+    const isOfflinePending = pendingOfflineIds.includes(String(item.id));
+
     return (
       <TouchableOpacity
         style={[styles.clientCard, { borderLeftColor: cardColor }]}
@@ -223,7 +321,15 @@ export default function HomeScreen({ navigation }) {
         }}
       >
         <View style={styles.clientInfo}>
-          <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
+            {isOfflinePending && (
+              <View style={styles.offlineTag}>
+                <Ionicons name="cloud-offline" size={10} color="#fff" />
+                <Text style={styles.offlineTagText}>OFFLINE</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.clientAddress} numberOfLines={1}>{item.direccion}</Text>
           <Text style={styles.clientDebt}>Deuda: S/ {parseFloat(item.deuda_total || 0).toFixed(2)}</Text>
           <View style={styles.badgeRow}>
@@ -247,13 +353,31 @@ export default function HomeScreen({ navigation }) {
   // ── GUARDIA: Sin jornada iniciada, muestra pantalla de bloqueo ─
   const NoJornadaBanner = () => (
     <View style={styles.lockBanner}>
-      <Ionicons name="lock-closed" size={50} color="#cbd5e1" />
-      <Text style={styles.lockTitle}>Jornada no iniciada</Text>
-      <Text style={styles.lockSub}>Presiona INICIAR DÍA para comenzar a gestionar clientes.</Text>
-      <TouchableOpacity style={styles.lockBtn} onPress={() => setShowJourneyModal(true)}>
-        <Ionicons name="play-circle" size={20} color="#fff" />
-        <Text style={styles.lockBtnText}>INICIAR DÍA</Text>
-      </TouchableOpacity>
+      <Ionicons 
+        name={enRefrigerio ? "restaurant" : "lock-closed"} 
+        size={50} 
+        color={enRefrigerio ? "#f59e0b" : "#cbd5e1"} 
+      />
+      <Text style={styles.lockTitle}>{enRefrigerio ? "En hora de almuerzo" : "Jornada no iniciada"}</Text>
+      <Text style={styles.lockSub}>
+        {enRefrigerio 
+          ? `Tu jornada está pausada. Tiempo transcurrido: ${timerAlmuerzo}`
+          : "Presiona INICIAR DÍA para comenzar a gestionar clientes."}
+      </Text>
+      {!enRefrigerio ? (
+        <TouchableOpacity style={styles.lockBtn} onPress={() => setShowJourneyModal(true)}>
+          <Ionicons name="play-circle" size={20} color="#fff" />
+          <Text style={styles.lockBtnText}>INICIAR DÍA</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity 
+          style={[styles.lockBtn, { backgroundColor: '#10b981' }]} 
+          onPress={() => setShowJourneyModal(true)}
+        >
+          <Ionicons name="time" size={20} color="#fff" />
+          <Text style={styles.lockBtnText}>VER CONTROL</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -285,7 +409,12 @@ export default function HomeScreen({ navigation }) {
         {/* HEADER */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>Ruta Zero</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.headerTitle}>Ruta Zero</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('DebugStorage')}>
+                <Ionicons name="bug" size={16} color="#cbd5e1" />
+              </TouchableOpacity>
+            </View>
             <Text style={[styles.headerUser, !isOnline && { color: '#ef4444' }]}>
               {user?.nombres} ({isOnline ? 'Online' : 'Offline'})
             </Text>
@@ -318,7 +447,7 @@ export default function HomeScreen({ navigation }) {
         {/* CONTENIDO PRINCIPAL */}
         {loading ? (
           <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 80 }} />
-        ) : !jornadaEstado || finalizado ? (
+        ) : !jornadaEstado || finalizado || enRefrigerio ? (
           <NoJornadaBanner />
         ) : (
           <FlatList
@@ -344,15 +473,15 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.tabBar}>
           <TouchableOpacity style={styles.tabItem} onPress={() => setFilterStatus('TODOS')}>
             <Ionicons name="people" size={24} color={filterStatus === 'TODOS' ? '#3b82f6' : '#94a3b8'} />
-            <Text style={[styles.tabLabel, filterStatus === 'TODOS' && { color: '#3b82f6' }]}>TODOS ({stats.total})</Text>
+            <Text style={[styles.tabLabel, filterStatus === 'TODOS' && { color: '#3b82f6' }]}>{stats.total}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Ruta')}>
             <Ionicons name="map" size={24} color="#94a3b8" />
             <Text style={styles.tabLabel}>MIS RUTAS</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tabItem} onPress={() => setFilterStatus('NO_ENCONTRADO')}>
-            <Ionicons name="close-circle" size={24} color={filterStatus === 'NO_ENCONTRADO' ? '#ef4444' : '#94a3b8'} />
-            <Text style={[styles.tabLabel, filterStatus === 'NO_ENCONTRADO' && { color: '#ef4444' }]}>NO ENCONTRADOS ({stats.noEncontrados})</Text>
+          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Asistencia')}>
+            <Ionicons name="calendar" size={24} color="#94a3b8" />
+            <Text style={styles.tabLabel}>ASISTENCIA</Text>
           </TouchableOpacity>
         </View>
 
@@ -503,6 +632,8 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 9, fontWeight: '800' },
   distritoText: { fontSize: 10, color: '#94a3b8' },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  offlineTag: { backgroundColor: '#ef4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 3 },
+  offlineTagText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   // Lock banner
   lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, gap: 12 },
   lockTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },

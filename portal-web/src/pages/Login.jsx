@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { MessageSquarePlus } from 'lucide-react';
 import './Login.css';
 import logoImg from '../assets/LOGO2.png';
+import heroImg from '../assets/image.png';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -32,72 +33,82 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      {/* MALLA / GRID INTEGRADA EN CSS DIRECTAMENTE */}
-      
-      {/* INTERACTIVE CORNER GRID + FEEDBACK */}
-      <div className="top-right-actions">
-        <button className="btn-feedback">
-          <MessageSquarePlus size={18} />
-          <span>FEEDBACK</span>
-        </button>
-        <div className="interactive-corner-grid">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div key={i} className="grid-cell"></div>
-          ))}
-        </div>
-      </div>
+      <div className="auth-container">
+        {/* Lado Izquierdo: Información y Branding */}
+        <div className="auth-info-pane">
+          <div className="auth-branding">
+            <h1>Routing</h1>
+          </div>
+          
+          <div className="auth-features">
+            <div className="feature-item">
+              <div className="feature-dot"></div>
+              <div className="feature-text">
+                <h3>Acceso seguro</h3>
+                <p>Protegemos tus datos operativos con cifrado de grado industrial.</p>
+              </div>
+            </div>
 
-      {/* NAVBAR (Left Aligned) */}
-      <nav className="navbar">
-        <div className="brand-container">
-          <img src={logoImg} alt="ROUTING" className="routing-logo-img" />
-          <div className="brand-text">
-            <h1 className="brand-name">ROUTING</h1>
-            <p className="brand-sub">BY INFORMAPERU</p>
+            <div className="feature-item">
+              <div className="feature-dot"></div>
+              <div className="feature-text">
+                <h3>Gestión Centralizada</h3>
+                <p>Controla todas tus rutas y trabajadores desde un solo lugar.</p>
+              </div>
+            </div>
+
+            <div className="feature-item">
+              <div className="feature-dot"></div>
+              <div className="feature-text">
+                <h3>Operaciones en tiempo real</h3>
+                <p>Monitoreo constante de entregas y jornadas de campo.</p>
+              </div>
+            </div>
           </div>
         </div>
-      </nav>
 
-      {/* HERO CONTENT */}
-      <div className="hero-container">
-        <div className="hero-text">
-          <div className="slogan">
-            <div>Logística <span className="highlight">inteligente</span></div>
-            <div>para <span className="highlight">rutas críticas</span></div>
-          </div>
-        </div>
-
-        <div className="login-section">
-          <div className="login-card">
+        {/* Lado Derecho: Formulario de Login */}
+        <div className="auth-form-pane">
+          <div className="form-content">
+            <h2 className="form-title">Inicie sesión</h2>
+            
             <form onSubmit={handleSubmit}>
               {error && <div className="error-msg">{error}</div>}
               
-              <div className="form-group">
-                <label>Usuario</label>
+              <div className="form-group-floating">
                 <input 
                   type="text" 
-                  placeholder="admin"
+                  id="username"
+                  className={username ? 'has-value' : ''}
                   value={username}
                   onChange={e => setUsername(e.target.value)}
+                  placeholder=" "
                   required
                 />
+                <label htmlFor="username">Usuario</label>
               </div>
 
-              <div className="form-group">
-                <label>Contraseña</label>
+              <div className="form-group-floating">
                 <input 
                   type="password" 
-                  placeholder="••••••••"
+                  id="password"
+                  className={password ? 'has-value' : ''}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  placeholder=" "
                   required
                 />
+                <label htmlFor="password">Contraseña</label>
               </div>
 
-              <button type="submit" className="btn-login" disabled={loading}>
-                {loading ? 'Validando...' : 'Iniciar Sesión'}
+              <button type="submit" className="btn-continue" disabled={loading}>
+                {loading ? 'Validando...' : 'Continuar'}
               </button>
             </form>
+
+            <div className="auth-footer">
+              <p>BY INFORMAPERU</p>
+            </div>
           </div>
         </div>
       </div>

@@ -2,212 +2,234 @@
    ROUTING — Total Visibility Edition (Final Stability Fix)
    ============================================================ */
 
+@font-face {
+  font-family: 'Serimi';
+  src: url('../assets/tipografia/SERIMI.ttf') format('truetype');
+}
+
 .login-page {
   position: relative;
-  width: 100% !important;
-  min-height: 100vh !important;
-  background-color: #050505 !important;
-  /* GRID / MALLA (Render Style) */
+  width: 100%;
+  min-height: 100vh;
+  background-color: #1E232F;
   background-image: 
-    linear-gradient(to right, rgba(255,255,255,0.12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.12) 1px, transparent 1px);
-  background-size: 45px 45px;
-  color: white !important;
-  display: flex !important;
-  flex-direction: column !important;
+    linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 50px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
+}
+
+.auth-container {
+  display: flex;
+  width: 950px;
+  min-height: 580px;
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* LADO IZQUIERDO */
+.auth-info-pane {
+  flex: 1.1;
+  background: #f8fafc;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.auth-branding h1 {
+  font-family: 'Serimi', sans-serif;
+  font-size: 48px;
+  color: #111;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  margin-top: 50px;
+  position: relative;
+}
+
+/* Línea vertical que une los puntos */
+.auth-features::before {
+  content: "";
+  position: absolute;
+  left: 5px; /* Mitad del ancho del punto */
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: #e2e8f0;
   z-index: 0;
 }
 
-/* Efecto de degradado radial (Asegurando que no tape nada) */
-.login-page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 50%, transparent 10%, #050505 90%);
-  pointer-events: none;
-  z-index: -1; /* Forzado al fondo absoluto */
-}
-
-/* NAVBAR */
-.navbar {
+.feature-item {
+  display: flex;
+  gap: 25px;
+  align-items: flex-start;
   position: relative;
-  z-index: 50;
-  display: flex;
-  justify-content: flex-start;
-  padding: 40px 60px;
-  width: 100%;
+  z-index: 1;
 }
 
-.brand-container {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.routing-logo-img {
-  height: 44px;
-  width: auto;
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 0.9;
-}
-
-.brand-name {
-  font-size: 34px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  color: white;
-  margin: 0;
-  font-family: 'Outfit', sans-serif;
-}
-
-.brand-sub {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 3px;
-  margin: 2px 0 0 2px;
-  text-transform: uppercase;
-}
-
-/* TOP RIGHT ACTIONS */
-.top-right-actions {
-  position: absolute;
-  top: 40px;
-  right: 60px;
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  z-index: 100;
-}
-
-.btn-feedback {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  padding: 10px 22px;
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.interactive-corner-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 12px);
-  gap: 4px;
-}
-
-.grid-cell {
+.feature-dot {
   width: 12px;
   height: 12px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
-
-/* HERO CONTAINER */
-.hero-container {
-  position: relative;
-  z-index: 10;
-  flex: 1;
-  display: flex;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 40px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 80px;
-}
-
-.hero-text { flex: 1.2; }
-
-.slogan {
-  font-size: 82px;
-  font-weight: 900;
-  line-height: 1;
-  color: white;
-  letter-spacing: -3px;
-}
-
-.highlight {
   background: #00A9BC;
-  color: white;
-  padding: 0 15px;
-  display: inline-block;
-  transform: skewX(-5deg);
+  border-radius: 50%;
+  margin-top: 6px;
+  border: 3px solid #f8fafc; /* Para que parezca que corta la línea */
 }
 
-/* LOGIN CARD */
-.login-section {
-  flex: 0.8;
+.feature-text h3 {
+  color: #111;
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+}
+
+.feature-text p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* LADO DERECHO */
+.auth-form-pane {
+  flex: 0.9;
+  background: white;
+  padding: 60px;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.login-card {
-  background: #111;
-  padding: 56px;
-  border-radius: 32px;
+.form-content {
   width: 100%;
-  max-width: 440px;
-  border: 1px solid #222;
-  box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9);
 }
 
-.form-group { margin-bottom: 24px; }
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  font-size: 11px;
-  margin-bottom: 10px;
-  color: #555;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+.form-title {
+  color: #111;
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 30px;
 }
 
-.form-group input {
+/* FLOATING LABELS */
+.form-group-floating {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.form-group-floating input {
   width: 100%;
-  padding: 18px;
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 14px;
-  color: white;
+  padding: 24px 16px 10px 16px;
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  color: #111;
   font-size: 16px;
   outline: none;
+  transition: all 0.2s ease;
 }
 
-.btn-login {
+.form-group-floating label {
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  color: #999;
+  font-size: 16px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+/* Animación cuando el input está enfocado o tiene valor */
+.form-group-floating input:focus,
+.form-group-floating input:not(:placeholder-shown) {
+  border-color: #00A9BC;
+  background: white;
+  padding-top: 28px;
+  padding-bottom: 6px;
+}
+
+.form-group-floating input:focus + label,
+.form-group-floating input:not(:placeholder-shown) + label {
+  top: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00A9BC;
+  text-transform: uppercase;
+}
+
+.btn-continue {
   width: 100%;
-  padding: 20px;
+  padding: 16px;
+  background: #d1d5db; /* Color gris suave como en la imagen */
+  color: #4b5563;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn-continue:hover:not(:disabled) {
   background: #00A9BC;
   color: white;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 800;
-  cursor: pointer;
 }
 
 .error-msg {
-  color: #ff4d4d;
-  background: rgba(255, 77, 77, 0.1);
-  padding: 12px;
-  border-radius: 8px;
+  color: #ef4444;
+  font-size: 13px;
   margin-bottom: 20px;
-  text-align: center;
+  background: #fef2f2;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid #ef4444;
 }
 
-@media (max-width: 1024px) {
-  .hero-container { flex-direction: column; text-align: center; padding: 40px 20px; }
-  .login-section { justify-content: center; width: 100%; }
-  .slogan { font-size: 48px; }
-  .top-right-actions { display: none; }
-  .navbar { padding: 30px; justify-content: center; }
+.auth-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.auth-footer p {
+  color: #ccc;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .auth-container {
+    width: 95%;
+    flex-direction: column;
+  }
+  .auth-info-pane {
+    padding: 30px;
+  }
+  .auth-features {
+    display: none; /* Simplificar en móviles */
+  }
+  .auth-form-pane {
+    padding: 40px 30px;
+  }
 }

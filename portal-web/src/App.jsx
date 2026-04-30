@@ -35,39 +35,69 @@ const Icon = ({ name, size = 16 }) => {
 
 // ─── Sidebar ──────────────────────────────────────────────────
 function Sidebar() {
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-logo">
+        <span>Routing</span>
+      </div>
+      <div className="sidebar-subtitle">GESTIÓN PRINCIPAL</div>
+      <ul className="sidebar-nav">
+        <li><NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard"/>Home</NavLink></li>
+        <li><NavLink to="/map" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map"/>Mapa</NavLink></li>
+        <li><NavLink to="/clientes" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="clients"/>Clientes</NavLink></li>
+        <li><NavLink to="/workers" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers"/>Workers</NavLink></li>
+      </ul>
+
+      <div className="sidebar-subtitle">OPERACIONES</div>
+      <ul className="sidebar-nav">
+        <li><NavLink to="/rutas" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="routes"/>Rutas</NavLink></li>
+        <li><NavLink to="/asistencia" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance"/>Asistencia</NavLink></li>
+        <li><NavLink to="/stats" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map"/>Stats</NavLink></li>
+        <li><NavLink to="/ciclos" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="cycles"/>Ciclos</NavLink></li>
+      </ul>
+    </aside>
+  );
+}
+
+// ─── Topbar & Profile ─────────────────────────────────────────
+function Topbar({ title }) {
   const { user, logout } = useContext(AuthContext);
+  const [showMenu, setShowMenu] = React.useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        🛵 <span>Ruta</span>Zero
+    <header className="topbar">
+      <div className="topbar-left">
+        <span className="topbar-title">{title}</span>
       </div>
-      <ul className="sidebar-nav">
-        <li><NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard"/>Dashboard</NavLink></li>
-        <li><NavLink to="/map" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map"/>Mapa</NavLink></li>
-        <li><NavLink to="/clientes" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="clients"/>Clientes</NavLink></li>
-        <li><NavLink to="/workers" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers"/>Workers</NavLink></li>
-        <li><NavLink to="/rutas" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="routes"/>Rutas</NavLink></li>
-        <li><NavLink to="/asistencia" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance"/>Asistencia</NavLink></li>
-        <li><NavLink to="/stats" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard"/>Stats</NavLink></li>
-        <li><NavLink to="/ciclos" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="cycles"/>Ciclos</NavLink></li>
-      </ul>
-      <div className="sidebar-bottom">
-        <div className="sidebar-user">
-          <div className="sidebar-avatar">{user?.nombres?.[0]?.toUpperCase() || 'A'}</div>
-          <div className="sidebar-user-info">
-            <div className="sidebar-user-name">{user?.nombres} {user?.apellidos}</div>
-            <div className="sidebar-user-role">{user?.rol}</div>
-          </div>
+      
+      <div className="topbar-right">
+        <ThemeToggle />
+        
+        <div className="profile-container">
+          <button className="profile-trigger" onClick={() => setShowMenu(!showMenu)}>
+            <div className="avatar-small">
+              {user?.nombres?.[0]?.toUpperCase()}
+            </div>
+          </button>
+
+          {showMenu && (
+            <div className="profile-dropdown">
+              <div className="dropdown-header">
+                <p className="user-name-full">{user?.nombres} {user?.apellidos}</p>
+                <p className="user-role-tag">{user?.rol}</p>
+              </div>
+              <button className="dropdown-item logout" onClick={handleLogout}>
+                <Icon name="logout"/>
+                <span>Cerrar sesión</span>
+              </button>
+            </div>
+          )}
         </div>
-        <button onClick={handleLogout} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',background:'none',border:'none',color:'var(--c-muted)',cursor:'pointer',width:'100%',borderRadius:6,marginTop:4,fontSize:13}}>
-          <Icon name="logout"/>Cerrar sesión
-        </button>
       </div>
-    </aside>
+    </header>
   );
 }
 
@@ -92,13 +122,10 @@ function ThemeToggle() {
 function AppLayout({ children, title }) {
   return (
     <div className="app-shell">
-      <div className="grid-bg" aria-hidden="true" />
       <Sidebar />
       <div className="main-area">
-        <header className="topbar">
-          <span className="topbar-title">{title}</span>
-          <ThemeToggle />
-        </header>
+        <div className="grid-bg" aria-hidden="true" />
+        <Topbar title={title} />
         <main className="page-content">{children}</main>
       </div>
     </div>
@@ -118,7 +145,7 @@ export default function App() {
       <NotificationCenter />
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<ProtectedRoute title="Dashboard"><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute title="Home"><Dashboard /></ProtectedRoute>} />
         <Route path="/map" element={<ProtectedRoute title="Mapa de Clientes"><MapPage /></ProtectedRoute>} />
         <Route path="/clientes" element={<ProtectedRoute title="Clientes"><Clientes /></ProtectedRoute>} />
         <Route path="/workers" element={<ProtectedRoute title="Workers"><Workers /></ProtectedRoute>} />

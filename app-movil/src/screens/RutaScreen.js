@@ -13,45 +13,67 @@ const RutaScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
+    const { getDayData, logConnectionStatus } = require('../services/OfflineService');
+    const { addEventListener } = require('@react-native-community/netinfo');
+    
+    // Check connection
+    const net = await require('@react-native-community/netinfo').fetch();
+    const isOnline = net.isConnected;
+
     try {
+      if (!isOnline) {
+        const localData = await getDayData();
+        if (localData) {
+          setJornadaEstado(localData.journey?.estado_jornada);
+          processRutas(localData.rutas || []);
+        }
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
       const [resWorker, resRutas] = await Promise.all([
         api.get(`/api/workers/${user.id}`),
         api.get('/api/workers/me/ruta')
       ]);
       setJornadaEstado(resWorker.data.data.estado_jornada);
-      
-      const rawData = resRutas.data.data || [];
-      const groups = rawData.reduce((acc, item) => {
-        const key = item.ruta_id;
-        if (!key) return acc;
-
-        if (!acc[key]) {
-          acc[key] = {
-            id: key,
-            nombre: item.ruta_nombre || 'Ruta General',
-            fecha: item.fecha_asignacion,
-            clientes: [],
-            visitados: 0
-          };
-        }
-
-        if (item.cliente_id) {
-          acc[key].clientes.push(item);
-          if (item.cliente_estado && item.cliente_estado !== 'LIBRE') {
-            acc[key].visitados++;
-          }
-        }
-        return acc;
-      }, {});
-
-      setGroupedRutas(Object.values(groups));
+      processRutas(resRutas.data.data || []);
     } catch (e) {
       console.log('[Ruta] Error fetching routes', e);
+      const localData = await getDayData();
+      if (localData) {
+        setJornadaEstado(localData.journey?.estado_jornada);
+        processRutas(localData.rutas || []);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [api, user]);
+
+  const processRutas = (rawData) => {
+    const groups = rawData.reduce((acc, item) => {
+      const key = item.ruta_id;
+      if (!key) return acc;
+      if (!acc[key]) {
+        acc[key] = {
+          id: key,
+          nombre: item.ruta_nombre || 'Ruta General',
+          fecha: item.fecha_asignacion,
+          clientes: [],
+          visitados: 0
+        };
+      }
+      if (item.cliente_id) {
+        acc[key].clientes.push(item);
+        if (item.cliente_estado && item.cliente_estado !== 'LIBRE') {
+          acc[key].visitados++;
+        }
+      }
+      return acc;
+    }, {});
+    setGroupedRutas(Object.values(groups));
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -60,7 +82,8 @@ const RutaScreen = ({ navigation }) => {
     }, [fetchData])
   );
 
-  const puedeTrabajar = jornadaEstado === 'JORNADA_INICIADA' || jornadaEstado === 'EN_REFRIGERIO';
+  const enRefrigerio = jornadaEstado === 'EN_REFRIGERIO';
+  const puedeTrabajar = jornadaEstado === 'JORNADA_INICIADA';
   const finalizado = jornadaEstado === 'JORNADA_FINALIZADA';
 
   const renderRutaCard = ({ item }) => {
@@ -116,11 +139,27 @@ const RutaScreen = ({ navigation }) => {
 
       {loading ? (
         <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
-      ) : !jornadaEstado || finalizado ? (
+      ) : !jornadaEstado || finalizado || enRefrigerio ? (
         <View style={styles.lockBanner}>
-          <Ionicons name="lock-closed" size={50} color="#cbd5e1" />
-          <Text style={styles.lockTitle}>Jornada no iniciada</Text>
-          <Text style={styles.lockSub}>Ve a Clientes e INICIA DÍA para ver tus rutas.</Text>
+          <Ionicons 
+            name={enRefrigerio ? "restaurant" : "lock-closed"} 
+            size={50} 
+            color={enRefrigerio ? "#f59e0b" : "#cbd5e1"} 
+          />
+          <Text style={styles.lockTitle}>{enRefrigerio ? "En hora de almuerzo" : "Jornada no iniciada"}</Text>
+          <Text style={styles.lockSub}>
+            {enRefrigerio 
+              ? "Tu jornada está pausada. Vuelve a Clientes para finalizar tu almuerzo."
+              : "Ve a Clientes e INICIA DÍA para ver tus rutas."}
+          </Text>
+          {!enRefrigerio && (
+            <TouchableOpacity 
+              style={styles.lockBtn} 
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={styles.lockBtnText}>IR A CLIENTES</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -179,6 +218,12 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 10, fontWeight: 'bold', color: '#3b82f6' },
   emptyBox: { marginTop: 100, alignItems: 'center' },
   emptyText: { color: '#94a3b8', marginTop: 15, fontSize: 16, fontWeight: '600' },
+  // Lock banner styles
+  lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, gap: 12 },
+  lockTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
+  lockSub: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 },
+  lockBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16, marginTop: 16, elevation: 3 },
+  lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   // BARRA INFERIOR
   tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
   tabItem: { alignItems: 'center' },

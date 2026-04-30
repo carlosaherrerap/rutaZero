@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
 
     // Obtener datos
     const dataQuery = `
-      SELECT c.*, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
+      SELECT c.*, c.dias_retraso as dias_atraso, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
              u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
@@ -96,7 +96,7 @@ router.get('/mapa', async (req, res) => {
     const { fecha_pago, tipo_gestion, en_ruta } = req.query;
 
     let queryClientes = `
-      SELECT DISTINCT c.id, c.nombres, c.apellidos, c.estado, c.deuda_total, c.fecha_pago,
+      SELECT DISTINCT c.id, c.nombres, c.apellidos, c.estado, c.deuda_total, c.fecha_pago, c.dias_retraso as dias_atraso,
              ub.latitud, ub.longitud, ub.direccion, ub.distrito, 
              c.bloqueado_por as worker_id
       FROM clientes c

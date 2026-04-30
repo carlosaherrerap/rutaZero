@@ -7,6 +7,8 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { AuthContext } from '../context/AuthContext.jsx';
 
+import pinmanIcon from '../assets/PINMAN.png';
+
 // Fix Leaflet default icon in Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -71,18 +73,11 @@ export default function MapPage() {
     });
   };
 
-  const workerIcon = L.divIcon({
-    className: 'worker-div-icon',
-    html: `
-      <div style="position: relative; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center;">
-        <svg viewBox="0 0 24 24" width="32" height="32" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-          <path fill="var(--c-text)" stroke="var(--c-on-primary)" stroke-width="1.5" d="M12 0C7.58 0 4 3.58 4 8c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8z"/>
-          <path fill="var(--c-on-primary)" d="M12 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-4 8a4 4 0 0 1 8 0v1H8v-1z" />
-        </svg>
-      </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+  const workerIcon = L.icon({
+    iconUrl: pinmanIcon,
+    iconSize: [45, 45],
+    iconAnchor: [22, 45],
+    popupAnchor: [0, -45]
   });
 
   const center = [-12.0464, -77.0428];

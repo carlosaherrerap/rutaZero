@@ -63,11 +63,11 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <section className="dashboard-hero card">
         <div className="hero-left">
-          <h1>Bienvenido de nuevo</h1>
-          <p className="muted">Resumen rápido de operaciones y estado de rutas.</p>
+          <h1 style={{ fontFamily: 'Serimi, sans-serif', fontSize: '42px', letterSpacing: '-1px' }}>Bienvenido de nuevo</h1>
+          <p className="muted">Resumen rápido de operaciones y estado de rutas en Routing.</p>
           <div style={{display:'flex',gap:12,marginTop:12}}>
-            <button className="btn btn-primary">Crear ruta</button>
-            <button className="btn btn-ghost">Ver equipos</button>
+            <button className="btn btn-primary" onClick={() => window.location.href='/rutas'}>Crear ruta</button>
+            <button className="btn btn-ghost" onClick={() => window.location.href='/ciclos'}>Ver Ciclos</button>
           </div>
         </div>
         <div className="hero-right">

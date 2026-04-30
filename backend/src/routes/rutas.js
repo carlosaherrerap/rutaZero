@@ -16,7 +16,8 @@ router.get('/', async (req, res) => {
     if (req.user.rol === 'ADMIN') {
       query = `SELECT r.*, 
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
-                      adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido
+                      adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido,
+                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids
                FROM rutas r
                LEFT JOIN usuarios u ON u.id = r.worker_id
                LEFT JOIN usuarios adm ON adm.id = r.creado_por
@@ -25,7 +26,8 @@ router.get('/', async (req, res) => {
     } else {
       query = `SELECT r.*, 
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
-                      adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido
+                      adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido,
+                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids
                FROM rutas r
                LEFT JOIN usuarios u ON u.id = r.worker_id
                LEFT JOIN usuarios adm ON adm.id = r.creado_por
@@ -84,7 +86,7 @@ router.get('/:id', async (req, res) => {
     // Obtener clientes de la ruta
     const clientesResult = await db.query(
       `SELECT rc.orden, c.id, c.nombres, c.apellidos, c.dni, c.estado,
-              c.fecha_pago, c.deuda_total, c.dias_retraso,
+              c.fecha_pago, c.deuda_total, c.dias_retraso as dias_atraso,
               ub.latitud, ub.longitud, ub.direccion, ub.distrito,
               bw.nombres AS bloqueado_por_nombre
        FROM ruta_clientes rc
@@ -168,6 +170,50 @@ router.delete('/:id', adminOnly, async (req, res) => {
   } catch (err) {
     console.error('Error al eliminar ruta:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * PATCH /api/rutas/:id
+ * Actualiza una ruta (nombre, worker, clientes)
+ */
+router.patch('/:id', adminOnly, async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    const { nombre, worker_id, cliente_ids } = req.body;
+    const rutaId = req.params.id;
+
+    await client.query('BEGIN');
+
+    // Actualizar datos base
+    await client.query(
+      `UPDATE rutas SET
+        nombre = COALESCE($1, nombre),
+        worker_id = COALESCE($2, worker_id),
+        total_clientes = COALESCE($3, total_clientes)
+       WHERE id = $4`,
+      [nombre, worker_id, cliente_ids ? cliente_ids.length : null, rutaId]
+    );
+
+    // Si se envían nuevos cliente_ids, reemplazamos la lista
+    if (cliente_ids && Array.isArray(cliente_ids)) {
+      await client.query('DELETE FROM ruta_clientes WHERE ruta_id = $1', [rutaId]);
+      for (let i = 0; i < cliente_ids.length; i++) {
+        await client.query(
+          'INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES ($1, $2, $3)',
+          [rutaId, cliente_ids[i], i + 1]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ message: 'Ruta actualizada correctamente' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error al actualizar ruta:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  } finally {
+    client.release();
   }
 });
 

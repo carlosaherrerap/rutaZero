@@ -43,6 +43,22 @@ export default function Workers() {
     }
   };
 
+  const [editingWorker, setEditingWorker] = useState(null);
+
+  const handleEditWorker = async (e) => {
+    e.preventDefault();
+    setCreating(true);
+    try {
+      await api.patch(`/api/workers/${editingWorker.id}`, editingWorker);
+      setEditingWorker(null);
+      fetchWorkers();
+    } catch (e) {
+      alert('Error: ' + (e.response?.data?.error || e.message));
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div>
       <div className="filter-bar">
@@ -107,13 +123,65 @@ export default function Workers() {
                   </span>
                 </td>
                 <td>
-                  <button className="btn btn-ghost btn-sm">Editar</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditingWorker(w)}>Editar</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* MODAL EDITAR */}
+      {editingWorker && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <span className="modal-title">Editar Worker: {editingWorker.username}</span>
+              <button className="btn-ghost btn-sm" onClick={() => setEditingWorker(null)}>✕</button>
+            </div>
+            <form onSubmit={handleEditWorker}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label className="form-label">Estado de Cuenta</label>
+                  <select 
+                    className="form-input" 
+                    value={editingWorker.estado} 
+                    onChange={e => setEditingWorker({...editingWorker, estado: e.target.value})}
+                  >
+                    <option value="ACTIVO">ACTIVO (Permitir ingreso)</option>
+                    <option value="INACTIVO">INACTIVO (Bloquear ingreso)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Nueva Contraseña (Dejar vacío para no cambiar)</label>
+                  <input 
+                    className="form-input" 
+                    type="password" 
+                    placeholder="Sét nueva contraseña..."
+                    onChange={e => setEditingWorker({...editingWorker, password: e.target.value})} 
+                  />
+                </div>
+                <div className="form-row form-row-2">
+                  <div className="form-group">
+                    <label className="form-label">Nombres</label>
+                    <input className="form-input" value={editingWorker.nombres} onChange={e => setEditingWorker({...editingWorker, nombres: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Apellidos</label>
+                    <input className="form-input" value={editingWorker.apellidos} onChange={e => setEditingWorker({...editingWorker, apellidos: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-ghost" onClick={() => setEditingWorker(null)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={creating}>
+                  {creating ? 'Guardando...' : 'Actualizar Worker'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay">

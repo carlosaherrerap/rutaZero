@@ -9,6 +9,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'rutazero_2026',
 });
 
+// Forzar zona horaria local en cada cliente del pool
+pool.on('connect', (client) => {
+  client.query("SET timezone = 'America/Lima'");
+});
+
 // Test connection
 pool.query('SELECT NOW()')
   .then(() => console.log('✅ PostgreSQL conectado'))

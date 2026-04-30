@@ -145,7 +145,13 @@ router.post('/', adminOnly, async (req, res) => {
  */
 router.patch('/:id', adminOnly, async (req, res) => {
   try {
-    const { nombres, apellidos, telefono, email, estado } = req.body;
+    const { nombres, apellidos, telefono, email, estado, password } = req.body;
+    const bcrypt = require('bcryptjs');
+
+    let password_hash = undefined;
+    if (password) {
+      password_hash = await bcrypt.hash(password, 10);
+    }
 
     const { rows } = await db.query(
       `UPDATE usuarios SET
@@ -153,10 +159,11 @@ router.patch('/:id', adminOnly, async (req, res) => {
         apellidos = COALESCE($2, apellidos),
         telefono = COALESCE($3, telefono),
         email = COALESCE($4, email),
-        estado = COALESCE($5, estado)
-       WHERE id = $6 AND rol = 'WORKER'
+        estado = COALESCE($5, estado),
+        password_hash = COALESCE($6, password_hash)
+       WHERE id = $7 AND rol = 'WORKER'
        RETURNING id, username, nombres, apellidos, estado`,
-      [nombres, apellidos, telefono, email, estado, req.params.id]
+      [nombres, apellidos, telefono, email, estado, password_hash, req.params.id]
     );
 
     if (rows.length === 0) {

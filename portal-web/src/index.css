@@ -1,59 +1,50 @@
-/* ============================================================
-   RUTA ZERO — Portal Web Design System
-   ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Inter:wght@400;600&display=swap');
+@font-face {
+  font-family: 'Serimi';
+  src: url('./assets/tipografia/SERIMI.ttf') format('truetype');
+}
 
-/* ─── Tokens (Scandinavian light) ───────────────────────── */
+/* ─── Tokens (Routing Dark Theme) ───────────────────────── */
 :root {
-  --c-bg:         #F7F8F9; /* warm off-white */
-  --c-surface:    #FFFFFF;
-  --c-surface-2:  #F1F3F5;
-  --c-border:     rgba(16,24,32,0.06);
-  --c-primary:    #2B8A9B; /* soft teal */
-  --c-primary-h:  #236f7a;
-  --c-accent:     #F2B880; /* warm accent */
+  --c-bg:         #1E232F; /* Deep navy background */
+  --c-surface:    #252b3b; /* Slightly lighter navy for cards */
+  --c-surface-2:  #2d3548; /* For hover states/sidebar */
+  --c-border:     rgba(255,255,255,0.06);
+  --c-primary:    #00A9BC; /* Brand color */
+  --c-primary-h:  #008CA0;
+  --c-accent:     #F2B880;
   --c-warn:       #f59e0b;
   --c-danger:     #ef4444;
   --c-success:    #10b981;
   --c-info:       #3b82f6;
   --c-on-primary: #ffffff;
-  --c-text:       #0f1724; /* charcoal */
-  --c-muted:      #6b7280;
-  --c-muted-2:    #9ca3af;
+  --c-text:       #e2e8f0; /* Soft white text */
+  --c-muted:      #94a3b8; /* Slate muted text */
+  --c-muted-2:    #64748b;
 
   --radius-sm:    8px;
-  --radius:       12px;
-  --radius-lg:    20px;
+  --radius:       14px;
+  --radius-lg:    24px;
 
-  --shadow:       0 6px 18px rgba(16,24,32,0.06);
-  --shadow-lg:    0 20px 40px rgba(16,24,32,0.08);
+  --shadow:       0 10px 30px rgba(0,0,0,0.3);
+  --shadow-lg:    0 20px 60px rgba(0,0,0,0.5);
 
-  --transition:   0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition:   0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  --sidebar-w:    260px;
-  --topbar-h:     64px;
-
-  /* Glass Utilities */
-  --glass-bg:     rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(16,24,32,0.04);
-  --glass-blur:   blur(8px);
+  --sidebar-w:    280px;
+  --topbar-h:     70px;
 }
 
-/* ─── Dark mode tokens (applied when [data-theme="dark"]) ─── */
+/* Fallback para light mode si existe, pero forzamos dark vibe */
+[data-theme="light"] {
+  --c-bg:         #1E232F;
+  --c-surface:    #252b3b;
+  --c-surface-2:  #2d3548;
+}
+
 [data-theme="dark"] {
-  --c-bg:         #0b0d0f;
-  --c-surface:    #0f1316;
-  --c-surface-2:  #14171a;
-  --c-border:     rgba(255,255,255,0.04);
-  --c-primary:    #00a9bc;
-  --c-primary-h:  #008ca0;
-  --c-accent:     #2b8a9b;
-  --c-success:    #10b981;
-  --c-info:       #3b82f6;
-  --c-on-primary: #ffffff;
-  --c-text:       #e6eef0;
-  --c-muted:      #9ca3af;
-  --grid-line:    rgba(255,255,255,0.03);
+  --c-bg:         #0f172a; /* Even darker for dark mode */
+  --c-surface:    #1e293b;
+  --c-surface-2:  #334155;
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
