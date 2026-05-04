@@ -21,59 +21,91 @@ CREATE EXTENSION IF NOT EXISTS "postgis";
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Estado visible en el mapa y en la app
-CREATE TYPE estado_cliente AS ENUM (
-    'LIBRE',            -- 🔵 Disponible para asignación
-    'EN_VISITA',        -- 🟣 Worker en camino / visitando
-    'VISITADO_PAGO',    -- 🟢 Ficha completada (PAGO)
-    'REPROGRAMADO',     -- 🟡 Se reprogramará la visita
-    'NO_ENCONTRADO'     -- 🔴 No se encontró al cliente
-);
+DO $$ BEGIN
+    CREATE TYPE estado_cliente AS ENUM (
+        'LIBRE',            -- 🔵 Disponible para asignación
+        'EN_VISITA',        -- 🟣 Worker en camino / visitando
+        'VISITADO_PAGO',    -- 🟢 Ficha completada (PAGO)
+        'REPROGRAMADO',     -- 🟡 Se reprogramará la visita
+        'NO_ENCONTRADO'     -- 🔴 No se encontró al cliente
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Estado interno de la ficha de gestión
-CREATE TYPE estado_ficha AS ENUM (
-    'SIN_DATOS',        -- Nunca se abrió
-    'EN_PROCESO',       -- Se abrió pero no se completó
-    'COMPLETADA'        -- Guardada exitosamente
-);
+DO $$ BEGIN
+    CREATE TYPE estado_ficha AS ENUM (
+        'SIN_DATOS',        -- Nunca se abrió
+        'EN_PROCESO',       -- Se abrió pero no se completó
+        'COMPLETADA'        -- Guardada exitosamente
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Condición contable del cliente
-CREATE TYPE condicion_contable AS ENUM (
-    'MOROSO',
-    'RESPONSABLE'
-);
+DO $$ BEGIN
+    CREATE TYPE condicion_contable AS ENUM (
+        'MOROSO',
+        'RESPONSABLE'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Estado de cuenta del worker
-CREATE TYPE estado_worker AS ENUM (
-    'ACTIVO',
-    'INACTIVO'
-);
+DO $$ BEGIN
+    CREATE TYPE estado_worker AS ENUM (
+        'ACTIVO',
+        'INACTIVO'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Estado de la jornada laboral diaria
-CREATE TYPE estado_jornada AS ENUM (
-    'INACTIVO',
-    'JORNADA_INICIADA',
-    'EN_REFRIGERIO',
-    'JORNADA_FINALIZADA'
-);
+DO $$ BEGIN
+    CREATE TYPE estado_jornada AS ENUM (
+        'INACTIVO',
+        'JORNADA_INICIADA',
+        'EN_REFRIGERIO',
+        'JORNADA_FINALIZADA'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Resultado de la gestión (tipificación)
-CREATE TYPE tipificacion_gestion AS ENUM (
-    'PAGO',
-    'REPROGRAMARA',
-    'NO_ENCONTRADO'
-);
+DO $$ BEGIN
+    CREATE TYPE tipificacion_gestion AS ENUM (
+        'PAGO',
+        'REPROGRAMARA',
+        'NO_ENCONTRADO'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Tipos de alerta entre workers
-CREATE TYPE tipo_alerta AS ENUM (
-    'CERCANIA',
-    'CLIENTE_REGISTRADO'
-);
+DO $$ BEGIN
+    CREATE TYPE tipo_alerta AS ENUM (
+        'CERCANIA',
+        'CLIENTE_REGISTRADO'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Roles del sistema
-CREATE TYPE rol_usuario AS ENUM (
-    'ADMIN',
-    'WORKER'
-);
+DO $$ BEGIN
+    CREATE TYPE rol_usuario AS ENUM (
+        'ADMIN',
+        'WORKER'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 2. FUNCIÓN UTILITARIA: auto-actualizar updated_at
@@ -91,7 +123,7 @@ $$ LANGUAGE plpgsql;
 -- 3. TABLA: ubicaciones
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE ubicaciones (
+CREATE TABLE IF NOT EXISTS ubicaciones (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     latitud         DOUBLE PRECISION NOT NULL,
     longitud        DOUBLE PRECISION NOT NULL,
@@ -125,7 +157,7 @@ CREATE INDEX idx_ubicaciones_distrito ON ubicaciones (departamento, provincia, d
 -- 4. TABLA: usuarios (admin + workers unificados)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username        VARCHAR(100) UNIQUE NOT NULL,
     password_hash   TEXT NOT NULL,
@@ -150,6 +182,7 @@ CREATE TABLE usuarios (
 CREATE INDEX idx_usuarios_rol    ON usuarios (rol);
 CREATE INDEX idx_usuarios_estado ON usuarios (estado);
 
+DROP TRIGGER IF EXISTS trg_update_usuarios ON usuarios;
 CREATE TRIGGER trg_update_usuarios
     BEFORE UPDATE ON usuarios
     FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
@@ -158,7 +191,7 @@ CREATE TRIGGER trg_update_usuarios
 -- 5. TABLA: clientes
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE clientes (
+CREATE TABLE IF NOT EXISTS clientes (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
     nombres         VARCHAR(150) NOT NULL,
@@ -199,6 +232,7 @@ CREATE UNIQUE INDEX idx_un_cliente_en_visita_por_worker
     ON clientes (bloqueado_por)
     WHERE estado = 'EN_VISITA' AND bloqueado_por IS NOT NULL;
 
+DROP TRIGGER IF EXISTS trg_update_clientes ON clientes;
 CREATE TRIGGER trg_update_clientes
     BEFORE UPDATE ON clientes
     FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
@@ -207,7 +241,7 @@ CREATE TRIGGER trg_update_clientes
 -- 6. TABLA: rutas
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE rutas (
+CREATE TABLE IF NOT EXISTS rutas (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre          VARCHAR(200) NOT NULL,
     worker_id       UUID NOT NULL REFERENCES usuarios(id),
@@ -225,6 +259,7 @@ CREATE TABLE rutas (
 CREATE INDEX idx_rutas_worker ON rutas (worker_id);
 CREATE INDEX idx_rutas_fecha  ON rutas (fecha_asignacion);
 
+DROP TRIGGER IF EXISTS trg_update_rutas ON rutas;
 CREATE TRIGGER trg_update_rutas
     BEFORE UPDATE ON rutas
     FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
@@ -233,7 +268,7 @@ CREATE TRIGGER trg_update_rutas
 -- 7. TABLA: ruta_clientes (M:N entre rutas y clientes)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE ruta_clientes (
+CREATE TABLE IF NOT EXISTS ruta_clientes (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     ruta_id     UUID NOT NULL REFERENCES rutas(id) ON DELETE CASCADE,
     cliente_id  UUID NOT NULL REFERENCES clientes(id),
@@ -258,6 +293,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_ruta_clientes_count ON ruta_clientes;
 CREATE TRIGGER trg_ruta_clientes_count
     AFTER INSERT OR DELETE ON ruta_clientes
     FOR EACH ROW EXECUTE FUNCTION fn_actualizar_contadores_ruta();
@@ -266,7 +302,7 @@ CREATE TRIGGER trg_ruta_clientes_count
 -- 8. TABLA: fichas (formulario de gestión)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE fichas (
+CREATE TABLE IF NOT EXISTS fichas (
     id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     cliente_id              UUID NOT NULL REFERENCES clientes(id),
     worker_id               UUID NOT NULL REFERENCES usuarios(id),
@@ -304,6 +340,7 @@ CREATE INDEX idx_fichas_worker       ON fichas (worker_id);
 CREATE INDEX idx_fichas_estado       ON fichas (estado);
 CREATE INDEX idx_fichas_tipificacion ON fichas (tipificacion);
 
+DROP TRIGGER IF EXISTS trg_update_fichas ON fichas;
 CREATE TRIGGER trg_update_fichas
     BEFORE UPDATE ON fichas
     FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
@@ -312,7 +349,7 @@ CREATE TRIGGER trg_update_fichas
 -- 9. TABLA: evidencias (imágenes adjuntas a una ficha — máx. 5)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE evidencias (
+CREATE TABLE IF NOT EXISTS evidencias (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     ficha_id    UUID NOT NULL REFERENCES fichas(id) ON DELETE CASCADE,
     tipo        VARCHAR(20) NOT NULL DEFAULT 'imagen',
@@ -334,6 +371,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_max_evidencias ON evidencias;
 CREATE TRIGGER trg_max_evidencias
     BEFORE INSERT ON evidencias
     FOR EACH ROW EXECUTE FUNCTION fn_validar_max_evidencias();
@@ -342,7 +380,7 @@ CREATE TRIGGER trg_max_evidencias
 -- 10. TABLA: gestiones_historial (auditoría completa de gestiones)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE gestiones_historial (
+CREATE TABLE IF NOT EXISTS gestiones_historial (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     cliente_id      UUID NOT NULL REFERENCES clientes(id),
     worker_id       UUID NOT NULL REFERENCES usuarios(id),
@@ -357,6 +395,7 @@ CREATE TABLE gestiones_historial (
     timestamp_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     observacion     TEXT,
+    es_offline      BOOLEAN DEFAULT FALSE,
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -369,7 +408,7 @@ CREATE INDEX idx_gestiones_tipificacion ON gestiones_historial (tipificacion);
 -- 11. TABLA: jornadas (control de asistencia laboral diaria)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE jornadas (
+CREATE TABLE IF NOT EXISTS jornadas (
     id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     worker_id            UUID NOT NULL REFERENCES usuarios(id),
     fecha                DATE NOT NULL DEFAULT CURRENT_DATE,
@@ -397,6 +436,7 @@ CREATE INDEX idx_jornadas_fecha        ON jornadas (fecha);
 CREATE INDEX idx_jornadas_validado     ON jornadas (validado);
 CREATE INDEX idx_jornadas_worker_fecha ON jornadas (worker_id, fecha);
 
+DROP TRIGGER IF EXISTS trg_update_jornadas ON jornadas;
 CREATE TRIGGER trg_update_jornadas
     BEFORE UPDATE ON jornadas
     FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
@@ -405,7 +445,7 @@ CREATE TRIGGER trg_update_jornadas
 -- 12. TABLA: alertas (notificaciones entre workers)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE alertas (
+CREATE TABLE IF NOT EXISTS alertas (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tipo        tipo_alerta NOT NULL,
     emisor_id   UUID NOT NULL REFERENCES usuarios(id),
@@ -423,7 +463,7 @@ CREATE INDEX idx_alertas_tipo     ON alertas (tipo);
 -- 13. TABLA: sync_queue (cola de sincronización offline → online)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE sync_queue (
+CREATE TABLE IF NOT EXISTS sync_queue (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     worker_id       UUID NOT NULL REFERENCES usuarios(id),
     tabla_destino   VARCHAR(100) NOT NULL,
@@ -442,7 +482,7 @@ CREATE INDEX idx_sync_worker    ON sync_queue (worker_id);
 -- 14. TABLA: monitoreo_acciones (trazabilidad granular de campo)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE monitoreo_acciones (
+CREATE TABLE IF NOT EXISTS monitoreo_acciones (
     id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     worker_id   UUID NOT NULL REFERENCES usuarios(id),
     cliente_id  UUID REFERENCES clientes(id),
@@ -468,7 +508,7 @@ CREATE INDEX idx_monitoreo_timestamp ON monitoreo_acciones (timestamp_at DESC);
 -- 15. TABLA: ubicaciones_worker_tracking (GPS en tiempo real)
 -- ────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE ubicaciones_worker_tracking (
+CREATE TABLE IF NOT EXISTS ubicaciones_worker_tracking (
     id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     worker_id    UUID NOT NULL REFERENCES usuarios(id),
     latitud      DOUBLE PRECISION NOT NULL,

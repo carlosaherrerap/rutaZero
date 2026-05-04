@@ -1,7 +1,7 @@
 {
   "name": "rutazero-backend",
   "version": "1.0.0",
-  "description": "Ruta Zero - API Backend",
+  "description": "Routing - API Backend",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

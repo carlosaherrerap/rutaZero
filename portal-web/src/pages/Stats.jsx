@@ -52,6 +52,8 @@ export default function Stats() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState(null);
+  const [routePolyline, setRoutePolyline] = useState([]);
+  const [routeMode, setRouteMode] = useState('foot'); // 'foot' or 'bike'
 
   useEffect(() => {
     fetchWorkers();
@@ -75,7 +77,30 @@ export default function Stats() {
       const res = await api.get(`/api/stats/worker/${selectedWorker}?fecha=${fecha}`);
       setStats(res.data.data);
     } catch (e) { console.error(e); }
-    finally { setLoading(false); setSelectedSegment(null); }
+    finally { setLoading(false); setSelectedSegment(null); setRoutePolyline([]); }
+  };
+
+  // Fetch real walking/cycling route from OSRM public API
+  const fetchOsrmRoute = async (segment) => {
+    const validPoints = segment.puntos.filter(p => p.lat && p.lng && !isNaN(parseFloat(p.lat)));
+    if (validPoints.length < 2) { setRoutePolyline([]); return; }
+    // Use only first and last point (origin → destination)
+    const [origin, dest] = [validPoints[0], validPoints[validPoints.length - 1]];
+    const profile = routeMode === 'bike' ? 'bike' : 'foot';
+    try {
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.routes && data.routes[0]) {
+        const coords = data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+        setRoutePolyline(coords);
+      } else {
+        setRoutePolyline([]);
+      }
+    } catch (e) {
+      console.warn('OSRM routing failed, using straight line', e);
+      setRoutePolyline([]);
+    }
   };
 
   const getPolylinePoints = () => {
@@ -109,7 +134,18 @@ export default function Stats() {
     ));
   };
 
+  // When segment is selected, fetch OSRM route
+  useEffect(() => {
+    if (selectedSegment !== null && stats?.segmentos[selectedSegment]) {
+      fetchOsrmRoute(stats.segmentos[selectedSegment]);
+    } else {
+      setRoutePolyline([]);
+    }
+  }, [selectedSegment, routeMode]);
+
   const polylinePoints = getPolylinePoints();
+  // Use real OSRM route if available, else fall back to straight line
+  const displayPolyline = routePolyline.length > 0 ? routePolyline : polylinePoints;
 
   return (
     <div className="stats-page" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -158,9 +194,15 @@ export default function Stats() {
             
             {stats && (
               <React.Fragment key={`${selectedWorker}-${fecha}-${selectedSegment}`}>
-                <MapBounds points={polylinePoints} />
-                {polylinePoints.length > 0 && (
-                  <Polyline positions={polylinePoints} color="var(--c-primary)" weight={5} opacity={0.8} />
+                <MapBounds points={displayPolyline.length > 0 ? displayPolyline : polylinePoints} />
+                {displayPolyline.length > 0 && (
+                  <Polyline
+                    positions={displayPolyline}
+                    color={routePolyline.length > 0 ? '#10b981' : 'var(--c-primary)'}
+                    weight={5}
+                    opacity={0.85}
+                    dashArray={routePolyline.length > 0 ? undefined : '8 6'}
+                  />
                 )}
                 {getMarkers()}
               </React.Fragment>
@@ -192,11 +234,23 @@ export default function Stats() {
 
               {/* Segments List */}
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '800' }}>Trayectos</h3>
-                  {selectedSegment !== null && (
-                    <button onClick={() => setSelectedSegment(null)} style={{ fontSize: '12px', color: 'var(--c-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Ver Todo</button>
-                  )}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {selectedSegment !== null && (
+                      <>
+                        <select
+                          value={routeMode}
+                          onChange={e => setRouteMode(e.target.value)}
+                          style={{ fontSize: 11, padding: '4px 8px', borderRadius: 8, border: '1px solid var(--c-border)', background: 'var(--c-surface)', color: 'var(--c-text)', cursor: 'pointer' }}
+                        >
+                          <option value="foot">A pie</option>
+                          <option value="bike">Bicicleta</option>
+                        </select>
+                        <button onClick={() => setSelectedSegment(null)} style={{ fontSize: '12px', color: 'var(--c-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Ver Todo</button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 {stats.segmentos.length === 0 ? (

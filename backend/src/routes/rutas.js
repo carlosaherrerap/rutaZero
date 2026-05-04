@@ -14,20 +14,38 @@ router.get('/', async (req, res) => {
     let query, params;
 
     if (req.user.rol === 'ADMIN') {
-      query = `SELECT r.*, 
+      query = `SELECT r.id, r.nombre, r.worker_id, r.creado_por, r.total_clientes, r.fecha_asignacion, r.created_at,
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
                       adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido,
-                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids
+                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'LIBRE') as cant_libres,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'REPROGRAMADO') as cant_repro,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'EN_VISITA') as cant_visita,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'NO_ENCONTRADO') as cant_no_enc,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'VISITADO_PAGO') as cant_gest,
+                      CASE 
+                        WHEN (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado IN ('LIBRE', 'EN_VISITA')) = 0 THEN TRUE
+                        ELSE FALSE
+                      END AS completada
                FROM rutas r
                LEFT JOIN usuarios u ON u.id = r.worker_id
                LEFT JOIN usuarios adm ON adm.id = r.creado_por
                ORDER BY r.fecha_asignacion DESC, r.nombre`;
       params = [];
     } else {
-      query = `SELECT r.*, 
+      query = `SELECT r.id, r.nombre, r.worker_id, r.creado_por, r.total_clientes, r.fecha_asignacion, r.created_at,
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
                       adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido,
-                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids
+                      (SELECT json_agg(cliente_id) FROM ruta_clientes WHERE ruta_id = r.id) as client_ids,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'LIBRE') as cant_libres,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'REPROGRAMADO') as cant_repro,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'EN_VISITA') as cant_visita,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'NO_ENCONTRADO') as cant_no_enc,
+                      (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado = 'VISITADO_PAGO') as cant_gest,
+                      CASE 
+                        WHEN (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado IN ('LIBRE', 'EN_VISITA')) = 0 THEN TRUE
+                        ELSE FALSE
+                      END AS completada
                FROM rutas r
                LEFT JOIN usuarios u ON u.id = r.worker_id
                LEFT JOIN usuarios adm ON adm.id = r.creado_por
@@ -72,7 +90,12 @@ router.get('/:id', async (req, res) => {
   try {
     // Obtener ruta
     const rutaResult = await db.query(
-      `SELECT r.*, u.nombres AS worker_nombre, u.apellidos AS worker_apellido
+      `SELECT r.id, r.nombre, r.worker_id, r.creado_por, r.total_clientes, r.fecha_asignacion, r.created_at,
+              u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
+              CASE 
+                WHEN (SELECT COUNT(*) FROM ruta_clientes rc JOIN clientes c ON c.id = rc.cliente_id WHERE rc.ruta_id = r.id AND c.estado IN ('LIBRE', 'EN_VISITA')) = 0 THEN TRUE
+                ELSE FALSE
+              END AS completada
        FROM rutas r
        JOIN usuarios u ON u.id = r.worker_id
        WHERE r.id = $1`,

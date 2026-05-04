@@ -38,7 +38,7 @@ export default function LoginScreen() {
               <View style={styles.iconWrapper}>
                 <Ionicons name="map-outline" size={45} color="#fff" />
               </View>
-              <Text style={styles.logoTitle}>Ruta Zero</Text>
+              <Text style={styles.logoTitle}>Routing</Text>
               <Text style={styles.logoSub}>WORKER PORTAL</Text>
             </View>
 

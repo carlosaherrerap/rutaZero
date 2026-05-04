@@ -9,8 +9,9 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = !!token;
 
   // configure axios instance
+  const API_HOST = typeof window !== 'undefined' ? window.location.hostname : '192.168.1.69';
   const api = axios.create({
-    baseURL: 'http://192.168.1.69:4000',
+    baseURL: `http://${API_HOST}:4000`,
     headers: { Authorization: token ? `Bearer ${token}` : undefined },
   });
 

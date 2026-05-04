@@ -195,8 +195,8 @@ export default function AsistenciaScreen({ navigation }) {
               <View style={styles.jornadaRow}>
                 <View style={styles.jornadaItem}><Ionicons name="log-in-outline" size={14} color="#10b981" /><Text style={styles.jornadaVal}>{fmtHora(j.hora_inicio_sesion)}</Text></View>
                 <View style={styles.jornadaItem}><Ionicons name="restaurant-outline" size={14} color="#f59e0b" /><Text style={styles.jornadaVal}>{j.duracion_refrigerio_min ? fmtDuracion(j.duracion_refrigerio_min) : '—'}</Text></View>
-                <View style={styles.jornadaItem}><Ionicons name="log-out-outline" size={14} color="#ef4444" /><Text style={styles.jornadaVal}>{fmtHora(j.hora_fin_jornada)}</Text></View>
-                <View style={styles.jornadaItem}><Ionicons name="time-outline" size={14} color="#3b82f6" /><Text style={styles.jornadaVal}>{j.horas_trabajadas ? fmtDuracion(Math.round(j.horas_trabajadas * 60)) : '—'}</Text></View>
+                <View style={styles.jornadaItem}><Ionicons name="document-text-outline" size={14} color="#3b82f6" /><Text style={styles.jornadaVal}>{j.clientes_gestionados || 0} fichas</Text></View>
+                <View style={styles.jornadaItem}><Ionicons name="time-outline" size={14} color="#64748b" /><Text style={styles.jornadaVal}>{j.horas_trabajadas ? fmtDuracion(Math.round(j.horas_trabajadas * 60)) : '—'}</Text></View>
               </View>
             </View>
           ))}

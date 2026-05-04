@@ -1,5 +1,5 @@
 -- ============================================================================
--- 🌱 RUTA ZERO — SEED DATA
+-- 🌱 ROUTING — SEED DATA
 -- ============================================================================
 -- ~200 clientes distribuidos en distritos de Lima, Perú
 -- 5 workers de ejemplo
@@ -259,9 +259,7 @@ INSERT INTO ubicaciones (id, latitud, longitud, direccion, departamento, provinc
 ('b0000001-0001-0001-0001-000000000002', -12.0250, -76.9920, 'Av. Gran Chimú 420', 'Lima', 'Lima', 'San Juan de Lurigancho', 'Domicilio worker'),
 ('b0000001-0001-0001-0001-000000000003', -12.1400, -76.9900, 'Av. Primavera 800', 'Lima', 'Lima', 'Santiago de Surco', 'Domicilio worker'),
 ('b0000001-0001-0001-0001-000000000004', -12.1700, -77.0160, 'Av. Huaylas 1200', 'Lima', 'Lima', 'Chorrillos', 'Domicilio worker'),
-('b0000001-0001-0001-0001-000000000005', -11.9800, -77.0650, 'Av. Carlos Izaguirre 500', 'Lima', 'Lima', 'Los Olivos', 'Domicilio worker');
-
-
+('b0000001-0001-0001-0001-000000000005', -11.9800, -77.0650, 'Av. Carlos Izaguirre 500', 'Lima', 'Lima', 'Los Olivos', 'Domicilio worker') ON CONFLICT (id) DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 -- 2. USUARIOS (1 admin + 5 workers)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -269,16 +267,14 @@ INSERT INTO ubicaciones (id, latitud, longitud, direccion, departamento, provinc
 
 INSERT INTO usuarios (id, username, password_hash, rol, nombres, apellidos, dni, telefono, email, foto_perfil_url, ubicacion_id, estado) VALUES
 -- Admin
-('c0000001-0001-0001-0001-000000000001', 'admin', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'ADMIN', 'Carlos', 'Mendoza Ríos', '72345678', '999888001', 'admin@rutazero.pe', NULL, NULL, 'ACTIVO'),
+('c0000001-0001-0001-0001-000000000001', 'admin', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'ADMIN', 'Carlos', 'Mendoza Ríos', '72345678', '999888001', 'admin@rutazero.pe', NULL, NULL, 'ACTIVO'),
 
 -- Workers
-('c0000001-0001-0001-0002-000000000001', 'pedro.gutierrez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Pedro', 'Gutiérrez Vargas', '71234501', '999888101', 'pedro@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000001', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000002', 'daniel.flores', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Daniel', 'Flores Huamán', '71234502', '999888102', 'daniel@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000002', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000003', 'maria.lopez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'María', 'López Torres', '71234503', '999888103', 'maria@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000003', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000004', 'jose.ramirez', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'José', 'Ramírez Soto', '71234504', '999888104', 'jose@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000004', 'ACTIVO'),
-('c0000001-0001-0001-0002-000000000005', 'ana.castro', '$2a$10$gDadjW8OJaluuBD7.ii/kOOZTKylZgJR/r1r6vSqhGTE0nbZffoHe', 'WORKER', 'Ana', 'Castro Mejía', '71234505', '999888105', 'ana@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000005', 'ACTIVO');
-
-
+('c0000001-0001-0001-0002-000000000001', 'pedro.gutierrez', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'WORKER', 'Pedro', 'Gutiérrez Vargas', '71234501', '999888101', 'pedro@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000001', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000002', 'daniel.flores', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'WORKER', 'Daniel', 'Flores Huamán', '71234502', '999888102', 'daniel@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000002', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000003', 'maria.lopez', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'WORKER', 'María', 'López Torres', '71234503', '999888103', 'maria@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000003', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000004', 'jose.ramirez', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'WORKER', 'José', 'Ramírez Soto', '71234504', '999888104', 'jose@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000004', 'ACTIVO'),
+('c0000001-0001-0001-0002-000000000005', 'ana.castro', '$2a$10$Vw4esAytJgiF/N6wAeyjHOOCoIQ6rfAKghmJAnjcPLtVC/cKqDCBK', 'WORKER', 'Ana', 'Castro Mejía', '71234505', '999888105', 'ana@rutazero.pe', NULL, 'b0000001-0001-0001-0001-000000000005', 'ACTIVO') ON CONFLICT (id) DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 -- 3. CLIENTES (200 clientes en 20 distritos de Lima)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -522,9 +518,7 @@ INSERT INTO clientes (id, nombres, apellidos, dni, telefono, email, ubicacion_id
 ('d0000001-0001-0001-0020-000000000007', 'Magdaleno', 'Chura Condori', '42000007', '912000197', NULL, 'a0000001-0001-0001-0020-000000000007', 'LIBRE', '2026-04-23', 6100.00, 0, '2026-04-16'),
 ('d0000001-0001-0001-0020-000000000008', 'Obdulia', 'Apaza Ramos', '42000008', '912000198', NULL, 'a0000001-0001-0001-0020-000000000008', 'LIBRE', '2026-04-17', 3900.00, 9, '2026-04-16'),
 ('d0000001-0001-0001-0020-000000000009', 'Liberato', 'Mamani Flores', '42000009', '912000199', NULL, 'a0000001-0001-0001-0020-000000000009', 'LIBRE', '2026-04-29', 5400.00, 0, '2026-04-16'),
-('d0000001-0001-0001-0020-000000000010', 'Rosalía', 'Puma Huamán', '42000010', '912000200', NULL, 'a0000001-0001-0001-0020-000000000010', 'LIBRE', '2026-04-19', 2700.00, 7, '2026-04-16');
-
-
+('d0000001-0001-0001-0020-000000000010', 'Rosalía', 'Puma Huamán', '42000010', '912000200', NULL, 'a0000001-0001-0001-0020-000000000010', 'LIBRE', '2026-04-19', 2700.00, 7, '2026-04-16') ON CONFLICT (id) DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 -- 4. RUTAS DE EJEMPLO (3 rutas asignadas a workers)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -532,9 +526,7 @@ INSERT INTO clientes (id, nombres, apellidos, dni, telefono, email, ubicacion_id
 INSERT INTO rutas (id, nombre, worker_id, creado_por, total_clientes, fecha_asignacion) VALUES
 ('e0000001-0001-0001-0001-000000000001', 'Lima Sur - Miraflores/Barranco', 'c0000001-0001-0001-0002-000000000001', 'c0000001-0001-0001-0001-000000000001', 10, '2026-04-16'),
 ('e0000001-0001-0001-0001-000000000002', 'Lima Norte - Comas/Los Olivos', 'c0000001-0001-0001-0002-000000000002', 'c0000001-0001-0001-0001-000000000001', 10, '2026-04-16'),
-('e0000001-0001-0001-0001-000000000003', 'Lima Este - Ate/La Molina', 'c0000001-0001-0001-0002-000000000003', 'c0000001-0001-0001-0001-000000000001', 10, '2026-04-16');
-
-
+('e0000001-0001-0001-0001-000000000003', 'Lima Este - Ate/La Molina', 'c0000001-0001-0001-0002-000000000003', 'c0000001-0001-0001-0001-000000000001', 10, '2026-04-16') ON CONFLICT (id) DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 -- 5. RUTA_CLIENTES (clientes asignados a cada ruta)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -550,8 +542,7 @@ INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 ('e0000001-0001-0001-0001-000000000001', 'd0000001-0001-0001-0016-000000000002', 7),
 ('e0000001-0001-0001-0001-000000000001', 'd0000001-0001-0001-0016-000000000003', 8),
 ('e0000001-0001-0001-0001-000000000001', 'd0000001-0001-0001-0016-000000000004', 9),
-('e0000001-0001-0001-0001-000000000001', 'd0000001-0001-0001-0016-000000000005', 10);
-
+('e0000001-0001-0001-0001-000000000001', 'd0000001-0001-0001-0016-000000000005', 10) ON CONFLICT (id) DO NOTHING;
 -- Ruta 2: Daniel → Comas (5) + Los Olivos (5)
 INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 ('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0012-000000000001', 1),
@@ -563,8 +554,7 @@ INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 ('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0013-000000000002', 7),
 ('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0013-000000000003', 8),
 ('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0013-000000000004', 9),
-('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0013-000000000005', 10);
-
+('e0000001-0001-0001-0001-000000000002', 'd0000001-0001-0001-0013-000000000005', 10) ON CONFLICT (id) DO NOTHING;
 -- Ruta 3: María → Ate (5) + La Molina (5)
 INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 ('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0007-000000000001', 1),
@@ -576,9 +566,7 @@ INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 ('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0005-000000000002', 7),
 ('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0005-000000000003', 8),
 ('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0005-000000000004', 9),
-('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0005-000000000005', 10);
-
-
+('e0000001-0001-0001-0001-000000000003', 'd0000001-0001-0001-0005-000000000005', 10) ON CONFLICT (id) DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 -- 6. JORNADAS DE EJEMPLO (hoy)
 -- ────────────────────────────────────────────────────────────────────────────
@@ -586,9 +574,7 @@ INSERT INTO ruta_clientes (ruta_id, cliente_id, orden) VALUES
 INSERT INTO jornadas (worker_id, fecha, estado, hora_inicio_sesion) VALUES
 ('c0000001-0001-0001-0002-000000000001', '2026-04-16', 'JORNADA_INICIADA', '2026-04-16 08:00:00-05'),
 ('c0000001-0001-0001-0002-000000000002', '2026-04-16', 'JORNADA_INICIADA', '2026-04-16 08:15:00-05'),
-('c0000001-0001-0001-0002-000000000003', '2026-04-16', 'JORNADA_INICIADA', '2026-04-16 08:30:00-05');
-
-
+('c0000001-0001-0001-0002-000000000003', '2026-04-16', 'JORNADA_INICIADA', '2026-04-16 08:30:00-05') ON CONFLICT (id) DO NOTHING;
 -- ============================================================================
 -- RESUMEN DEL SEED:
 -- ============================================================================
@@ -2109,4 +2095,6 @@ INSERT INTO clientes (id, nombres, apellidos, dni, telefono, email, ubicacion_id
 ('e0000001-0001-0001-0000-000000001497', 'Jorge', 'Espinoza Perez', '45819455', '924383213', NULL, 'a0000001-0001-0001-0009-000000000002', 'LIBRE', '2026-05-08', 7260.94, 18, '2026-04-16'),
 ('e0000001-0001-0001-0000-000000001498', 'Miguel', 'Rios Rojas', '41007930', '918730005', NULL, 'a0000001-0001-0001-0013-000000000001', 'LIBRE', '2026-04-30', 5392.46, 15, '2026-04-16'),
 ('e0000001-0001-0001-0000-000000001499', 'Juan', 'Rios Vargas', '42323631', '972089408', NULL, 'a0000001-0001-0001-0015-000000000008', 'LIBRE', '2026-04-28', 1028.02, 24, '2026-04-16'),
-('e0000001-0001-0001-0000-000000001500', 'Carmen', 'Herrera Vargas', '45917885', '976190470', NULL, 'a0000001-0001-0001-0008-000000000006', 'LIBRE', '2026-05-05', 9787.24, 2, '2026-04-16');
+('e0000001-0001-0001-0000-000000001500', 'Carmen', 'Herrera Vargas', '45917885', '976190470', NULL, 'a0000001-0001-0001-0008-000000000006', 'LIBRE', '2026-05-05', 9787.24, 2, '2026-04-16')
+ON CONFLICT (id) DO NOTHING;
+

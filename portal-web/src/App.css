@@ -36,11 +36,12 @@
 }
 .sidebar-subtitle {
   padding: 24px 24px 8px 24px;
-  font-size: 10px;
-  font-weight: 800;
+  font-size: 9px;
+  font-weight: 900;
   color: var(--c-muted-2);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 2px;
+  opacity: 0.7;
 }
 .sidebar-nav {
   list-style: none;
@@ -78,6 +79,20 @@
   overflow: hidden;
   position: relative;
   background-color: var(--c-bg);
+}
+
+.grid-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .topbar {
@@ -131,19 +146,19 @@
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
-  width: 220px;
+  width: 240px;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: 16px;
-  box-shadow: var(--shadow-lg);
-  padding: 12px;
-  z-index: 1000;
-  animation: slideIn 0.2s ease-out;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  padding: 8px;
+  z-index: 9999;
+  animation: dropdownIn 0.2s ease-out;
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .dropdown-header {
@@ -202,7 +217,8 @@
   background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow);
 }
 .card-header {
   display: flex;

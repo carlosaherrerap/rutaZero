@@ -43,7 +43,7 @@ export default function NotificationCenter() {
   return (
     <div className="notification-container" style={{
       position: 'fixed',
-      bottom: '20px',
+      top: '20px',
       right: '24px',
       zIndex: 10000,
       display: 'flex',

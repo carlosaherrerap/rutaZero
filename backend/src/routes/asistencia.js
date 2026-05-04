@@ -107,16 +107,17 @@ router.get('/ciclos', async (req, res) => {
              c.deuda_total, c.dias_retraso, c.fecha_pago,
              ub.direccion, ub.distrito,
              u.nombres || ' ' || u.apellidos AS ultimo_worker,
-             gh.created_at AS fecha_gestion, gh.tipificacion
+             gh.created_at AS fecha_gestion, gh.tipificacion, gh.es_offline
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN LATERAL (
-        SELECT worker_id, created_at, tipificacion FROM gestiones_historial
+        SELECT worker_id, created_at, tipificacion, es_offline FROM gestiones_historial
         WHERE cliente_id = c.id ORDER BY created_at DESC LIMIT 1
       ) gh ON true
       LEFT JOIN usuarios u ON u.id = gh.worker_id
-      WHERE c.estado IN ('VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO')
-      ORDER BY gh.created_at DESC
+      WHERE (c.estado IN ('VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'))
+         OR (c.estado = 'LIBRE' AND c.fecha_pago < CURRENT_DATE)
+      ORDER BY gh.created_at DESC NULLS LAST, c.fecha_pago ASC
     `);
     res.json({ data: rows });
   } catch (err) {
@@ -274,19 +275,20 @@ router.get('/ciclos/export', async (req, res) => {
     const { rows } = await db.query(`
       SELECT 
         c.dni, c.nombres || ' ' || c.apellidos AS cliente, c.estado,
-        c.deuda_total, ub.distrito, gh.tipificacion, gh.created_at AS fecha_gestion
+        c.deuda_total, ub.distrito, gh.tipificacion, gh.created_at AS fecha_gestion, gh.es_offline
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN LATERAL (
-        SELECT tipificacion, created_at FROM gestiones_historial 
+        SELECT tipificacion, created_at, es_offline FROM gestiones_historial 
         WHERE cliente_id = c.id ORDER BY created_at DESC LIMIT 1
       ) gh ON true
-      WHERE c.estado IN ('VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO')
+      WHERE (c.estado IN ('VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'))
+         OR (c.estado = 'LIBRE' AND c.fecha_pago < CURRENT_DATE)
     `);
 
-    let csv = 'DNI,Cliente,Estado,Deuda,Distrito,Tipificacion,Fecha Gestion\n';
+    let csv = 'DNI,Cliente,Estado,Deuda,Distrito,Tipificacion,Fecha Gestion,Offline\n';
     rows.forEach(r => {
-      csv += `${r.dni},"${r.cliente}",${r.estado},${r.deuda_total},"${r.distrito}",${r.tipificacion},${r.fecha_gestion?.toISOString() || ''}\n`;
+      csv += `${r.dni},"${r.cliente}",${r.estado},${r.deuda_total},"${r.distrito}",${r.tipificacion},${r.fecha_gestion?.toISOString() || ''},${r.es_offline ? 'SI' : 'NO'}\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv');

@@ -11,7 +11,7 @@ router.use(authMiddleware);
  */
 router.get('/', async (req, res) => {
   try {
-    const { search, distrito, estado, worker_id, ruta_id } = req.query;
+    const { search, distrito, estado, worker_id, ruta_id, fecha_pago } = req.query;
     const pageNum = parseInt(req.query.page) || 1;
     const limitNum = parseInt(req.query.limit) || 12;
     const offsetNum = (pageNum - 1) * limitNum;
@@ -32,6 +32,11 @@ router.get('/', async (req, res) => {
     if (estado) {
       params.push(estado);
       whereClause += ` AND c.estado = $${params.length}`;
+    }
+
+    if (fecha_pago) {
+      params.push(fecha_pago);
+      whereClause += ` AND c.fecha_pago = $${params.length}`;
     }
 
     if (worker_id) {
@@ -65,10 +70,15 @@ router.get('/', async (req, res) => {
     // Obtener datos
     const dataQuery = `
       SELECT c.*, c.dias_retraso as dias_atraso, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
-             u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre
+             u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre,
+             r.nombre AS ruta_nombre,
+             uw.nombres || ' ' || uw.apellidos AS worker_nombre
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN usuarios u ON u.id = c.bloqueado_por
+      LEFT JOIN ruta_clientes rc ON rc.cliente_id = c.id
+      LEFT JOIN rutas r ON r.id = rc.ruta_id
+      LEFT JOIN usuarios uw ON uw.id = r.worker_id
       ${whereClause}
       ORDER BY c.apellidos, c.nombres
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -154,10 +164,15 @@ router.get('/:id', async (req, res) => {
     // 1. Datos base del cliente
     const { rows: clienteRows } = await db.query(`
       SELECT c.*, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
-             u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre
+             u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre,
+             r.nombre AS ruta_nombre,
+             uw.nombres || ' ' || uw.apellidos AS worker_nombre
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN usuarios u ON u.id = c.bloqueado_por
+      LEFT JOIN ruta_clientes rc ON rc.cliente_id = c.id
+      LEFT JOIN rutas r ON r.id = rc.ruta_id
+      LEFT JOIN usuarios uw ON uw.id = r.worker_id
       WHERE c.id = $1
     `, [req.params.id]);
 
@@ -168,7 +183,7 @@ router.get('/:id', async (req, res) => {
     // 2. Historial de gestiones con nombre del worker y timestamp
     const { rows: gestionesRows } = await db.query(`
       SELECT 
-        gh.id, gh.tipificacion, gh.estado_nuevo, gh.observacion,
+        gh.id, gh.tipificacion, gh.estado_nuevo, gh.observacion, gh.es_offline,
         gh.created_at AS timestamp_at,
         u.nombres || ' ' || u.apellidos AS worker_nombre,
         f.tipo_credito, f.monto_desembolso, f.moneda, f.nro_cuotas,

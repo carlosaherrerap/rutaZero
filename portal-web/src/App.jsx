@@ -38,7 +38,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <span>Routing</span>
+        <span style={{ fontFamily: 'Serimi', fontSize: '32px' }}>Routing</span>
       </div>
       <div className="sidebar-subtitle">GESTIÓN PRINCIPAL</div>
       <ul className="sidebar-nav">
@@ -63,36 +63,89 @@ function Sidebar() {
 function Topbar({ title }) {
   const { user, logout } = useContext(AuthContext);
   const [showMenu, setShowMenu] = React.useState(false);
+  const [theme, setTheme] = React.useState(() => localStorage.getItem('theme') || 'light');
   const navigate = useNavigate();
+  const dropdownRef = React.useRef(null);
+
+  React.useEffect(() => {
+    try { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); } catch (e) {}
+  }, [theme]);
+
+  // Cerrar dropdown al hacer click fuera
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [dropdownRef]);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="topbar-title">{title}</span>
+        <span className="topbar-title" style={{ fontFamily: title === 'Home' ? 'Serimi' : 'inherit', fontSize: title === 'Home' ? '28px' : 'inherit' }}>{title}</span>
       </div>
       
       <div className="topbar-right">
-        <ThemeToggle />
         
-        <div className="profile-container">
-          <button className="profile-trigger" onClick={() => setShowMenu(!showMenu)}>
+        <div className="profile-container" ref={dropdownRef}>
+          <button className="profile-trigger" onClick={() => setShowMenu(!showMenu)} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '6px 14px', borderRadius: '14px', border: '1px solid var(--c-border)', transition: 'all 0.2s' }}>
             <div className="avatar-small">
               {user?.nombres?.[0]?.toUpperCase()}
             </div>
+            <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-text)' }}>{user?.nombres?.split(' ')[0]}</div>
+              <div style={{ fontSize: '10px', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{user?.rol}</div>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.5 }}><path d="M6 9l6 6 6-6"/></svg>
           </button>
 
           {showMenu && (
-            <div className="profile-dropdown">
-              <div className="dropdown-header">
-                <p className="user-name-full">{user?.nombres} {user?.apellidos}</p>
-                <p className="user-role-tag">{user?.rol}</p>
+            <div className="profile-dropdown" style={{ 
+              position: 'absolute', top: 'calc(100% + 10px)', right: 0, 
+              width: '240px', backgroundColor: 'var(--c-surface)', 
+              borderRadius: '16px', border: '1px solid var(--c-border)', 
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 9999,
+              padding: '8px', overflow: 'hidden', animation: 'dropdownIn 0.2s ease-out'
+            }}>
+              <div style={{ padding: '12px', borderBottom: '1px solid var(--c-border)', marginBottom: '4px' }}>
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: '900', color: 'var(--c-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>{user?.rol}</p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '14px', fontWeight: '700', color: 'var(--c-text)' }}>{user?.nombres} {user?.apellidos}</p>
               </div>
-              <button className="dropdown-item logout" onClick={handleLogout}>
-                <Icon name="logout"/>
-                <span>Cerrar sesión</span>
-              </button>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <button 
+                  className="dropdown-item" 
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '8px', color: 'var(--c-text)', fontSize: '13px' }}
+                >
+                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'var(--c-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {theme === 'dark' ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    )}
+                  </div>
+                  <span style={{ flex: 1, fontWeight: '500' }}>Modo {theme === 'dark' ? 'claro' : 'oscuro'}</span>
+                </button>
+
+                <div style={{ height: '1px', background: 'var(--c-border)', margin: '4px 0' }} />
+
+                <button 
+                  className="dropdown-item" 
+                  onClick={handleLogout}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', borderRadius: '8px', color: 'var(--c-danger)', fontSize: '13px' }}
+                >
+                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4z"/></svg>
+                  </div>
+                  <span style={{ flex: 1, fontWeight: '700' }}>Cerrar Sesión</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -101,22 +154,9 @@ function Topbar({ title }) {
   );
 }
 
-// ─── Theme Toggle ────────────────────────────────────────────
-function ThemeToggle() {
-  const [theme, setTheme] = React.useState(() => localStorage.getItem('theme') || 'light');
-  React.useEffect(() => {
-    try { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); } catch (e) {}
-  }, [theme]);
-  return (
-    <button className="theme-toggle" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme">
-      {theme === 'dark' ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-      ) : (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-      )}
-    </button>
-  );
-}
+// ─── Theme Toggle (Ahora integrado en Topbar) ─────────────────
+// Eliminado para evitar duplicidad o dejarlo como placeholder si se usa en otro lado
+function ThemeToggle() { return null; }
 
 // ─── Protected layout ─────────────────────────────────────────
 function AppLayout({ children, title }) {

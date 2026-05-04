@@ -32,8 +32,8 @@ export default function MapPage() {
       const res = await api.get('/api/clientes/mapa', {
         params: {
           fecha_pago: fechaPago,
-          tipo_gestion: tipoGestion,
-          en_ruta: true
+          tipo_gestion: tipoGestion
+          // SE QUITA en_ruta: true para mostrar todos los clientes gestionados hoy
         }
       });
       setData(res.data.data || { clientes: [], workers: [] });

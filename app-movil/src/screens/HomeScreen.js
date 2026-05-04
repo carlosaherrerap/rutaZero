@@ -17,6 +17,7 @@ const STATUS_OPTIONS = [
   { id: 'EN_VISITA', label: 'EN CAMINO', color: '#a855f7' },
   { id: 'VISITADO_PAGO', label: 'GESTIONADOS', color: '#10b981' },
   { id: 'REPROGRAMADO', label: 'REPROGRAMADOS', color: '#f59e0b' },
+  { id: 'NO_ENCONTRADO', label: 'NO ENCONTRADOS', color: '#ef4444' },
 ];
 
 // Cronómetro: cuenta hh:mm:ss desde un timestamp de inicio
@@ -30,20 +31,30 @@ function useCronometro(startTime) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
     }
-    const tick = () => {
-      if (!startTime) return;
-      const now = new Date();
-      const start = new Date(startTime);
-      
-      // Si el inicio es mayor que ahora (por desfase de segundos/ms), ponemos 0
-      let diff = Math.floor((now.getTime() - start.getTime()) / 1000);
-      if (diff < 0) diff = 0;
 
-      const h = String(Math.floor(diff / 3600)).padStart(2, '0');
-      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-      const s = String(diff % 60).padStart(2, '0');
-      setElapsed(`${h}:${m}:${s}`);
+    const tick = () => {
+      try {
+        const now = new Date();
+        const start = new Date(startTime);
+        
+        if (isNaN(start.getTime())) {
+          console.warn('⚠️ [useCronometro] startTime inválido:', startTime);
+          setElapsed('00:00:00');
+          return;
+        }
+
+        let diff = Math.floor((now.getTime() - start.getTime()) / 1000);
+        if (diff < 0) diff = 0;
+
+        const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const s = String(diff % 60).padStart(2, '0');
+        setElapsed(`${h}:${m}:${s}`);
+      } catch (err) {
+        console.error('❌ [useCronometro] Error:', err);
+      }
     };
+
     tick();
     intervalRef.current = setInterval(tick, 1000);
     return () => clearInterval(intervalRef.current);
@@ -64,6 +75,8 @@ export default function HomeScreen({ navigation }) {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('TODOS');
   const [actionLoading, setActionLoading] = useState(false);
+  // Estado local de clientes para reflejar cambios offline en tiempo real
+  const [localClients, setLocalClients] = useState([]);
 
   // Cronómetro de almuerzo (corre solo si estado es EN_REFRIGERIO)
   const almuerzoStart = journey?.estado_jornada === 'EN_REFRIGERIO' ? journey?.hora_inicio_almuerzo : null;
@@ -105,6 +118,8 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   const [pendingOfflineIds, setPendingOfflineIds] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
 
   const fetchData = useCallback(async (pageNum = 1, shouldRefresh = false) => {
     if (!user) return;
@@ -112,7 +127,7 @@ export default function HomeScreen({ navigation }) {
       saveDayData, getDayData, logConnectionStatus, getPendingClientIds 
     } = require('../services/OfflineService');
     
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
     console.log(`📡 [Home] fetchData(page=${pageNum}) - Solo hoy: ${todayStr} - Online: ${isOnline}`);
     
     try {
@@ -185,10 +200,27 @@ export default function HomeScreen({ navigation }) {
     fetchData(1, true); 
   }, [fetchData]));
 
+  // Sincronizar localClients cuando cambia allClients
   useEffect(() => {
-    if (filterStatus === 'TODOS') setFilteredClients(allClients);
-    else setFilteredClients(allClients.filter(c => c.estado === filterStatus));
-  }, [filterStatus, allClients]);
+    setLocalClients(allClients);
+  }, [allClients]);
+
+  // Al volver a la pantalla, releer del caché local para reflejar cambios offline
+  useFocusEffect(useCallback(() => {
+    const syncLocalState = async () => {
+      const { getDayData } = require('../services/OfflineService');
+      if (!isOnline) {
+        const cached = await getDayData();
+        if (cached?.clients) setLocalClients(cached.clients);
+      }
+    };
+    syncLocalState();
+  }, [isOnline]));
+
+  useEffect(() => {
+    if (filterStatus === 'TODOS') setFilteredClients(localClients);
+    else setFilteredClients(localClients.filter(c => c.estado === filterStatus));
+  }, [filterStatus, localClients]);
 
   const loadMore = () => {
     if (hasMore && !loading && !refreshing) {
@@ -293,6 +325,19 @@ export default function HomeScreen({ navigation }) {
       } finally { setActionLoading(false); }
     });
   };
+  
+  const handleClearCache = () => {
+    confirmarAccion('Limpiar Caché', '¿Estás seguro? Se borrarán todos los datos guardados localmente y gestiones pendientes de sincronizar.', async () => {
+      const { clearOfflineCache } = require('../services/OfflineService');
+      try {
+        await clearOfflineCache();
+        Alert.alert('Éxito', 'La caché ha sido limpiada correctamente.');
+        fetchData(1, true);
+      } catch (e) {
+        Alert.alert('Error', 'No se pudo limpiar la caché.');
+      }
+    });
+  };
 
   // ── RENDER CLIENTE ──────────────────────────────────────────
   const getStatusColor = (estado) => {
@@ -308,13 +353,26 @@ export default function HomeScreen({ navigation }) {
   const renderClient = ({ item }) => {
     const cardColor = getStatusColor(item.estado);
     const isOfflinePending = pendingOfflineIds.includes(String(item.id));
+    // Bloquear: verificar si hay otro cliente ya en visita por este worker
+    const clienteEnVisita = localClients.find(
+      c => c.estado === 'EN_VISITA' && String(c.bloqueado_por) === String(user.id)
+    );
+    const esteEstaEnVisita = item.estado === 'EN_VISITA' && String(item.bloqueado_por) === String(user.id);
+    const bloqueado = clienteEnVisita && !esteEstaEnVisita;
 
     return (
       <TouchableOpacity
-        style={[styles.clientCard, { borderLeftColor: cardColor }]}
+        style={[styles.clientCard, { borderLeftColor: cardColor, opacity: bloqueado ? 0.55 : 1 }]}
         onPress={() => {
           if (!puedeTrabajar) {
             Alert.alert('Atención', 'Debes iniciar tu jornada para gestionar clientes.');
+            return;
+          }
+          if (bloqueado) {
+            Alert.alert(
+              'Cliente en curso',
+              `Ya tienes a "${clienteEnVisita.nombres} ${clienteEnVisita.apellidos}" en visita. Libera ese cliente antes de seleccionar otro.`
+            );
             return;
           }
           navigation.navigate('DetalleCliente', { cliente: item });
@@ -347,35 +405,44 @@ export default function HomeScreen({ navigation }) {
   const stats = {
     total: allClients.length,
     gestionados: allClients.filter(c => c.estado === 'VISITADO_PAGO').length,
-    noEncontrados: allClients.filter(c => c.estado === 'NO_ENCONTRADO').length,
   };
 
   // ── GUARDIA: Sin jornada iniciada, muestra pantalla de bloqueo ─
   const NoJornadaBanner = () => (
     <View style={styles.lockBanner}>
-      <Ionicons 
-        name={enRefrigerio ? "restaurant" : "lock-closed"} 
-        size={50} 
-        color={enRefrigerio ? "#f59e0b" : "#cbd5e1"} 
-      />
+      <View style={[styles.lockIconContainer, { backgroundColor: enRefrigerio ? '#fef3c7' : '#f1f5f9' }]}>
+        <Ionicons 
+          name={enRefrigerio ? "restaurant" : "lock-closed"} 
+          size={50} 
+          color={enRefrigerio ? "#f59e0b" : "#94a3b8"} 
+        />
+      </View>
       <Text style={styles.lockTitle}>{enRefrigerio ? "En hora de almuerzo" : "Jornada no iniciada"}</Text>
       <Text style={styles.lockSub}>
         {enRefrigerio 
-          ? `Tu jornada está pausada. Tiempo transcurrido: ${timerAlmuerzo}`
-          : "Presiona INICIAR DÍA para comenzar a gestionar clientes."}
+          ? `Tu jornada está pausada para descanso. \nRecupera fuerzas para continuar.`
+          : "Debes iniciar tu jornada laboral para comenzar a visualizar y gestionar tu cartera de clientes de hoy."}
       </Text>
+      
+      {enRefrigerio && (
+        <View style={styles.timerContainer}>
+           <Ionicons name="time-outline" size={20} color="#f59e0b" />
+           <Text style={styles.timerText}>{timerAlmuerzo}</Text>
+        </View>
+      )}
+
       {!enRefrigerio ? (
         <TouchableOpacity style={styles.lockBtn} onPress={() => setShowJourneyModal(true)}>
           <Ionicons name="play-circle" size={20} color="#fff" />
-          <Text style={styles.lockBtnText}>INICIAR DÍA</Text>
+          <Text style={styles.lockBtnText}>INICIAR JORNADA</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity 
           style={[styles.lockBtn, { backgroundColor: '#10b981' }]} 
           onPress={() => setShowJourneyModal(true)}
         >
-          <Ionicons name="time" size={20} color="#fff" />
-          <Text style={styles.lockBtnText}>VER CONTROL</Text>
+          <Ionicons name="log-in" size={20} color="#fff" />
+          <Text style={styles.lockBtnText}>RETORNAR A TRABAJAR</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -410,7 +477,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.headerTitle}>Ruta Zero</Text>
+              <Text style={styles.headerTitle}>Routing</Text>
               <TouchableOpacity onPress={() => navigation.navigate('DebugStorage')}>
                 <Ionicons name="bug" size={16} color="#cbd5e1" />
               </TouchableOpacity>
@@ -423,6 +490,9 @@ export default function HomeScreen({ navigation }) {
             {jornadaEstado && <JornadaBadge />}
             <TouchableOpacity style={styles.iconBtn} onPress={() => setShowJourneyModal(true)}>
               <Ionicons name="time" size={24} color={enRefrigerio ? '#f59e0b' : '#3b82f6'} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.iconBtn} onPress={handleClearCache}>
+              <Ionicons name="trash-outline" size={22} color="#94a3b8" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} onPress={logout}>
               <Ionicons name="log-out-outline" size={24} color="#ef4444" />
@@ -635,11 +705,14 @@ const styles = StyleSheet.create({
   offlineTag: { backgroundColor: '#ef4444', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 3 },
   offlineTagText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   // Lock banner
-  lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, gap: 12 },
-  lockTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
-  lockSub: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 },
-  lockBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#3b82f6', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16, marginTop: 16, elevation: 3 },
-  lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, backgroundColor: '#fff' },
+  lockIconContainer: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  lockTitle: { fontSize: 24, fontWeight: '900', color: '#1e293b', marginBottom: 10, textAlign: 'center' },
+  lockSub: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  timerContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff7ed', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: '#fed7aa', marginBottom: 20, gap: 8 },
+  timerText: { fontSize: 20, fontWeight: '900', color: '#f59e0b', fontVariant: ['tabular-nums'] },
+  lockBtn: { backgroundColor: '#3b82f6', flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 16, gap: 10, elevation: 4, shadowColor: '#3b82f6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   // Tab
   tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
   tabItem: { alignItems: 'center' },

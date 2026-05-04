@@ -1,4 +1,4 @@
-# 🗺️ Ruta Zero — Diagrama de Flujo del Sistema
+# 🗺️ Routing — Diagrama de Flujo del Sistema
 
 > **Versión:** 1.0 · **Fecha:** 2026-04-16
 > **Metodología:** 3F (Forma · Fondo · Flujo)

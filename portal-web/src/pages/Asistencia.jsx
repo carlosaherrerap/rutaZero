@@ -1,55 +1,53 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { Calendar, User, CheckCircle, Clock, Download, ChevronRight, ChevronLeft, Search } from 'lucide-react';
+import { 
+  Clock, Download, ChevronRight, ChevronLeft, Users, 
+  CheckCircle2, PlayCircle, StopCircle, Coffee, 
+  ClipboardList, Map as MapIcon, Timer 
+} from 'lucide-react';
 
 export default function Asistencia() {
   const { api, token } = useContext(AuthContext);
-  const [summary, setSummary] = useState([]);
-  const [selectedWorker, setSelectedWorker] = useState(null);
-  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [search, setSearch] = useState('');
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
+  const [monthData, setMonthData] = useState([]);
+  const [dayWorkers, setDayWorkers] = useState([]);
+  const [selectedWorkerDetails, setSelectedWorkerDetails] = useState(null);
 
-  useEffect(() => {
-    fetchSummary();
-  }, [api]);
-
-  const fetchSummary = async () => {
+  const fetchMonthData = async (month, year) => {
     setLoading(true);
     try {
-      const res = await api.get('/api/asistencia/workers-summary');
-      setSummary(res.data.data || []);
+      const res = await api.get(`/api/asistencia?mes=${month}&anio=${year}`);
+      setMonthData(res.data.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
-  const handleSelectWorker = async (worker, month = currentMonth, year = currentYear) => {
-    setSelectedWorker(worker);
-    setLoadingHistory(true);
-    try {
-      const res = await api.get(`/api/asistencia?worker_id=${worker.id}&mes=${month}&anio=${year}`);
-      setHistory(res.data.data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoadingHistory(false); }
-  };
+  useEffect(() => {
+    fetchMonthData(currentDate.getMonth() + 1, currentDate.getFullYear());
+  }, [currentDate]);
 
-  const handleMonthChange = (e) => {
-    const val = parseInt(e.target.value);
-    setCurrentMonth(val);
-    if (selectedWorker) handleSelectWorker(selectedWorker, val, currentYear);
+  useEffect(() => {
+    const workers = monthData.filter(j => {
+      const jDate = new Date(j.fecha).toISOString().split('T')[0];
+      return jDate === selectedDay;
+    });
+    setDayWorkers(workers);
+    setSelectedWorkerDetails(null);
+  }, [selectedDay, monthData]);
+
+  const handleMonthNav = (dir) => {
+    const next = new Date(currentDate);
+    next.setMonth(next.getMonth() + dir);
+    setCurrentDate(next);
   };
 
   const handleValidar = async (jornadaId) => {
     if (!window.confirm('¿Validar este día?')) return;
     try {
       await api.patch(`/api/asistencia/${jornadaId}/validar`);
-      // Refresh history
-      const res = await api.get(`/api/asistencia?worker_id=${selectedWorker.id}&mes=${currentMonth}&anio=${currentYear}`);
-      setHistory(res.data.data || []);
-      fetchSummary(); // Refresh counts in list
+      fetchMonthData(currentDate.getMonth() + 1, currentDate.getFullYear());
     } catch (e) { console.error(e); }
   };
 
@@ -58,211 +56,210 @@ export default function Asistencia() {
     window.open(`${API_BASE}/api/asistencia/export?token=${token}`, '_blank');
   };
 
-  const filteredSummary = summary.filter(w => 
-    `${w.nombres} ${w.apellidos}`.toLowerCase().includes(search.toLowerCase()) ||
-    w.dni.includes(search)
-  );
+  const calendarDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const days = [];
+    const padding = firstDay === 0 ? 6 : firstDay - 1;
+    for (let i = 0; i < padding; i++) days.push(null);
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const hasActivity = monthData.some(j => new Date(j.fecha).toISOString().split('T')[0] === dateStr);
+      const allValidated = hasActivity && monthData.filter(j => new Date(j.fecha).toISOString().split('T')[0] === dateStr).every(j => j.validado);
+      days.push({ day: d, date: dateStr, hasActivity, allValidated });
+    }
+    return days;
+  }, [currentDate, monthData]);
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* Header with Global Download */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-text)', marginBottom: '4px' }}>Control de Asistencia</h1>
-          <p style={{ color: 'var(--c-muted)', fontSize: '14px' }}>Monitorea y valida las jornadas laborales de tus trabajadores.</p>
+          <h1 style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-text)', marginBottom: '4px', fontFamily: 'Serimi' }}>Panel de Asistencia</h1>
+          <p style={{ color: 'var(--c-muted)', fontSize: '14px' }}>Control interactivo de jornadas y validación administrativa.</p>
         </div>
-        <button 
-          onClick={handleDownload}
-          className="btn btn-primary" 
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', borderRadius: '12px', background: 'var(--c-primary)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '700' }}
-        >
-          <Download size={18}/>
-          Exportar Asistencia (CSV)
+        <button onClick={handleDownload} className="btn btn-primary">
+          <Download size={18}/> Exportar Reporte
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: selectedWorker ? '380px 1fr' : '1fr', gap: '32px', alignItems: 'flex-start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 380px 1fr', gap: '24px', alignItems: 'flex-start' }}>
         
-        {/* WORKER LIST PANEL */}
-            <div className="card" style={{ background: 'var(--c-surface)', borderRadius: '20px', border: '1px solid var(--c-border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
-            <div style={{ padding: '20px', borderBottom: '1px solid var(--c-border)' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--c-muted)' }}/>
-              <input 
-                type="text" 
-                placeholder="Buscar trabajador..." 
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '10px', border: '1px solid var(--c-border)', fontSize: '14px', background:'var(--c-surface-2)', color:'var(--c-text)' }}
-              />
+        {/* CALENDAR PANEL */}
+        <div className="card" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-muted)', textTransform: 'uppercase' }}>Calendario</h3>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn-icon btn-sm" onClick={() => handleMonthNav(-1)}><ChevronLeft size={16}/></button>
+              <button className="btn-icon btn-sm" onClick={() => handleMonthNav(1)}><ChevronRight size={16}/></button>
             </div>
           </div>
-
-          <div style={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' }}>
-            {loading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--c-muted)' }}>Cargando trabajadores...</div>
-            ) : filteredSummary.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--c-muted)' }}>No se encontraron trabajadores.</div>
-            ) : filteredSummary.map(w => (
-              <div 
-                key={w.id} 
-                onClick={() => handleSelectWorker(w)}
+          <div style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', fontWeight: '800', color: 'var(--c-primary)', textTransform: 'capitalize' }}>
+            {currentDate.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' })}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center' }}>
+            {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
+              <div key={i} style={{ fontSize: '10px', fontWeight: '900', color: 'var(--c-muted-2)', paddingBottom: '8px' }}>{d}</div>
+            ))}
+            {calendarDays.map((d, i) => (
+              <div key={i} 
+                onClick={() => d && setSelectedDay(d.date)}
                 style={{ 
-                  padding: '20px', 
-                  borderBottom: '1px solid var(--c-surface-2)', 
-                  cursor: 'pointer',
-                  background: selectedWorker?.id === w.id ? 'var(--c-surface-2)' : 'transparent',
-                  borderLeft: selectedWorker?.id === w.id ? `4px solid var(--c-primary)` : '4px solid transparent',
-                  transition: 'all var(--transition)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+                  aspectRatio: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px',
+                  cursor: d ? 'pointer' : 'default',
+                  background: d?.date === selectedDay ? 'var(--c-primary)' : (d?.hasActivity ? 'var(--c-surface-2)' : 'transparent'),
+                  color: d?.date === selectedDay ? 'white' : 'var(--c-text)',
+                  border: d?.date === selectedDay ? 'none' : '1px solid var(--c-border)',
+                  position: 'relative', transition: 'all 0.2s'
                 }}
               >
-                <div>
-                  <div style={{ fontWeight: '800', fontSize: '15px', color: 'var(--c-text)' }}>{w.nombres} {w.apellidos}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--c-muted)', marginTop: '2px' }}>DNI: {w.dni}</div>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
-                    <div title="Total asistencias" style={{ fontSize: '11px', fontWeight: '700', color: 'var(--c-muted)', background: 'var(--c-surface-2)', padding: '2px 8px', borderRadius: '6px' }}>
-                      {w.total_asistencias} días
-                    </div>
-                    <div title="Días validados" style={{ fontSize: '11px', fontWeight: '700', color: 'var(--c-primary)', background: 'rgba(16,185,129,0.08)', padding: '2px 8px', borderRadius: '6px' }}>
-                      {w.dias_validados} val.
+                {d && (
+                  <>
+                    <span style={{ fontSize: '13px', fontWeight: '700' }}>{d.day}</span>
+                    {d.hasActivity && (
+                      <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: d.allValidated ? 'var(--c-success)' : 'var(--c-warn)', position: 'absolute', bottom: '6px' }} />
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+          {/* Leyenda */}
+          <div style={{ display: 'flex', gap: '12px', marginTop: '16px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--c-muted)' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-success)' }}/>Validado
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--c-muted)' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-warn)' }}/>Pendiente
+            </div>
+          </div>
+        </div>
+
+        {/* WORKERS LIST */}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid var(--c-border)', background: 'var(--c-surface-2)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-text)' }}>
+              Trabajadores el {new Date(selectedDay + 'T00:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long' })}
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--c-muted)', marginTop: '4px' }}>{dayWorkers.length} registros</p>
+          </div>
+          <div style={{ height: '550px', overflowY: 'auto' }}>
+            {loading ? (
+              <div style={{ padding: '60px', textAlign: 'center' }}><div className="spinner"/></div>
+            ) : dayWorkers.length === 0 ? (
+              <div style={{ padding: '60px', textAlign: 'center', color: 'var(--c-muted)' }}>
+                <Users size={32} style={{ opacity: 0.3, marginBottom: '12px' }}/>
+                <p>Sin actividad registrada.</p>
+              </div>
+            ) : dayWorkers.map(j => (
+              <div key={j.id} onClick={() => setSelectedWorkerDetails(selectedWorkerDetails?.id === j.id ? null : j)}
+                style={{ 
+                  padding: '16px 20px', borderBottom: '1px solid var(--c-border)', cursor: 'pointer',
+                  background: selectedWorkerDetails?.id === j.id ? 'rgba(0,169,188,0.06)' : 'transparent',
+                  borderLeft: selectedWorkerDetails?.id === j.id ? '3px solid var(--c-primary)' : '3px solid transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--c-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--c-primary)', fontSize: '16px' }}>{j.nombres[0]}</div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '700' }}>{j.nombres} {j.apellidos}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Clock size={10}/> {j.hora_inicio_sesion ? new Date(j.hora_inicio_sesion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                      {j.validado && <span style={{ color: 'var(--c-success)', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12}/> Validado</span>}
                     </div>
                   </div>
                 </div>
-                {selectedWorker?.id === w.id && <ChevronRight size={18} color="var(--c-primary)" />}
+                <ChevronRight size={16} color="var(--c-muted)" style={{ transform: selectedWorkerDetails?.id === j.id ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}/>
               </div>
             ))}
           </div>
         </div>
 
-        {/* WORKER DETAIL PANEL */}
-        {selectedWorker ? (
-          <div className="card" style={{ background: 'var(--c-surface)', borderRadius: '20px', border: '1px solid var(--c-border)', padding: '32px', boxShadow: 'var(--shadow)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <button className="btn btn-ghost" onClick={() => setSelectedWorker(null)} style={{ color: 'var(--c-danger)', alignSelf: 'flex-end' }}>Cerrar Detalle</button>
-                
-                {/* MONTH NAVIGATION */}
-                <div style={{ backgroundColor: 'var(--c-surface-2)', padding: '16px', borderRadius: '15px', border: '1px solid var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <button 
-                    className="btn-icon" 
-                    onClick={() => {
-                      const newMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-                      const newYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-                      if (selectedWorker) handleSelectWorker(selectedWorker, newMonth, newYear);
-                    }}
-                  >
-                    <ChevronLeft size={20}/>
-                  </button>
-                  
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-text)', textTransform: 'uppercase' }}>
-                      {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][currentMonth - 1]} {currentYear}
-                    </span>
-                  </div>
-
-                  <button 
-                    className="btn-icon" 
-                    onClick={() => {
-                      const newMonth = currentMonth === 12 ? 1 : currentMonth + 1;
-                      const newYear = currentMonth === 12 ? currentYear + 1 : currentYear;
-                      setCurrentMonth(newMonth);
-                      setCurrentYear(newYear);
-                      if (selectedWorker) handleSelectWorker(selectedWorker, newMonth, newYear);
-                    }}
-                  >
-                    <ChevronRight size={20}/>
-                  </button>
+        {/* WORKER DETAIL */}
+        <div>
+          {selectedWorkerDetails ? (
+            <div className="card" style={{ padding: '24px' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--c-border)' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '22px' }}>
+                  {selectedWorkerDetails.nombres[0]}
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>{selectedWorkerDetails.nombres} {selectedWorkerDetails.apellidos}</h2>
+                  <p style={{ fontSize: '12px', color: 'var(--c-muted)', margin: '4px 0 0' }}>
+                    Jornada del {new Date(selectedWorkerDetails.fecha).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </p>
+                </div>
+                <div style={{ marginLeft: 'auto' }}>
+                  {selectedWorkerDetails.validado ? (
+                    <span style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--c-success)', fontWeight: '900', fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--c-success)', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={14}/> VALIDADA</span>
+                  ) : (
+                    <span style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--c-warn)', fontWeight: '900', fontSize: '12px', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--c-warn)' }}>PENDIENTE</span>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {loadingHistory ? (
-              <div style={{ textAlign: 'center', padding: '60px' }}>Obteniendo registros...</div>
-            ) : history.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--c-muted)', background: 'var(--c-surface-2)', borderRadius: '16px', border: '2px dashed var(--c-border)' }}>
-                Este trabajador aún no tiene registros en este mes.
+              {/* Métricas */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+                {[
+                  { label: 'Inicio Jornada', value: selectedWorkerDetails.hora_inicio_sesion ? new Date(selectedWorkerDetails.hora_inicio_sesion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '—', color: 'var(--c-primary)', icon: <PlayCircle size={18}/> },
+                  { label: 'Fin Jornada', value: selectedWorkerDetails.hora_fin_jornada ? new Date(selectedWorkerDetails.hora_fin_jornada).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : '—', color: 'var(--c-text)', icon: <StopCircle size={18}/> },
+                  { label: 'Refrigerio', value: `${selectedWorkerDetails.duracion_refrigerio_min || 0} min`, color: 'var(--c-warn)', icon: <Coffee size={18}/> },
+                  { label: 'Fichas Guardadas', value: selectedWorkerDetails.clientes_gestionados || 0, color: 'var(--c-success)', icon: <ClipboardList size={18}/> },
+                  { label: 'Rutas Asignadas', value: selectedWorkerDetails.rutas_asignadas || 0, color: 'var(--c-info)', icon: <MapIcon size={18}/> },
+                  { label: 'Horas Trabajadas', value: selectedWorkerDetails.horas_trabajadas ? `${selectedWorkerDetails.horas_trabajadas}h` : '—', color: 'var(--c-accent)', icon: <Timer size={18}/> },
+                ].map((m, i) => (
+                  <div key={i} style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: '14px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ color: m.color, marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>{m.icon}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--c-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{m.label}</div>
+                    <div style={{ fontSize: '20px', fontWeight: '900', color: m.color }}>{m.value}</div>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div className="table-container" style={{ 
-                border: '1px solid var(--c-border)', 
-                borderRadius: '16px', 
-                overflowX: 'auto', 
-                background: 'var(--c-surface)',
-                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.1)'
-              }}>
-                <table style={{ borderCollapse: 'collapse', minWidth: '1000px', width: '100%' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--c-surface-2)' }}>
-                      <th style={{ padding: '20px 16px', textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Día / Fecha</th>
-                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Estado</th>
-                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Entrada</th>
-                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Salida</th>
-                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Horas Efec.</th>
-                      <th style={{ textAlign: 'left', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Refrigerio</th>
-                      <th style={{ textAlign: 'center', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Gestiones</th>
-                      <th style={{ textAlign: 'right', paddingRight: '24px', color: 'var(--c-muted)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }}>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {history.map(j => (
-                      <tr key={j.id} style={{ borderBottom: '1px solid var(--c-border)', transition: 'background 0.2s' }}>
-                        <td style={{ padding: '24px 16px' }}>
-                          <div style={{ fontWeight: '900', color: 'var(--c-primary)', fontSize: '15px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            {new Date(j.fecha).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric' }).replace(',', '').toUpperCase()}
-                          </div>
-                        </td>
-                        <td style={{ padding: '8px' }}>
-                          <span className={`badge badge-${j.estado.toLowerCase().replace(/_/g, '-')}`} style={{ fontSize: '10px' }}>
-                            {j.estado.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td style={{ color: 'var(--c-text)', fontWeight: '600', padding: '8px' }}>
-                          {j.hora_inicio_sesion ? new Date(j.hora_inicio_sesion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
-                        </td>
-                        <td style={{ color: 'var(--c-text)', fontWeight: '600', padding: '8px' }}>
-                          {j.hora_fin_jornada ? new Date(j.hora_fin_jornada).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--'}
-                        </td>
-                        <td style={{ padding: '8px' }}><b style={{ color: 'var(--c-info)', fontSize: '15px' }}>{j.horas_trabajadas || '0'}h</b></td>
-                        <td style={{ color: 'var(--c-muted)', fontSize: '13px', padding: '8px' }}>{j.duracion_refrigerio_min ? `${j.duracion_refrigerio_min} min` : '—'}</td>
-                        <td style={{ textAlign: 'center', padding: '8px' }}>
-                          <div style={{ background: 'var(--c-surface-2)', display: 'inline-flex', padding: '6px 12px', borderRadius: '10px', fontSize: '13px', fontWeight: '900', color:'var(--c-text)', border: '1px solid var(--c-border)' }}>
-                            {j.clientes_gestionados || 0}
-                          </div>
-                        </td>
-                        <td style={{ padding: '8px', textAlign: 'right', paddingRight: '24px' }}>
-                          {j.validado ? (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', color: 'var(--c-success)', fontWeight: '900', fontSize: '12px' }}>
-                              <CheckCircle size={16}/> VALIDADO
-                            </div>
-                          ) : (
-                            <button 
-                              className="btn btn-primary btn-sm" 
-                              onClick={() => handleValidar(j.id)}
-                            >
-                              VALIDAR
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+              {/* Horarios Detallados */}
+              <div style={{ background: 'var(--c-surface-2)', borderRadius: '14px', padding: '16px', marginBottom: '20px' }}>
+                <h5 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Horario Detallado</h5>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {[
+                    { label: 'Inicio de sesión', time: selectedWorkerDetails.hora_inicio_sesion },
+                    { label: 'Inicio refrigerio', time: selectedWorkerDetails.hora_inicio_almuerzo },
+                    { label: 'Fin refrigerio', time: selectedWorkerDetails.hora_fin_almuerzo },
+                    { label: 'Cierre de jornada', time: selectedWorkerDetails.hora_fin_jornada },
+                  ].map((item, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--c-muted)' }}>{item.label}</span>
+                      <b style={{ fontFamily: 'monospace', fontSize: '14px' }}>
+                        {item.time ? new Date(item.time).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                      </b>
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '500px', background: 'var(--c-surface-2)', borderRadius: '24px', border: '2px dashed var(--c-border)', color: 'var(--c-muted)' }}>
-            <User size={48} style={{ marginBottom: '16px', opacity: 0.3 }}/>
-            <p style={{ fontWeight: '600' }}>Selecciona un trabajador del panel izquierdo</p>
-            <p style={{ fontSize: '13px' }}>Para ver su historial detallado y validar sus asistencias.</p>
-          </div>
-        )}
+
+              {/* Acción validar */}
+              {!selectedWorkerDetails.validado && (
+                <button 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', padding: '12px', fontWeight: '900', fontSize: '14px' }}
+                  onClick={() => handleValidar(selectedWorkerDetails.id)}
+                >
+                  <CheckCircle2 size={16}/> VALIDAR JORNADA
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="card" style={{ height: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--c-muted)', borderStyle: 'dashed', background: 'transparent' }}>
+              <Users size={48} style={{ opacity: 0.1, marginBottom: '16px' }}/>
+              <p style={{ fontSize: '14px' }}>Selecciona un trabajador para ver el detalle de su jornada.</p>
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

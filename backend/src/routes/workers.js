@@ -75,7 +75,8 @@ router.get('/:id', async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT u.*, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
-              j.estado AS estado_jornada
+              j.estado AS estado_jornada, j.hora_inicio_sesion, 
+              j.hora_inicio_almuerzo, j.hora_fin_almuerzo, j.hora_fin_jornada
        FROM usuarios u
        LEFT JOIN ubicaciones ub ON ub.id = u.ubicacion_id
        LEFT JOIN jornadas j ON j.worker_id = u.id AND j.fecha = CURRENT_DATE
@@ -373,7 +374,8 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
       tipo_credito, fecha_desembolso, monto_desembolso,
       moneda, nro_cuotas, nro_cuotas_pagadas,
       condicion_contable, saldo_capital,
-      hora_inicio_visita, hora_apertura_ficha, duracion_llenado_seg
+      hora_inicio_visita, hora_apertura_ficha, duracion_llenado_seg,
+      es_offline
     } = req.body;
     const cliente_id = req.params.id;
 
@@ -484,9 +486,9 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
 
     // 3. Registrar en historial
     await client.query(
-      `INSERT INTO gestiones_historial (cliente_id, worker_id, ficha_id, tipificacion, estado_nuevo, observacion)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [cliente_id, req.user.id, fichaRes.rows[0].id, cleanData.tipificacion, nuevoEstado, cleanData.observacion]
+      `INSERT INTO gestiones_historial (cliente_id, worker_id, ficha_id, tipificacion, estado_nuevo, observacion, es_offline)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [cliente_id, req.user.id, fichaRes.rows[0].id, cleanData.tipificacion, nuevoEstado, cleanData.observacion, es_offline === 'true' || es_offline === true]
     );
 
     await client.query('COMMIT');
@@ -501,6 +503,31 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
     res.status(500).json({ error: 'Error al guardar gestión' });
   } finally {
     client.release();
+  }
+});
+
+router.get('/clientes/:id/ficha', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `
+      SELECT f.*, gh.es_offline
+      FROM fichas f
+      JOIN gestiones_historial gh ON f.id = gh.ficha_id
+      WHERE f.cliente_id = $1
+      ORDER BY f.created_at DESC
+      LIMIT 1
+    `;
+    const fichaRes = await db.query(query, [id]);
+    if (fichaRes.rows.length === 0) {
+      return res.status(404).json({ error: 'No se encontró ficha para este cliente' });
+    }
+    const ficha = fichaRes.rows[0];
+    const evRes = await db.query('SELECT url FROM evidencias WHERE ficha_id = $1', [ficha.id]);
+    ficha.evidencias = evRes.rows.map(r => r.url);
+    res.json({ data: ficha });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener ficha' });
   }
 });
 

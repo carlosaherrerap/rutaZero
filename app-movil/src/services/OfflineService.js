@@ -219,9 +219,13 @@ export const syncAllOfflineData = async (api) => {
     console.log('⏳ Sincronización en curso. Esperando...');
     return;
   }
+  isSyncing = true;
 
   const state = await NetInfo.fetch();
-  if (!state.isConnected) return;
+  if (!state.isConnected) {
+    isSyncing = false;
+    return;
+  }
 
   const lastStatus = await getLastConnectionStatus();
   // Si la última gestión fue ONLINE y seguimos con internet, no intentamos resincronizar
@@ -233,11 +237,11 @@ export const syncAllOfflineData = async (api) => {
     
     if (actions.length === 0 && fichas.length === 0) {
       console.log('📶 Todo está al día. Saltando revisión de cola.');
+      isSyncing = false;
       return;
     }
   }
 
-  isSyncing = true;
   console.log('🔄 Iniciando sincronización de datos pendientes...');
   try {
     // 1. Sincronizar acciones de jornada
@@ -268,6 +272,7 @@ export const syncAllOfflineData = async (api) => {
       try {
         const data = new FormData();
         Object.keys(item.formData).forEach(key => data.append(key, item.formData[key]));
+        data.append('es_offline', 'true');
 
         item.fotos.forEach((uri, index) => {
           const fileName = uri.split('/').pop() || `evidencia_${index}.jpg`;

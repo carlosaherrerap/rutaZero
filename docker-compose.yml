@@ -10,6 +10,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pass123
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
+      TZ: America/Lima
+      PGTZ: America/Lima
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql

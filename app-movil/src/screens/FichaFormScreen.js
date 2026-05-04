@@ -61,9 +61,9 @@ export default function FichaFormScreen({ route, navigation }) {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'], // Nueva API no deprecada
+      mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.5,
+      quality: 0.7, // REDUCIDO para mejorar velocidad de subida
     });
 
     if (!result.canceled && fotos.length < 5) {

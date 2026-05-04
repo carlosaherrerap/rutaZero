@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { Eye, Trash2, Plus, X, Map as MapIcon, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Eye, Trash2, Plus, X, Map as MapIcon, Users, Calendar, Info, Sparkles } from 'lucide-react';
 import pinmanIcon from '../assets/PINMAN.png';
 
 const workerIcon = L.icon({
@@ -41,12 +41,14 @@ export default function Rutas() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editingRouteId, setEditingRouteId] = useState(null);
   
   const [newRuta, setNewRuta] = useState({ 
     nombre: '', 
     worker_id: '', 
     cliente_ids: [],
-    fecha_asignacion: new Date().toISOString().split('T')[0]
+    fecha_asignacion: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
   });
 
   const [showViewModal, setShowViewModal] = useState(false);
@@ -55,7 +57,8 @@ export default function Rutas() {
   const [showAllWorkers, setShowAllWorkers] = useState(false);
 
   const [creating, setCreating] = useState(false);
-  const [filterPago, setFilterPago] = useState(new Date().toISOString().split('T')[0]);
+  const [filterPago, setFilterPago] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
+  const [searchAvail, setSearchAvail] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -88,30 +91,54 @@ export default function Rutas() {
     }
   };
 
-  const handleViewRuta = async (id) => {
+  const handleEditRuta = async (id) => {
     try {
       const res = await api.get(`/api/rutas/${id}`);
-      setSelectedRutaDetails(res.data.data);
-      setShowViewModal(true);
+      const r = res.data.data;
+      setEditingRouteId(id);
+      setNewRuta({
+        nombre: r.nombre,
+        worker_id: r.worker_id,
+        cliente_ids: r.clientes.map(c => c.id),
+        fecha_asignacion: new Date(r.fecha_asignacion).toISOString().split('T')[0]
+      });
+      setEditMode(true);
+      setShowModal(true);
     } catch (err) {
       alert('Error al obtener detalles de la ruta');
     }
   };
-  const handleCreateRuta = async () => {
+
+  const handleSaveRuta = async () => {
     if (!newRuta.nombre || !newRuta.worker_id || newRuta.cliente_ids.length === 0) {
       return alert('Completa todos los campos y selecciona al menos un cliente.');
     }
     setCreating(true);
     try {
-      await api.post('/api/rutas', newRuta);
+      if (editMode) {
+        await api.patch(`/api/rutas/${editingRouteId}`, newRuta);
+      } else {
+        await api.post('/api/rutas', newRuta);
+      }
       setShowModal(false);
-      setNewRuta({ nombre: '', worker_id: '', cliente_ids: [], fecha_asignacion: new Date().toISOString().split('T')[0] });
+      resetPlanner();
       fetchData();
     } catch (err) {
-      alert('Error al crear ruta');
+      alert(editMode ? 'Error al actualizar ruta' : 'Error al crear ruta');
     } finally {
       setCreating(false);
     }
+  };
+
+  const resetPlanner = () => {
+    setNewRuta({ 
+      nombre: '', 
+      worker_id: '', 
+      cliente_ids: [], 
+      fecha_asignacion: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) 
+    });
+    setEditMode(false);
+    setEditingRouteId(null);
   };
 
   const toggleCliente = (id) => {
@@ -123,18 +150,25 @@ export default function Rutas() {
     });
   };
 
-  // Clientes ya asignados para la fecha seleccionada
+  // Clientes ya asignados para la fecha de la ruta activa (creación o vista)
   const assignedClientIds = React.useMemo(() => {
     const ids = new Set();
+    // Fecha de referencia: si hay ruta seleccionada en el modal de vista, usar su fecha; si no, usar la del formulario de creación
+    const refDate = showViewModal && selectedRutaDetails
+      ? new Date(selectedRutaDetails.fecha_asignacion).toISOString().slice(0, 10)
+      : new Date(newRuta.fecha_asignacion).toISOString().slice(0, 10);
     rutas.forEach(r => {
+      // Excluir la propia ruta si estamos editándola o viéndola
+      if (editMode && r.id === editingRouteId) return;
+      if (showViewModal && selectedRutaDetails && r.id === selectedRutaDetails.id) return;
+
       const rDate = new Date(r.fecha_asignacion).toISOString().slice(0, 10);
-      const fDate = new Date(newRuta.fecha_asignacion).toISOString().slice(0, 10);
-      if (rDate === fDate && r.client_ids) {
+      if (rDate === refDate && r.client_ids) {
         r.client_ids.forEach(id => ids.add(id));
       }
     });
     return ids;
-  }, [rutas, newRuta.fecha_asignacion]);
+  }, [rutas, newRuta.fecha_asignacion, showViewModal, selectedRutaDetails]);
 
   // Filtramos por fecha de pago normalizando ambos valores a YYYY-MM-DD
   const clientesVisibles = clientes.filter(c => {
@@ -159,30 +193,50 @@ export default function Rutas() {
           <h1 className="text-2xl font-bold">Gestión de Rutas</h1>
           <p className="text-muted">Planifica y asigna rutas a tus workers.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ CREAR RUTA</button>
+        <button className="btn btn-primary" onClick={() => { setEditMode(false); setShowModal(true); }}>+ CREAR RUTA</button>
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="table">
+      <div className="card" style={{ overflowX: 'auto' }}>
+        <table className="table" style={{ minWidth: '1100px' }}>
           <thead>
             <tr>
               <th>Nombre</th>
               <th>Worker</th>
               <th>Fecha</th>
-              <th>Clientes</th>
+              <th>Total Clientes</th>
+              <th>Libres</th>
+              <th>Reprogramados</th>
+              <th>En Visita</th>
+              <th>No Encontrados</th>
+              <th>Gestionados</th>
               <th>Estado</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {rutas.map(r => (
               <tr key={r.id}>
-                <td>{r.nombre}</td>
-                <td>{r.worker_nombre}</td>
-                <td>{new Date(r.fecha_asignacion).toLocaleDateString()}</td>
-                <td>{r.total_clientes}</td>
-                <td className="flex gap-4">
-                  <button className="btn-icon color-info" onClick={() => handleViewRuta(r.id)} title="Ver detalles"><Eye size={18}/></button>
-                  <button className="btn-icon color-danger" onClick={() => handleDeleteRuta(r.id)} title="Borrar ruta"><Trash2 size={18}/></button>
+                <td><b style={{ color: 'var(--c-primary)' }}>{r.nombre}</b></td>
+                <td>{r.worker_nombre} {r.worker_apellido}</td>
+                <td>{new Date(r.fecha_asignacion).toLocaleDateString('es-PE')}</td>
+                <td className="text-center font-bold">{r.total_clientes}</td>
+                <td className="text-center" style={{ color: 'var(--c-info)' }}>{r.cant_libres || 0}</td>
+                <td className="text-center" style={{ color: 'var(--c-warn)' }}>{r.cant_repro || 0}</td>
+                <td className="text-center" style={{ color: 'var(--c-accent)' }}>{r.cant_visita || 0}</td>
+                <td className="text-center" style={{ color: 'var(--c-danger)' }}>{r.cant_no_enc || 0}</td>
+                <td className="text-center" style={{ color: 'var(--c-success)' }}>{r.cant_gest || 0}</td>
+                <td>
+                  <span className={`badge badge-${r.completada ? 'success' : 'info'}`}>
+                    {r.completada ? 'COMPLETADA' : 'EN PROCESO'}
+                  </span>
+                </td>
+                <td>
+                  <div className="flex gap-2">
+                    <button className="btn btn-primary btn-sm" onClick={() => handleEditRuta(r.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Eye size={16}/> EDITAR
+                    </button>
+                    <button className="btn-icon color-danger" onClick={() => handleDeleteRuta(r.id)} title="Borrar ruta"><Trash2 size={18}/></button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -205,8 +259,10 @@ export default function Rutas() {
           }}>
             {/* HEADER FIJO */}
             <div className="modal-header" style={{ borderBottom: '1px solid #1e293b', padding: '15px 25px' }}>
-              <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.2rem', fontWeight: '800' }}>CENTRO DE PLANIFICACIÓN DE RUTAS</span>
-              <button className="btn-ghost" style={{ color: 'var(--c-muted)' }} onClick={() => setShowModal(false)}>✕</button>
+              <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.2rem', fontWeight: '800' }}>
+                {editMode ? `EDITANDO RUTA: ${newRuta.nombre}` : 'CENTRO DE PLANIFICACIÓN DE RUTAS'}
+              </span>
+              <button className="btn-ghost" style={{ color: 'var(--c-muted)' }} onClick={() => { setShowModal(false); resetPlanner(); }}><X size={20}/></button>
             </div>
             
             {/* BODY USANDO GRID PARA EVITAR DESBORDAMIENTOS */}
@@ -309,12 +365,21 @@ export default function Rutas() {
                    <button 
                      className="btn btn-primary" 
                      style={{ height: '50px', fontSize: '0.9rem', fontWeight: 'bold' }}
-                     onClick={handleCreateRuta}
+                     onClick={handleSaveRuta}
                      disabled={creating}
                    >
-                     {creating ? 'PROCESANDO...' : 'CONFIRMAR Y CREAR RUTA'}
+                     {creating ? 'PROCESANDO...' : (editMode ? 'ACTUALIZAR CAMBIOS' : 'CONFIRMAR Y CREAR RUTA')}
                    </button>
-                   <button className="btn btn-ghost" style={{ color: '#94a3b8' }} onClick={() => setShowModal(false)}>CANCELAR</button>
+                   {editMode && (
+                     <button 
+                       className="btn btn-ghost" 
+                       style={{ color: 'var(--c-danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }} 
+                       onClick={() => { handleDeleteRuta(editingRouteId); setShowModal(false); resetPlanner(); }}
+                     >
+                       ELIMINAR RUTA
+                     </button>
+                   )}
+                   <button className="btn btn-ghost" style={{ color: '#94a3b8' }} onClick={() => { setShowModal(false); resetPlanner(); }}>CANCELAR</button>
                 </div>
               </div>
 
@@ -468,109 +533,179 @@ export default function Rutas() {
       {/* MODAL VER RUTA */}
       {showViewModal && selectedRutaDetails && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '800px', width: '95%', height: '90vh', display: 'flex', flexDirection: 'column' }}>
-            <div className="modal-header">
-              <span className="modal-title">GESTIÓN DE RUTA: {selectedRutaDetails.nombre}</span>
-              <button className="btn-ghost" onClick={() => setShowViewModal(false)}><X size={20}/></button>
-            </div>
-            <div className="modal-body" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', p: 0 }}>
-              <div className="flex" style={{ flex: 1 }}>
-                {/* LISTA DE CLIENTES ACTUALES */}
-                <div style={{ flex: 1, borderRight: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column' }}>
-                   <div className="p-4 bg-muted-surface flex justify-between items-center">
-                      <div>
-                        <h4 className="font-bold flex items-center gap-2"><Users size={16}/> Clientes en Ruta</h4>
-                        <p className="text-xs text-muted">{selectedRutaDetails.worker_nombre} {selectedRutaDetails.worker_apellido}</p>
-                      </div>
-                   </div>
-                   <div style={{ flex: 1, overflowY: 'auto' }} className="p-2">
-                      {selectedRutaDetails.clientes.map(c => (
-                        <div key={c.id} className="flex justify-between items-center p-3 mb-2 bg-surface border rounded-xl hover:shadow-sm transition-all">
-                          <div>
-                            <div className="font-bold text-sm">{c.nombres} {c.apellidos}</div>
-                            <div className="text-xs text-muted">{c.direccion}</div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                             <span className={`badge badge-sm ${c.estado === 'LIBRE' ? 'badge-success' : 'badge-info'}`}>{c.estado}</span>
-                             <button 
-                                className="btn-icon color-danger btn-sm" 
-                                onClick={async () => {
-                                  const newIds = selectedRutaDetails.clientes.filter(x => x.id !== c.id).map(x => x.id);
-                                  try {
-                                    await api.patch(`/api/rutas/${selectedRutaDetails.id}`, { cliente_ids: newIds });
-                                    handleViewRuta(selectedRutaDetails.id);
-                                    fetchData();
-                                  } catch (e) { alert('Error al quitar cliente'); }
-                                }}
-                             >
-                               <Trash2 size={14}/>
-                             </button>
-                          </div>
-                        </div>
-                      ))}
-                   </div>
+          <div className="modal" style={{ maxWidth: '900px', width: '95%', height: '90vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--c-surface)', border: '1px solid var(--c-border)' }}>
+            <div className="modal-header" style={{ padding: '25px 30px', background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                  <div style={{ width: '40px', height: '40px', background: 'var(--c-primary-soft)', color: 'var(--c-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '18px' }}>
+                    {selectedRutaDetails.worker_nombre?.[0]}{selectedRutaDetails.worker_apellido?.[0]}
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0, color: 'var(--c-text)', letterSpacing: '-0.5px' }}>
+                      {selectedRutaDetails.worker_nombre} {selectedRutaDetails.worker_apellido}
+                    </h2>
+                    <div style={{ fontSize: '11px', color: 'var(--c-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Responsable de la ruta: {selectedRutaDetails.nombre}
+                    </div>
+                  </div>
                 </div>
+                <div style={{ fontSize: '12px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14}/> {new Date(selectedRutaDetails.fecha_asignacion).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                   <span style={{ opacity: 0.3 }}>|</span>
+                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={14}/> {selectedRutaDetails.clientes?.length || 0} clientes asignados</span>
+                </div>
+              </div>
+              <button className="btn-ghost" onClick={() => setShowViewModal(false)} style={{ borderRadius: '12px', padding: '8px' }}><X size={24}/></button>
+            </div>
+            
+            <div className="modal-body" style={{ flex: 1, overflow: 'hidden', display: 'flex', padding: 0 }}>
+              {/* LISTA IZQUIERDA: ACTUALES */}
+              <div style={{ flex: 1.2, borderRight: '1px solid var(--c-border)', display: 'flex', flexDirection: 'column', background: 'var(--c-surface)' }}>
+                <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--c-border)', backgroundColor: 'var(--c-surface-2)' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '900', color: 'var(--c-text)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Users size={14}/> CLIENTES ASIGNADOS ({selectedRutaDetails.clientes?.length || 0})
+                  </h4>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+                  {selectedRutaDetails.clientes?.length === 0 ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--c-muted)' }}>
+                      <Users size={40} style={{ opacity: 0.1, marginBottom: '10px' }}/>
+                      <p style={{ fontSize: '13px' }}>No hay clientes asignados a esta ruta.</p>
+                    </div>
+                  ) : (
+                    selectedRutaDetails.clientes.map(c => (
+                      <div key={`assigned-${c.id}`} style={{ 
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                        padding: '12px 16px', marginBottom: '10px', backgroundColor: 'var(--c-surface-2)', 
+                        border: '1px solid var(--c-border)', borderRadius: '14px',
+                        transition: 'all 0.2s'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '800', fontSize: '13px', color: 'var(--c-text)' }}>{c.nombres} {c.apellidos}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--c-muted)', marginTop: '2px' }}>{c.direccion}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ 
+                            fontSize: '10px', fontWeight: '900', padding: '4px 8px', borderRadius: '6px',
+                            backgroundColor: c.estado === 'LIBRE' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                            color: c.estado === 'LIBRE' ? 'var(--c-success)' : 'var(--c-info)'
+                          }}>
+                            {c.estado}
+                          </span>
+                          <button 
+                            className="btn-icon color-danger btn-sm" 
+                            style={{ padding: '8px' }}
+                            onClick={async () => {
+                              if (!window.confirm('¿Quitar a este cliente de la ruta?')) return;
+                              const newIds = selectedRutaDetails.clientes.filter(x => x.id !== c.id).map(x => x.id);
+                              try {
+                                await api.patch(`/api/rutas/${selectedRutaDetails.id}`, { cliente_ids: newIds });
+                                handleViewRuta(selectedRutaDetails.id);
+                                fetchData();
+                              } catch (e) { alert('Error al quitar cliente'); }
+                            }}
+                          >
+                            <Trash2 size={16}/>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
 
-                {/* AGREGAR CLIENTES (HOY + NO ASIGNADOS) */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f8fafc' }}>
-                   <div className="p-4 border-b bg-white">
-                      <h4 className="font-bold flex items-center gap-2"><Plus size={16}/> Agregar a Ruta</h4>
-                      <p className="text-xs text-muted">Clientes con pago hoy no asignados</p>
-                   </div>
-                   <div style={{ flex: 1, overflowY: 'auto' }} className="p-2">
-                      {clientes
-                        .filter(c => {
-                          const isToday = new Date(c.fecha_pago).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
-                          const isAlreadyInThisRuta = selectedRutaDetails.clientes.some(x => x.id === c.id);
-                          const isAssignedElsewhere = assignedClientIds.has(c.id);
-                          const isManaged = c.estado !== 'LIBRE' && c.estado !== 'EN_RUTA';
-                          return isToday && !isAlreadyInThisRuta && !isAssignedElsewhere && !isManaged;
-                        })
-                        .map(c => (
-                          <div key={c.id} className="flex justify-between items-center p-3 mb-2 bg-white border rounded-xl shadow-sm">
-                            <div style={{ flex: 1 }}>
-                              <div className="font-bold text-sm">{c.nombres} {c.apellidos}</div>
-                              <div className="text-xs text-muted">{c.distrito}</div>
-                            </div>
-                            <button 
-                              className="btn btn-sm btn-primary"
-                              onClick={async () => {
-                                const newIds = [...selectedRutaDetails.clientes.map(x => x.id), c.id];
-                                try {
-                                  await api.patch(`/api/rutas/${selectedRutaDetails.id}`, { cliente_ids: newIds });
-                                  handleViewRuta(selectedRutaDetails.id);
-                                  fetchData();
-                                } catch (e) { alert('Error al agregar cliente'); }
-                              }}
-                            >
-                              AGREGAR
-                            </button>
-                          </div>
-                        ))
-                      }
-                      {clientes.filter(c => {
-                          const isToday = new Date(c.fecha_pago).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
-                          const isAlreadyInThisRuta = selectedRutaDetails.clientes.some(x => x.id === c.id);
-                          const isAssignedElsewhere = assignedClientIds.has(c.id);
-                          return isToday && !isAlreadyInThisRuta && !isAssignedElsewhere;
-                      }).length === 0 && (
-                        <div className="p-8 text-center text-muted text-sm">No hay más clientes disponibles para hoy.</div>
-                      )}
-                   </div>
+              {/* LISTA DERECHA: DISPONIBLES */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(0,0,0,0.02)' }}>
+                <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--c-border)', backgroundColor: 'var(--c-surface)' }}>
+                  <h4 style={{ fontSize: '12px', fontWeight: '900', color: 'var(--c-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Plus size={14}/> AGREGAR CLIENTES
+                  </h4>
+                  <p style={{ fontSize: '10px', color: 'var(--c-muted)', marginTop: '4px' }}>Clientes libres no asignados a otra ruta.</p>
+                  {/* Buscador */}
+                  <input
+                    type="text"
+                    placeholder="Buscar cliente..."
+                    value={searchAvail}
+                    onChange={e => setSearchAvail(e.target.value)}
+                    style={{ marginTop: '10px', width: '100%', background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', borderRadius: '8px', padding: '7px 12px', fontSize: '12px', color: 'var(--c-text)', outline: 'none' }}
+                  />
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+                  {clientes
+                    .filter(c => {
+                      const rutaFecha = new Date(selectedRutaDetails.fecha_asignacion).toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+                      const clientPagoStr = c.fecha_pago ? new Date(c.fecha_pago).toISOString().slice(0, 10) : '';
+                      const isRutaDay = clientPagoStr === rutaFecha;
+                      const isAlreadyInThisRuta = selectedRutaDetails.clientes.some(x => x.id === c.id);
+                      const isAssignedElsewhere = assignedClientIds.has(c.id);
+                      const isManaged = c.estado !== 'LIBRE';
+                      const matchSearch = !searchAvail || 
+                        `${c.nombres} ${c.apellidos} ${c.dni}`.toLowerCase().includes(searchAvail.toLowerCase());
+                      return isRutaDay && !isAlreadyInThisRuta && !isAssignedElsewhere && !isManaged && matchSearch;
+                    })
+                    .map(c => (
+                      <div key={`avail-${c.id}`} style={{ 
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                        padding: '12px 16px', marginBottom: '10px', backgroundColor: 'var(--c-surface)', 
+                        border: '1px solid var(--c-border)', borderRadius: '14px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--c-text)' }}>{c.nombres} {c.apellidos}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--c-muted)', marginTop: '2px' }}>{c.distrito} — S/ {c.deuda_total}</div>
+                        </div>
+                        <button 
+                          className="btn btn-sm btn-primary"
+                          style={{ borderRadius: '8px', fontSize: '11px', fontWeight: '800', padding: '6px 12px' }}
+                          onClick={async () => {
+                            const newIds = [...selectedRutaDetails.clientes.map(x => x.id), c.id];
+                            try {
+                              await api.patch(`/api/rutas/${selectedRutaDetails.id}`, { cliente_ids: newIds });
+                              handleViewRuta(selectedRutaDetails.id);
+                              fetchData();
+                            } catch (e) { alert('Error al agregar cliente'); }
+                          }}
+                        >
+                          AGREGAR
+                        </button>
+                      </div>
+                    ))
+                  }
+                  {clientes.filter(c => {
+                      const rutaFecha = new Date(selectedRutaDetails.fecha_asignacion).toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+                      const clientPagoStr = c.fecha_pago ? new Date(c.fecha_pago).toISOString().slice(0, 10) : '';
+                      const isRutaDay = clientPagoStr === rutaFecha;
+                      const isAlreadyInThisRuta = selectedRutaDetails.clientes.some(x => x.id === c.id);
+                      const isAssignedElsewhere = assignedClientIds.has(c.id);
+                      const isManaged = c.estado !== 'LIBRE';
+                      const matchSearch = !searchAvail || 
+                        `${c.nombres} ${c.apellidos} ${c.dni}`.toLowerCase().includes(searchAvail.toLowerCase());
+                      return isRutaDay && !isAlreadyInThisRuta && !isAssignedElsewhere && !isManaged && matchSearch;
+                  }).length === 0 && (
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--c-muted)' }}>
+                      <Sparkles size={40} style={{ opacity: 0.1, marginBottom: '10px' }}/>
+                      <p style={{ fontSize: '12px', marginTop: '10px' }}>No hay más clientes disponibles con fecha de pago hoy.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-            <div className="modal-footer bg-white border-t p-4 flex justify-end gap-3">
+
+            <div className="modal-footer" style={{ padding: '20px 25px', borderTop: '1px solid var(--c-border)', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: 'var(--c-surface)' }}>
                <button 
-                 className="btn btn-info flex items-center gap-2"
+                 className="btn btn-primary"
+                 style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--c-accent)', borderColor: 'var(--c-accent)' }}
                  onClick={() => {
-                   // Lógica para abrir mapa con ruta (Podría ser otro modal o expandir este)
-                   alert('Visualización de mapa en construcción para esta sección.');
+                   // Cerramos este modal y abrimos el planificador enfocado si es necesario, 
+                   // o simplemente centramos en el mapa principal.
+                   setShowViewModal(false);
+                   // Si tuviéramos una lógica de "foco", la activaríamos aquí.
+                   alert('Centrando en el mapa principal...');
                  }}
                >
                  <MapIcon size={16}/> VER EN MAPA
                </button>
-               <button className="btn btn-ghost" onClick={() => setShowViewModal(false)}>CERRAR</button>
+               <button className="btn btn-ghost" style={{ fontWeight: '800', color: 'var(--c-muted)' }} onClick={() => setShowViewModal(false)}>CERRAR</button>
             </div>
           </div>
         </div>

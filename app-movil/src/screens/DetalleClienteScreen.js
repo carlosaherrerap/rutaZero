@@ -12,7 +12,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width } = Dimensions.get('window');
 
-const ESTADOS_GESTIONADOS = ['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'];
+const ESTADOS_GESTIONADOS = ['VISITADO_PAGO', 'REPROGRAMADO'];
 
 const DetalleClienteScreen = ({ route, navigation }) => {
   const { cliente: initialCliente } = route.params || {};
@@ -113,7 +113,6 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       case 'EN_VISITA': return { color: '#a855f7', label: 'EN CAMINO' };
       case 'VISITADO_PAGO': return { color: '#10b981', label: 'GESTIONADO' };
       case 'REPROGRAMADO': return { color: '#f59e0b', label: 'REPROGRAMADO' };
-      case 'NO_ENCONTRADO': return { color: '#ef4444', label: 'NO ENCONTRADO' };
       default: return { color: '#3b82f6', label: 'LIBRE' };
     }
   };
@@ -246,6 +245,16 @@ const DetalleClienteScreen = ({ route, navigation }) => {
            )}
 
             <View style={styles.mapActions}>
+              {isMapFullscreen && (
+                <TouchableOpacity 
+                  style={[styles.mapBtn, styles.mapBtnBack]} 
+                  onPress={() => setIsMapFullscreen(false)}
+                >
+                   <Ionicons name="arrow-back" size={24} color="#fff" />
+                   <Text style={[styles.mapBtnText, { color: '#fff' }]}>VOLVER AL DETALLE</Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity 
                 style={[styles.mapBtn, { marginBottom: 8 }]} 
                 onPress={() => setIsMapFullscreen(!isMapFullscreen)}
@@ -336,10 +345,11 @@ const styles = StyleSheet.create({
   mapContainer: { width: width, height: 300, backgroundColor: '#e2e8f0', zIndex: 10 },
   mapContainerFullscreen: { position: 'absolute', top: 0, left: 0, width: width, height: Dimensions.get('window').height, zIndex: 1000 },
   map: { width: '100%', height: '100%' },
-  mapActions: { position: 'absolute', bottom: 15, right: 15 },
-  mapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 12, elevation: 5 },
-  mapBtnText: { marginLeft: 5, fontWeight: '700', fontSize: 12, color: '#3b82f6' },
-  workerMarker: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#fff' },
+  mapActions: { position: 'absolute', bottom: 20, right: 15, left: 15, alignItems: 'flex-end' },
+  mapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 12, borderRadius: 12, elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
+  mapBtnBack: { alignSelf: 'flex-start', position: 'absolute', top: -Dimensions.get('window').height + 150, backgroundColor: '#1e293b', paddingHorizontal: 20 },
+  mapBtnText: { marginLeft: 8, fontWeight: '800', fontSize: 13, color: '#3b82f6' },
+  workerMarker: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
   infoSection: { backgroundColor: '#fff', marginTop: -20, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, elevation: 10 },
   clientName: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
   clientSub: { fontSize: 14, color: '#64748b', marginTop: 5 },

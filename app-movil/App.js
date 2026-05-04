@@ -21,7 +21,7 @@ function NavigationStack() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#1F2937', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: 'white' }}>Iniciando Ruta Zero...</Text>
+        <Text style={{ color: 'white' }}>Iniciando Routing...</Text>
       </View>
     );
   }

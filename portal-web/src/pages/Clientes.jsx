@@ -1,5 +1,10 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { 
+  User, MapPin, Phone, Mail, Home, Building2, Shield, 
+  AlertTriangle, WifiOff, Calendar, ChevronUp, ChevronDown, 
+  ClipboardList, X, Image, Map as MapIcon 
+} from 'lucide-react';
 
 // Mapa de estado → color (mismo que la app)
 const ESTADO_COLORS = {
@@ -7,7 +12,6 @@ const ESTADO_COLORS = {
   EN_VISITA:     { bg: 'var(--c-surface-2)', text: 'var(--c-accent)', label: 'EN CAMINO' },
   VISITADO_PAGO: { bg: 'var(--c-surface-2)', text: 'var(--c-success)', label: 'GESTIONADO' },
   REPROGRAMADO:  { bg: 'var(--c-surface-2)', text: 'var(--c-warn)', label: 'REPROGRAMADO' },
-  NO_ENCONTRADO: { bg: 'var(--c-surface-2)', text: 'var(--c-danger)', label: 'NO ENCONTRADO' },
 };
 
 function EstadoBadge({ estado }) {
@@ -29,43 +33,71 @@ function EstadoBadge({ estado }) {
 }
 
 function FichaDetallePanel({ g }) {
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  const { api } = useContext(AuthContext);
   const fmt = v => (v !== null && v !== undefined && v !== '') ? v : '—';
   const fmtNum = v => (v !== null && v !== undefined) ? parseFloat(v).toLocaleString('es-PE', { minimumFractionDigits: 2 }) : '—';
   const fmtDate = v => v ? new Date(v).toLocaleDateString('es-PE') : '—';
 
   return (
-    <div style={{ background: 'var(--c-surface-2)', borderRadius: '12px', padding: '14px', marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', fontSize: '12px' }}>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Tipo Crédito</span><br /><b>{fmt(g.tipo_credito)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Fecha Desembolso</span><br /><b>{fmtDate(g.fecha_desembolso)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Monto Desembolso</span><br /><b>{g.moneda || 'PEN'} {fmtNum(g.monto_desembolso)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>N° Cuotas</span><br /><b>{fmt(g.nro_cuotas)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Cuotas Pagadas</span><br /><b>{fmt(g.nro_cuotas_pagadas)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Monto Cuota</span><br /><b>{fmtNum(g.monto_cuota)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Saldo Capital</span><br /><b>{fmtNum(g.saldo_capital)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Cond. Contable</span><br /><b>{fmt(g.condicion_contable)}</b></div>
-      <div><span style={{ color: 'var(--c-text-muted)' }}>Duración Llenado</span><br /><b>{g.duracion_llenado_seg ? `${g.duracion_llenado_seg}s` : '—'}</b></div>
-      {g.observacion && (
-        <div style={{ gridColumn: '1 / -1' }}>
-          <span style={{ color: 'var(--c-text-muted)' }}>Observación</span><br />
-          <i style={{ color: 'var(--c-text)' }}>{g.observacion}</i>
+    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>TIPO CRÉDITO</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.tipo_credito)}</div>
         </div>
-      )}
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>FECHA DESEMBOLSO</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmtDate(g.fecha_desembolso)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>MONTO DESEMBOLSO</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{g.moneda || 'PEN'} {fmtNum(g.monto_desembolso)}</div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>N° CUOTAS</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.nro_cuotas)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>CUOTAS PAGADAS</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.nro_cuotas_pagadas)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>MONTO CUOTA</div>
+          <div style={{ fontSize: '13px', fontWeight: '900' }}>S/ {fmtNum(g.monto_cuota)}</div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>SALDO CAPITAL</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>S/ {fmtNum(g.saldo_capital)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>COND. CONTABLE</div>
+          <div style={{ fontSize: '13px', fontWeight: '800' }}>{fmt(g.condicion_contable)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>DURACIÓN LLENADO</div>
+          <div style={{ fontSize: '13px', fontWeight: '700' }}>{g.duracion_llenado_seg ? `${g.duracion_llenado_seg}s` : '—'}</div>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>OBSERVACIÓN</div>
+        <div style={{ fontSize: '13px', color: 'var(--c-text)', fontStyle: 'italic', lineHeight: '1.5' }}>
+          "{g.observacion || 'Sin observaciones registradas'}"
+        </div>
+      </div>
+
       {g.evidencias && g.evidencias.length > 0 && (
-        <div style={{ gridColumn: '1 / -1' }}>
-          <span style={{ color: 'var(--c-text-muted)', display: 'block', marginBottom: '8px' }}>📸 Evidencias ({g.evidencias.length})</span>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {g.evidencias.map((url, i) => (
-              <a key={i} href={`${API_BASE}${url}`} target="_blank" rel="noopener noreferrer">
-                <img src={`${API_BASE}${url}`} alt={`ev-${i+1}`}
-                  style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid var(--c-border)', cursor: 'pointer', transition: 'transform 0.15s' }}
-                  onMouseEnter={e => e.target.style.transform = 'scale(1.05)'}
-                  onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-                  onError={e => { e.target.style.display = 'none'; }}
-                />
-              </a>
-            ))}
-          </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {g.evidencias.map((url, i) => (
+            <img key={i} 
+              src={url.startsWith('http') ? url : `${api.defaults.baseURL}${url}`} 
+              style={{ width: '64px', height: '64px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--c-border)', cursor: 'pointer' }}
+              onClick={() => window.open(url.startsWith('http') ? url : `${api.defaults.baseURL}${url}`, '_blank')}
+              onError={e => e.target.style.display = 'none'}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -83,37 +115,21 @@ export default function Clientes() {
   const { api } = useContext(AuthContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [workers, setWorkers] = useState([]);
-  const [routes, setRoutes] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 12, totalPages: 0 });
-  const [filters, setFilters] = useState({ search: '', distrito: '', estado: '', worker_id: '', ruta_id: '' });
+  const [filters, setFilters] = useState({ 
+    search: '', 
+    distrito: '', 
+    estado: '', 
+    fecha_pago: new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })
+  });
   const [selectedClient, setSelectedClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [expandedGestion, setExpandedGestion] = useState(null);
 
   useEffect(() => { 
-    fetchWorkers();
     fetchClientes(); 
   }, [api, pagination.page, filters]);
-
-  const fetchWorkers = async () => {
-    try {
-      const res = await api.get('/api/workers');
-      setWorkers(res.data.data || []);
-    } catch (e) { console.error('Error fetching workers', e); }
-  };
-
-  const fetchRoutesByWorker = async (workerId) => {
-    if (!workerId) {
-      setRoutes([]);
-      return;
-    }
-    try {
-      const res = await api.get(`/api/rutas/worker/${workerId}`);
-      setRoutes(res.data.data || []);
-    } catch (e) { console.error('Error fetching routes', e); }
-  };
 
   const fetchClientes = async () => {
     setLoading(true);
@@ -128,14 +144,7 @@ export default function Clientes() {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    
-    if (name === 'worker_id') {
-      fetchRoutesByWorker(value);
-      setFilters(prev => ({ ...prev, [name]: value, ruta_id: '' })); // Reset ruta if worker changes
-    } else {
-      setFilters(prev => ({ ...prev, [name]: value }));
-    }
-    
+    setFilters(prev => ({ ...prev, [name]: value }));
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -160,19 +169,14 @@ export default function Clientes() {
           <input type="text" name="search" placeholder="Buscar por nombre, apellidos o DNI..." value={filters.search} onChange={handleFilterChange} />
         </div>
         
-        <select name="worker_id" className="form-input" style={{ width: '180px' }} value={filters.worker_id} onChange={handleFilterChange}>
-          <option value="">[Worker] Todos</option>
-          {workers.map(w => (
-            <option key={w.id} value={w.id}>{w.nombres} {w.apellidos}</option>
-          ))}
-        </select>
-
-        <select name="ruta_id" className="form-input" style={{ width: '180px' }} value={filters.ruta_id} onChange={handleFilterChange} disabled={!filters.worker_id}>
-          <option value="">[RUTAS] Todas</option>
-          {routes.map(r => (
-            <option key={r.id} value={r.id}>{r.nombre}</option>
-          ))}
-        </select>
+        <input 
+          type="date" 
+          name="fecha_pago" 
+          className="form-input" 
+          style={{ width: '150px' }} 
+          value={filters.fecha_pago} 
+          onChange={handleFilterChange} 
+        />
 
         <select name="estado" className="form-input" style={{ width: '160px' }} value={filters.estado} onChange={handleFilterChange}>
           <option value="">[ESTADOS] Todos</option>
@@ -236,76 +240,151 @@ export default function Clientes() {
         <button className="btn btn-ghost" disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}>Siguiente</button>
       </div>
 
-      {/* MODAL DETALLE */}
+      {/* MODAL DETALLE PREMIUM */}
       {showModal && selectedClient && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '960px', width: '95vw' }}>
-            <div className="modal-header">
-              <span className="modal-title">📋 Ficha — {selectedClient.nombres} {selectedClient.apellidos}</span>
-              <button className="btn-ghost btn-sm" onClick={() => setShowModal(false)}>✕</button>
+        <div className="modal-overlay" style={{ backdropFilter: 'blur(5px)' }}>
+          <div className="modal" style={{ maxWidth: '1100px', width: '95vw', background: 'var(--c-bg)', border: '1px solid var(--c-border)', borderRadius: '24px', overflow: 'hidden' }}>
+            
+            {/* HEADER MODAL */}
+            <div className="p-10 flex justify-between items-center">
+              <div>
+                <h2 style={{ fontSize: '28px', fontWeight: '900', color: 'var(--c-text)', margin: 0 }}>{selectedClient.nombres} {selectedClient.apellidos}</h2>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
+                  <span style={{ color: 'var(--c-primary)', fontSize: '11px', fontWeight: '900', letterSpacing: '0.5px' }}>ID: {selectedClient.id.substring(0, 8).toUpperCase()}</span>
+                  <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--c-border)' }}></span>
+                  <span style={{ fontSize: '12px', color: 'var(--c-muted)' }}>Registrado {new Date(selectedClient.created_at || Date.now()).toLocaleDateString('es-PE', { month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <button className="btn btn-primary" style={{ padding: '10px 24px', borderRadius: '14px', fontSize: '13px', fontWeight: '800' }}>
+                  <ClipboardList size={18}/> EXPORTAR FICHA
+                </button>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  style={{ 
+                    width: '44px', height: '44px', borderRadius: '50%', border: '1px solid var(--c-border)', 
+                    background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', transition: 'all 0.2s', color: 'var(--c-muted)'
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-surface-2)'; e.currentTarget.style.color = 'var(--c-text)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-muted)'; }}
+                >
+                  <X size={24}/>
+                </button>
+              </div>
             </div>
-            <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
-              {loadingDetail ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}><div className="spinner"></div></div>
-              ) : (
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  {/* Columna izquierda */}
-                  <div style={{ flex: '1', minWidth: '220px' }}>
-                    <h4 className="card-title mb-3">Información Personal</h4>
-                    <div className="card" style={{ padding: '14px', background: 'var(--c-bg-light)', fontSize: '13px', marginBottom: '12px' }}>
-                      <div style={{ marginBottom: '6px' }}>📞 {selectedClient.telefono}</div>
-                      <div style={{ marginBottom: '6px' }}>✉️ {selectedClient.email || 'No registrado'}</div>
-                      <div style={{ marginBottom: '6px' }}>📍 {selectedClient.direccion}</div>
-                      <div>🏙️ {selectedClient.distrito} - Lima</div>
-                    </div>
-                    <div className="card" style={{ padding: '12px', background: 'var(--c-bg-light)', marginBottom: '12px' }}>
-                      <div className="text-sm text-muted mb-1">Estado actual</div>
-                      <EstadoBadge estado={selectedClient.estado} />
-                    </div>
-                    <div className="card" style={{ padding: '12px', background: 'var(--c-bg-light)' }}>
-                      <div className="text-sm text-muted mb-1">Deuda Total</div>
-                      <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--c-danger)' }}>
-                        S/ {parseFloat(selectedClient.deuda_total || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="text-xs text-muted">{selectedClient.dias_retraso} días de retraso</div>
-                    </div>
-                  </div>
-                  {/* Columna derecha: historial */}
-                  <div style={{ flex: '2', minWidth: '300px' }}>
-                    <h4 className="card-title mb-3">Historial de Gestiones ({(selectedClient.gestiones || []).length})</h4>
-                    {!selectedClient.gestiones || selectedClient.gestiones.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '30px', color: 'var(--c-text-muted)', fontSize: '14px' }}>
-                        📋 No hay gestiones registradas para este cliente
-                      </div>
-                    ) : selectedClient.gestiones.map((g, idx) => (
-                      <div key={g.id || idx} className="card mb-3" style={{ padding: '14px', borderLeft: `4px solid ${getTipColor(g.tipificacion)}` }}>
-                        <div
-                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                          onClick={() => setExpandedGestion(expandedGestion === idx ? null : idx)}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <span style={{ background: getTipColor(g.tipificacion), color: 'var(--c-on-primary)', borderRadius: '6px', padding: '3px 8px', fontSize: '10px', fontWeight: '800' }}>
-                              {g.tipificacion}
-                            </span>
-                            <b style={{ fontSize: '13px' }}>{g.worker_nombre}</b>
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--c-text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            📅 {new Date(g.timestamp_at).toLocaleString('es-PE')}
-                            <span>{expandedGestion === idx ? '▲ ocultar' : '▼ ver ficha'}</span>
-                          </div>
+
+            <div className="modal-body" style={{ padding: '0 40px 40px', maxHeight: '75vh', overflowY: 'auto', display: 'grid', gridTemplateColumns: '320px 1fr', gap: '48px' }}>
+              
+              {/* SIDEBAR IZQUIERDO */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                
+                {/* ASIGNACIÓN ACTUAL (DINÁMICO) - AHORA ARRIBA */}
+                <section style={{ 
+                  padding: '16px 20px', 
+                  background: selectedClient.worker_nombre ? 'rgba(59, 130, 246, 0.05)' : 'rgba(239, 68, 68, 0.04)', 
+                  border: `1px solid ${selectedClient.worker_nombre ? 'rgba(59, 130, 246, 0.15)' : 'rgba(239, 68, 68, 0.12)'}`, 
+                  borderRadius: '16px',
+                  display: 'flex', alignItems: 'center', gap: '12px'
+                }}>
+                  {selectedClient.worker_nombre 
+                    ? <User size={18} color="#3b82f6"/>
+                    : <AlertTriangle size={18} color="#ef4444"/>
+                  }
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: selectedClient.worker_nombre ? '#3b82f6' : '#ef4444' }}>
+                    {selectedClient.worker_nombre 
+                      ? `${selectedClient.worker_nombre} (${selectedClient.ruta_nombre})`
+                      : 'Sin worker y/o ruta activa'
+                    }
+                  </span>
+                </section>
+
+                {/* UBICACIÓN Y DATOS */}
+                <section>
+                  <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '20px' }}>UBICACIÓN Y DATOS</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    {[
+                      { icon: <Phone size={18}/>, label: 'TELÉFONO', value: selectedClient.telefono },
+                      { icon: <Mail size={18}/>, label: 'EMAIL', value: selectedClient.email || 'No registrado' },
+                      { icon: <MapPin size={18}/>, label: 'DIRECCIÓN', value: selectedClient.direccion },
+                      { icon: <Building2 size={18}/>, label: 'DISTRITO', value: selectedClient.distrito }
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ color: 'var(--c-primary)', marginTop: '2px' }}>{item.icon}</div>
+                        <div>
+                          <div style={{ fontSize: '10px', color: 'var(--c-muted)', fontWeight: '800', marginBottom: '4px' }}>{item.label}</div>
+                          <div style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.4' }}>{item.value}</div>
                         </div>
-                        {expandedGestion === idx && <FichaDetallePanel g={g} />}
                       </div>
                     ))}
                   </div>
+                </section>
+
+              </div>
+
+              {/* CONTENIDO PRINCIPAL: TIMELINE */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--c-muted)', textTransform: 'uppercase', letterSpacing: '1.5px', margin: 0 }}>HISTORIAL DE GESTIONES</h4>
                 </div>
-              )}
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-primary" onClick={() => setShowModal(false)}>Cerrar</button>
+
+                {loadingDetail ? (
+                  <div style={{ textAlign: 'center', padding: '40px' }}><div className="spinner"></div></div>
+                ) : !selectedClient.gestiones || selectedClient.gestiones.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px', background: 'var(--c-surface)', borderRadius: '20px', border: '1px dashed var(--c-border)' }}>
+                    <p style={{ color: 'var(--c-muted)', fontSize: '14px' }}>No hay registros de gestión para este cliente.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0', position: 'relative' }}>
+                    {/* Línea vertical del timeline */}
+                    <div style={{ position: 'absolute', left: '16px', top: '0', bottom: '0', width: '2px', background: 'var(--c-border)', zIndex: 0 }}></div>
+                    
+                    {selectedClient.gestiones.map((g, idx) => (
+                      <div key={g.id || idx} style={{ position: 'relative', paddingLeft: '56px', marginBottom: '32px', zIndex: 1 }}>
+                        {/* Círculo del timeline */}
+                        <div style={{ 
+                          position: 'absolute', left: '0', top: '0', width: '34px', height: '34px', 
+                          borderRadius: '50%', background: 'var(--c-bg)', border: `2px solid ${getTipColor(g.tipificacion)}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2
+                        }}>
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: getTipColor(g.tipificacion) }}></div>
+                        </div>
+
+                        <div className="card" style={{ 
+                          background: 'var(--c-surface)', borderRadius: '20px', padding: '24px', 
+                          border: '1px solid var(--c-border)', transition: 'all 0.3s'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                              <span style={{ 
+                                background: 'rgba(0,0,0,0.2)', color: getTipColor(g.tipificacion), 
+                                fontSize: '10px', fontWeight: '900', padding: '4px 10px', 
+                                borderRadius: '6px', border: `1px solid ${getTipColor(g.tipificacion)}` 
+                              }}>
+                                {g.tipificacion}
+                              </span>
+                              <div style={{ fontWeight: '800', fontSize: '14px' }}>{g.tipificacion === 'PAGO' ? 'Cobro Recaudado' : (g.tipificacion === 'REPROGRAMARA' ? 'Visita Reprogramada' : 'Entrega Fallida')}</div>
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Calendar size={14}/> {new Date(g.timestamp_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} • {new Date(g.timestamp_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+
+                          <FichaDetallePanel g={g} />
+                          
+                          <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--c-border)', fontSize: '11px', color: 'var(--c-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Gestionado por <b>{g.worker_nombre}</b></span>
+                            {g.es_offline && <span style={{ color: 'var(--c-accent)', fontWeight: '900' }}>MODO OFFLINE</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

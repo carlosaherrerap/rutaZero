@@ -62,7 +62,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`🚀 Ruta Zero API corriendo en http://localhost:${PORT}`);
-  console.log(`📡 WebSocket activo en ws://localhost:${PORT}`);
+const { ensureAdminUser } = require('./config/init_db');
+
+server.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 Routing API corriendo en http://0.0.0.0:${PORT}`);
+  console.log(`📡 WebSocket activo en ws://0.0.0.0:${PORT}`);
+  
+  // Asegurar que el admin siempre exista con la clave correcta
+  await ensureAdminUser();
 });

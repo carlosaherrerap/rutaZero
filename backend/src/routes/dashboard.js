@@ -43,7 +43,15 @@ router.get('/stats', async (req, res) => {
 
     // Rutas completadas hoy
     const rutasCompletadas = await db.query(
-      'SELECT COUNT(*) FROM rutas WHERE fecha_asignacion = CURRENT_DATE AND completada = true'
+      `SELECT COUNT(*) 
+       FROM rutas r 
+       WHERE r.fecha_asignacion = CURRENT_DATE 
+       AND (
+         SELECT COUNT(*) 
+         FROM ruta_clientes rc 
+         JOIN clientes c ON c.id = rc.cliente_id 
+         WHERE rc.ruta_id = r.id AND c.estado IN ('LIBRE', 'EN_VISITA')
+       ) = 0`
     );
     stats.rutasCompletadas = parseInt(rutasCompletadas.rows[0].count);
 
@@ -58,6 +66,12 @@ router.get('/stats', async (req, res) => {
       "SELECT COUNT(*) FROM clientes WHERE estado = 'REPROGRAMADO' AND fecha_gestion = CURRENT_DATE"
     );
     stats.totalReprogramados = parseInt(reprogramados.rows[0].count);
+
+    // Clientes con fecha de pago hoy
+    const pagoHoy = await db.query(
+      'SELECT COUNT(*) FROM clientes WHERE fecha_pago = CURRENT_DATE'
+    );
+    stats.clientesPagoHoy = parseInt(pagoHoy.rows[0].count);
 
     // Clientes por distrito (top 10)
     const porDistrito = await db.query(

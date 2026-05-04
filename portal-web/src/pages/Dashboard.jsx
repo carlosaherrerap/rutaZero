@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
+import { Users, Wallet, Activity, Map as MapIcon, CheckCircle, AlertCircle, Calendar, CreditCard } from 'lucide-react';
 
 export default function Dashboard() {
   const { api, token } = useContext(AuthContext);
@@ -75,33 +76,60 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="stats-grid" style={{gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap:16}}>
-        <div className="stat-card">
-          <div className="stat-label">Total Clientes</div>
-          <div className="stat-value">{stats.totalClientes}</div>
-          <div className="stat-sub">Registrados</div>
+      {/* STATS SCROLLABLE */}
+      <div style={{ overflowX: 'auto', paddingBottom: '16px', marginBottom: '24px', cursor: 'grab' }}>
+        <div style={{ display: 'flex', gap: '20px', minWidth: 'max-content', padding: '4px' }}>
+          {[
+            { label: 'TOTAL CLIENTES', value: stats.totalClientes, sub: 'TOTAL CARTERA', color: 'var(--c-primary)', icon: <Users size={48} />, bg: 'var(--c-primary-soft)' },
+            { label: 'PAGOS DE HOY', value: stats.clientesPagoHoy, sub: 'VENCEN HOY', color: 'var(--c-accent)', icon: <Wallet size={48} />, bg: 'var(--c-accent-soft)' },
+            { label: 'WORKERS ACTIVOS', value: stats.workersActivos, sub: 'EN JORNADA', color: 'var(--c-info)', icon: <Activity size={48} />, bg: 'var(--c-info-soft)' },
+            { label: 'RUTAS HOY', value: stats.rutasHoy, sub: 'ASIGNADAS', color: 'var(--c-primary)', icon: <MapIcon size={48} />, bg: 'var(--c-primary-soft)' },
+            { label: 'GESTIONES', value: stats.gestionesHoy, sub: 'REALIZADAS', color: 'var(--c-success)', icon: <CheckCircle size={48} />, bg: 'var(--c-success-soft)' },
+            { 
+              label: 'NO ENCONTRADOS', 
+              value: stats.clientesPorEstado?.find(e => e.estado === 'NO_ENCONTRADO')?.total || 0, 
+              sub: 'AUSENTES', color: 'var(--c-danger)', icon: <AlertCircle size={48} />, bg: 'var(--c-danger-soft)' 
+            },
+            { 
+              label: 'REPROGRAMADOS', 
+              value: stats.clientesPorEstado?.find(e => e.estado === 'REPROGRAMADO')?.total || 0, 
+              sub: 'PENDIENTES', color: 'var(--c-warn)', icon: <Calendar size={48} />, bg: 'var(--c-warn-soft)' 
+            },
+            { 
+              label: 'PAGARON', 
+              value: stats.clientesPorEstado?.find(e => e.estado === 'VISITADO_PAGO')?.total || 0, 
+              sub: 'GESTIONADOS', color: '#10b981', icon: <CreditCard size={48} />, bg: 'rgba(16,185,129,0.1)' 
+            },
+          ].map((s, i) => (
+            <div key={i} className="stat-card" style={{ 
+              minWidth: '280px', 
+              flex: '0 0 auto',
+              background: 'var(--c-surface)',
+              padding: '24px',
+              borderRadius: '24px',
+              border: '1px solid var(--c-border)',
+              boxShadow: 'var(--shadow)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '24px',
+              transition: 'transform 0.2s',
+              cursor: 'default'
+            }}>
+              <div style={{ 
+                color: s.color,
+                opacity: 0.8
+              }}>
+                {s.icon}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right', flex: 1 }}>
+                <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-text)', letterSpacing: '0.5px' }}>{s.label}</div>
+                <div style={{ fontSize: '38px', fontWeight: '900', color: 'var(--c-text)', margin: '4px 0', lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: '11px', color: 'var(--c-muted)', fontWeight: '800' }}>{s.sub}</div>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="stat-card">
-          <div className="stat-label">Workers Activos</div>
-          <div className="stat-value">{stats.workersActivos}</div>
-          <div className="stat-sub">En jornada hoy</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Rutas Hoy</div>
-          <div className="stat-value">{stats.rutasHoy}</div>
-          <div className="stat-sub">Asignadas</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Gestiones</div>
-          <div className="stat-value" style={{color:'var(--c-primary)'}}>{stats.gestionesHoy}</div>
-          <div className="stat-sub">Realizadas hoy</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Reprogramados</div>
-          <div className="stat-value" style={{color:'var(--c-accent)'}}>{stats.totalReprogramados}</div>
-          <div className="stat-sub">Volver a visitar</div>
-        </div>
-      </section>
+      </div>
 
       <div className="form-row form-row-2 mt-4">
         <div className="card">
