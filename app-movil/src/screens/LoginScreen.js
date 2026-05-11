@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Image } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,9 +36,13 @@ export default function LoginScreen() {
           <View style={styles.glassCard}>
             <View style={styles.logoContainer}>
               <View style={styles.iconWrapper}>
-                <Ionicons name="map-outline" size={45} color="#fff" />
+                <Image 
+                  source={require('../../assets/logo-informatech.png')} 
+                  style={styles.logoImage}
+                  resizeMode="contain"
+                />
               </View>
-              <Text style={styles.logoTitle}>Routing</Text>
+              <Text style={styles.logoTitle}>InformaPeru</Text>
               <Text style={styles.logoSub}>WORKER PORTAL</Text>
             </View>
 
@@ -126,14 +130,14 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 80, height: 80,
     borderRadius: 25,
-    backgroundColor: '#2563eb',
+    backgroundColor: 'transparent',
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 15,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    elevation: 8,
+  },
+  logoImage: {
+    width: 90,
+    height: 90,
+    tintColor: '#ffffff', // Invertir de negro a blanco
   },
   logoTitle: { color: '#f8fafc', fontSize: 32, fontWeight: '900', letterSpacing: 0.5 },
   logoSub: { color: '#94a3b8', fontSize: 13, fontWeight: '700', letterSpacing: 3, marginTop: 4 },

@@ -8,6 +8,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Location from 'expo-location';
 
 const { width } = Dimensions.get('window');
 
@@ -105,12 +106,32 @@ export default function HomeScreen({ navigation }) {
       }
     }, 1000 * 60 * 10);
 
+    // TRACKING GPS (Cada 20 segundos si está en jornada)
+    const trackingInterval = setInterval(async () => {
+      if (isOnline && api && journey?.estado_jornada === 'JORNADA_INICIADA') {
+        try {
+          // Usamos getCurrentPositionAsync para mayor precisión, pero con baja exactitud para balancear batería
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          if (loc) {
+            api.post('/api/tracking/posicion', {
+              latitud: loc.coords.latitude,
+              longitud: loc.coords.longitude,
+              precision_m: loc.coords.accuracy
+            }).catch(() => {});
+          }
+        } catch (e) {
+          console.log('⚠️ [Tracking] Error obteniendo ubicación:', e.message);
+        }
+      }
+    }, 20000);
+
     return () => { 
       console.log('🔌 [Home] Limpiando detector de conexión');
       unsubscribe(); 
       clearInterval(interval); 
+      clearInterval(trackingInterval);
     };
-  }, [api, isOnline]);
+  }, [api, isOnline, journey?.estado_jornada]);
 
   // Pantalla completa Android
   useEffect(() => {
@@ -254,6 +275,20 @@ export default function HomeScreen({ navigation }) {
           return;
         }
         await api.post('/api/workers/jornada/iniciar');
+        
+        // LOG MONITOREO
+        try {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          if (loc) {
+            api.post('/api/monitoreo/log', {
+              accion: 'JORNADA_INICIADA',
+              metadata: { lat: loc.coords.latitude, lng: loc.coords.longitude }
+            }).catch(() => {});
+          }
+        } catch (e) {
+          console.log('⚠️ [Home] No se pudo obtener ubicación para log inicial');
+        }
+
         await updateLocalJourneyStatus('JORNADA_INICIADA'); 
         await fetchData();
         setShowJourneyModal(false);
@@ -275,6 +310,10 @@ export default function HomeScreen({ navigation }) {
           return;
         }
         await api.post('/api/workers/jornada/almuerzo/inicio');
+
+        // LOG MONITOREO
+        api.post('/api/monitoreo/log', { accion: 'ALMUERZO_INICIADO' }).catch(() => {});
+
         await updateLocalJourneyStatus('EN_REFRIGERIO', { hora_inicio_almuerzo: new Date().toISOString() });
         await fetchData();
       } catch (e) {
@@ -294,6 +333,10 @@ export default function HomeScreen({ navigation }) {
           return;
         }
         await api.post('/api/workers/jornada/almuerzo/fin');
+
+        // LOG MONITOREO
+        api.post('/api/monitoreo/log', { accion: 'ALMUERZO_FINALIZADO' }).catch(() => {});
+
         await updateLocalJourneyStatus('JORNADA_INICIADA');
         await fetchData();
       } catch (e) {
@@ -315,6 +358,10 @@ export default function HomeScreen({ navigation }) {
           return;
         }
         await api.post('/api/workers/jornada/finalizar');
+
+        // LOG MONITOREO
+        api.post('/api/monitoreo/log', { accion: 'JORNADA_FINALIZADA' }).catch(() => {});
+
         await updateLocalJourneyStatus('JORNADA_FINALIZADA');
         await clearOfflineCache(); 
         await fetchData();

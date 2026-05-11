@@ -1,64 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&display=swap');
+
 @font-face {
   font-family: 'Serimi';
   src: url('./assets/tipografia/SERIMI.ttf') format('truetype');
 }
 
-/* ─── Tokens (Routing Dark Theme) ───────────────────────── */
+/* ─── Tokens (Routing Professional Light Theme) ───────────────────────── */
 :root {
-  --c-bg:         #1E232F; /* Deep navy background */
-  --c-surface:    #252b3b; /* Slightly lighter navy for cards */
-  --c-surface-2:  #2d3548; /* For hover states/sidebar */
-  --c-border:     rgba(255,255,255,0.06);
-  --c-primary:    #00A9BC; /* Brand color */
-  --c-primary-h:  #008CA0;
-  --c-accent:     #F2B880;
-  --c-warn:       #f59e0b;
-  --c-danger:     #ef4444;
-  --c-success:    #10b981;
-  --c-info:       #3b82f6;
-  --c-on-primary: #ffffff;
-  --c-text:       #e2e8f0; /* Soft white text */
-  --c-muted:      #94a3b8; /* Slate muted text */
-  --c-muted-2:    #64748b;
+  --c-bg:         #FFFFFF; /* White background */
+  --c-surface:    #F2F0EB; /* Beige surface (Sidebar/Cards) */
+  --c-surface-2:  #E8E6E0; /* Slightly darker beige for hover */
+  --c-border:     #E0E0E0; /* Light gray border */
+  --c-primary:    #2D3436; /* Dark gray for primary actions */
+  --c-primary-h:  #000000;
+  --c-accent:     #636E72;
+  --c-warn:       #D6A01E;
+  --c-danger:     #D63031;
+  --c-success:    #27AE60;
+  --c-info:       #2980B9;
+  --c-on-primary: #FFFFFF;
+  --c-text:       #1A1A1A; /* Solid dark text */
+  --c-sidebar-text: #636E72;
+  --c-muted:      #636E72; /* Gray muted text */
+  --c-muted-2:    #B2BEC3;
 
-  --radius-sm:    8px;
-  --radius:       14px;
-  --radius-lg:    24px;
+  --radius-sm:    4px; /* More professional, sharper corners */
+  --radius:       8px;
+  --radius-lg:    12px;
 
-  --shadow:       0 10px 30px rgba(0,0,0,0.3);
-  --shadow-lg:    0 20px 60px rgba(0,0,0,0.5);
+  --shadow:       0 4px 12px rgba(0,0,0,0.05);
+  --shadow-lg:    0 8px 30px rgba(0,0,0,0.1);
 
-  --transition:   0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition:   0.2s ease-in-out;
+  --font-main:    'Arial', sans-serif;
 
   --sidebar-w:    280px;
   --topbar-h:     70px;
 }
 
-/* Fallback para light mode si existe, pero forzamos dark vibe */
 [data-theme="light"] {
-  --c-bg:         #1E232F;
-  --c-surface:    #252b3b;
-  --c-surface-2:  #2d3548;
+  --c-bg:         #FFFFFF;
+  --c-surface:    #F9F9F7;
+  --c-surface-2:  #F2F0EB;
+  --c-text:       #111111;
+  --c-muted:      #636E72;
+  --c-border:     #E0E0E0;
 }
 
 [data-theme="dark"] {
-  --c-bg:         #0f172a; /* Even darker for dark mode */
-  --c-surface:    #1e293b;
-  --c-surface-2:  #334155;
+  --c-bg:         #0B0E11; /* Deep Dark */
+  --c-surface:    #15191C; /* Darker Surface */
+  --c-surface-2:  #1C2226; /* Hover Surface */
+  --c-border:     #2D3436;
+  --c-primary:    #00A9BC; /* Cyan/Teal Accent */
+  --c-primary-h:  #008CA0;
+  --c-text:       #FFFFFF;
+  --c-muted:      #B2BEC3;
+  --c-muted-2:    #636E72;
 }
 
 /* ─── Reset ──────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; font-family: inherit; }
 html, body, #root { height: 100%; }
 body {
-  font-family: 'Poppins', Inter, system-ui, sans-serif;
+  font-family: var(--font-main);
   background: var(--c-bg);
   color: var(--c-text);
-  line-height: 1.6;
-  font-size: 16px;
+  line-height: 1.5;
+  font-size: 14px; /* Slightly smaller for professional feel */
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', Inter, sans-serif; font-weight: 600; }
+h1, h2, h3, h4, h5, h6 { font-family: inherit; font-weight: 700; color: var(--c-text); }
 
 /* Render-style Grid Background */
 .grid-bg {
@@ -68,11 +80,11 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', Inter, sans-serif; font-weight:
     linear-gradient(to right, var(--c-border) 1px, transparent 1px),
     linear-gradient(to bottom, var(--c-border) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.45) 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.45) 0%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.2) 0%, transparent 70%);
   pointer-events: none;
   z-index: -1;
-  opacity: 0.6;
+  opacity: 0.3;
 }
 
 .glass {

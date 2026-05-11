@@ -14,6 +14,14 @@ router.get('/', async (req, res) => {
     let query, params;
 
     if (req.user.rol === 'ADMIN') {
+      const sedeId = req.headers['x-sede-id'];
+      params = [];
+      let whereClause = 'WHERE 1=1';
+      if (sedeId) {
+        params.push(sedeId);
+        whereClause = `WHERE r.sede_id = $${params.length}`;
+      }
+
       query = `SELECT r.id, r.nombre, r.worker_id, r.creado_por, r.total_clientes, r.fecha_asignacion, r.created_at,
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
                       adm.nombres AS creador_nombre, adm.apellidos AS creador_apellido,
@@ -30,8 +38,8 @@ router.get('/', async (req, res) => {
                FROM rutas r
                LEFT JOIN usuarios u ON u.id = r.worker_id
                LEFT JOIN usuarios adm ON adm.id = r.creado_por
+               ${whereClause}
                ORDER BY r.fecha_asignacion DESC, r.nombre`;
-      params = [];
     } else {
       query = `SELECT r.id, r.nombre, r.worker_id, r.creado_por, r.total_clientes, r.fecha_asignacion, r.created_at,
                       u.nombres AS worker_nombre, u.apellidos AS worker_apellido,
@@ -149,12 +157,13 @@ router.post('/', adminOnly, async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Crear ruta con fecha opcional
+    // Crear ruta con fecha opcional y sede_id
+    const sedeId = req.headers['x-sede-id'];
     const rutaResult = await client.query(
-      `INSERT INTO rutas (nombre, worker_id, creado_por, total_clientes, fecha_asignacion)
-       VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_DATE))
+      `INSERT INTO rutas (nombre, worker_id, creado_por, sede_id, total_clientes, fecha_asignacion)
+       VALUES ($1, $2, $3, $4, $5, COALESCE($6, CURRENT_DATE))
        RETURNING *`,
-      [nombre, worker_id, req.user.id, cliente_ids.length, fecha_asignacion]
+      [nombre, worker_id, req.user.id, sedeId, cliente_ids.length, fecha_asignacion]
     );
 
     const ruta = rutaResult.rows[0];

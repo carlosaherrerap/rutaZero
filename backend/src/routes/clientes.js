@@ -19,6 +19,12 @@ router.get('/', async (req, res) => {
     let whereClause = 'WHERE 1=1';
     const params = [];
 
+    const sedeId = req.headers['x-sede-id'];
+    if (sedeId) {
+      params.push(sedeId);
+      whereClause += ` AND c.sede_id = $${params.length}`;
+    }
+
     if (search) {
       params.push(`%${search}%`);
       whereClause += ` AND (c.nombres ILIKE $${params.length} OR c.apellidos ILIKE $${params.length} OR c.dni ILIKE $${params.length})`;
@@ -30,8 +36,12 @@ router.get('/', async (req, res) => {
     }
 
     if (estado) {
-      params.push(estado);
-      whereClause += ` AND c.estado = $${params.length}`;
+      if (estado === 'NO_ENCONTRADO') {
+        whereClause += ` AND c.estado IN ('NO_ENCONTRADO', 'NO ENCONTRADO', 'NO_ECONTRADO')`;
+      } else {
+        params.push(estado);
+        whereClause += ` AND c.estado = $${params.length}`;
+      }
     }
 
     if (fecha_pago) {
@@ -117,6 +127,12 @@ router.get('/mapa', async (req, res) => {
     const params = [];
     let paramIdx = 1;
 
+    const sedeId = req.headers['x-sede-id'];
+    if (sedeId) {
+      queryClientes += ` AND c.sede_id = $${paramIdx++}`;
+      params.push(sedeId);
+    }
+
     if (fecha_pago) {
       queryClientes += ` AND c.fecha_pago = $${paramIdx++}`;
       params.push(fecha_pago);
@@ -133,15 +149,17 @@ router.get('/mapa', async (req, res) => {
 
     const clientesRes = await db.query(queryClientes, params);
 
-    // 2. Obtener Workers con jornada activa hoy
+    // 2. Obtener Workers con jornada activa hoy de la sede seleccionada
     const workersRes = await db.query(`
       SELECT u.id, u.nombres, u.apellidos, j.estado as estado_jornada, 
              COALESCE(ub.latitud, '0') as latitud, COALESCE(ub.longitud, '0') as longitud
       FROM usuarios u
       LEFT JOIN jornadas j ON j.worker_id = u.id AND j.fecha = CURRENT_DATE
       LEFT JOIN ubicaciones ub ON ub.id = u.ubicacion_id
-      WHERE u.rol = 'WORKER' AND (j.estado IS NULL OR j.estado != 'JORNADA_FINALIZADA')
-    `);
+      WHERE u.rol = 'WORKER' 
+        AND (u.sede_id = $1 OR $1 IS NULL)
+        AND (j.estado IS NULL OR j.estado != 'JORNADA_FINALIZADA')
+    `, [sedeId]);
 
     res.json({
       data: {
@@ -166,13 +184,17 @@ router.get('/:id', async (req, res) => {
       SELECT c.*, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
              u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre,
              r.nombre AS ruta_nombre,
-             uw.nombres || ' ' || uw.apellidos AS worker_nombre
+             uw.nombres || ' ' || uw.apellidos AS worker_nombre,
+             pf.nombre as plantilla_nombre,
+             pf.campos as plantilla_campos,
+             pf.requiere_firma as plantilla_requiere_firma
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN usuarios u ON u.id = c.bloqueado_por
       LEFT JOIN ruta_clientes rc ON rc.cliente_id = c.id
       LEFT JOIN rutas r ON r.id = rc.ruta_id
       LEFT JOIN usuarios uw ON uw.id = r.worker_id
+      LEFT JOIN plantillas_formularios pf ON pf.id = c.plantilla_id
       WHERE c.id = $1
     `, [req.params.id]);
 
@@ -184,7 +206,7 @@ router.get('/:id', async (req, res) => {
     const { rows: gestionesRows } = await db.query(`
       SELECT 
         gh.id, gh.tipificacion, gh.estado_nuevo, gh.observacion, gh.es_offline,
-        gh.created_at AS timestamp_at,
+        gh.created_at,
         u.nombres || ' ' || u.apellidos AS worker_nombre,
         f.tipo_credito, f.monto_desembolso, f.moneda, f.nro_cuotas,
         f.nro_cuotas_pagadas, f.monto_cuota, f.condicion_contable,
@@ -199,7 +221,7 @@ router.get('/:id', async (req, res) => {
       LEFT JOIN fichas f ON f.id = gh.ficha_id
       LEFT JOIN evidencias ev ON ev.ficha_id = f.id
       WHERE gh.cliente_id = $1
-      GROUP BY gh.id, u.nombres, u.apellidos,
+      GROUP BY gh.id, u.nombres, u.apellidos, gh.created_at,
                f.tipo_credito, f.monto_desembolso, f.moneda, f.nro_cuotas,
                f.nro_cuotas_pagadas, f.monto_cuota, f.condicion_contable,
                f.saldo_capital, f.fecha_desembolso, f.hora_inicio_visita,
@@ -211,6 +233,76 @@ router.get('/:id', async (req, res) => {
   } catch (err) {
     console.error('Error al obtener cliente:', err);
     res.status(500).json({ error: 'Error al obtener cliente' });
+  }
+});
+
+/**
+ * GET /api/clientes/chatbot/info
+ * Búsqueda optimizada para el ChatBot (Clientes y Workers)
+ */
+router.get('/chatbot/info', async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) return res.status(400).json({ error: 'Query requerida' });
+
+    // 1. Buscar en Clientes
+    const { rows: clienteRows } = await db.query(`
+      SELECT c.id, c.nombres, c.apellidos, c.dni, c.estado, c.fecha_pago, c.deuda_total,
+             ub.direccion, ub.distrito,
+             (SELECT tipificacion FROM gestiones_historial WHERE cliente_id = c.id ORDER BY created_at DESC LIMIT 1) as ultima_gestion
+      FROM clientes c
+      LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
+      WHERE (c.nombres ILIKE $1 OR c.apellidos ILIKE $1 OR c.dni ILIKE $1)
+      LIMIT 1
+    `, [`%${query}%`]);
+
+    if (clienteRows.length > 0) {
+      const client = clienteRows[0];
+      return res.json({ 
+        found: true, 
+        type: 'CLIENTE',
+        data: {
+          nombre: `${client.nombres} ${client.apellidos}`,
+          dni: client.dni,
+          estado: client.estado,
+          fecha_pago: client.fecha_pago,
+          deuda: client.deuda_total,
+          direccion: `${client.direccion}, ${client.distrito}`,
+          ultima_ficha: client.ultima_gestion || "Aún no tiene ficha"
+        }
+      });
+    }
+
+    // 2. Si no es cliente, buscar en Workers (Usuarios con rol WORKER)
+    const { rows: workerRows } = await db.query(`
+      SELECT u.id, u.username, u.nombres, u.apellidos, u.rol, u.estado,
+             s.nombre as sede_nombre,
+             (SELECT COUNT(*) FROM rutas WHERE worker_id = u.id AND estado = 'COMPLETADO') as rutas_completadas
+      FROM usuarios u
+      LEFT JOIN sedes s ON s.id = u.sede_id
+      WHERE u.rol = 'WORKER' 
+        AND (u.nombres ILIKE $1 OR u.apellidos ILIKE $1 OR u.username ILIKE $1)
+      LIMIT 1
+    `, [`%${query}%`]);
+
+    if (workerRows.length > 0) {
+      const worker = workerRows[0];
+      return res.json({
+        found: true,
+        type: 'OPERADOR',
+        data: {
+          nombre: `${worker.nombres} ${worker.apellidos}`,
+          usuario: worker.username,
+          sede: worker.sede_nombre,
+          estado: worker.estado,
+          total_rutas: worker.rutas_completadas
+        }
+      });
+    }
+
+    res.json({ found: false });
+  } catch (err) {
+    res.status(500).json({ error: 'Error en búsqueda chatbot' });
   }
 });
 

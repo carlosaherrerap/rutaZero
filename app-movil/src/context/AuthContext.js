@@ -10,7 +10,8 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = 'http://192.168.1.69:4000';
+  // Si es Web usamos localhost, si es móvil usamos la IP de la PC para que el celular la vea
+  const BASE_URL = Platform.OS === 'web' ? 'http://localhost:4000' : 'http://192.168.1.69:4000';
 
   // Creamos la instancia de API
   useEffect(() => {

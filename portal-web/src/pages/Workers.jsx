@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { ChevronRight, MapPin, FileText, Calendar, User as UserIcon, X, Search as SearchIcon, WifiOff } from 'lucide-react';
 
 export default function Workers() {
-  const { api } = useContext(AuthContext);
+  const { api, sedeActual } = useContext(AuthContext);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,18 +35,29 @@ export default function Workers() {
 
   useEffect(() => { fetchWorkers(); }, [api]);
 
+  const [workerLogs, setWorkerLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
   const handleSelectWorker = async (w) => {
     setSelectedWorker(w);
     setLoadingRoutes(true);
+    setLoadingLogs(true);
     setWorkerRoutes([]);
+    setWorkerLogs([]);
     setSelectedRoute(null);
     setRouteDetail(null);
     setSelectedFicha(null);
     try {
-      const res = await api.get(`/api/rutas/worker/${w.id}`);
-      setWorkerRoutes(res.data.data || []);
+      const resR = await api.get(`/api/rutas/worker/${w.id}`);
+      setWorkerRoutes(resR.data.data || []);
+      
+      const resL = await api.get(`/api/monitoreo/logs/${w.id}`);
+      setWorkerLogs(resL.data.data || []);
     } catch (e) { console.error(e); }
-    finally { setLoadingRoutes(false); }
+    finally { 
+      setLoadingRoutes(false);
+      setLoadingLogs(false); 
+    }
   };
 
   const handleSelectRoute = async (r) => {
@@ -97,11 +108,30 @@ export default function Workers() {
     finally { setCreating(false); }
   };
 
+  const getActionInfo = (accion) => {
+    switch (accion) {
+      case 'JORNADA_INICIADA': return { color: '#10b981', label: 'INICIÓ DÍA', icon: '🚀' };
+      case 'ALMUERZO_INICIADO': return { color: '#f59e0b', label: 'INICIÓ RECESO', icon: '🍱' };
+      case 'ALMUERZO_FINALIZADO': return { color: '#10b981', label: 'FIN RECESO', icon: '✅' };
+      case 'FICHA_DETALLE_ABIERTA': return { color: '#3b82f6', label: 'VIO DETALLE', icon: '👀' };
+      case 'VISITAR_PRESIONADO': return { color: '#a855f7', label: 'EN CAMINO', icon: '🚴' };
+      case 'FICHA_ABIERTA': return { color: '#6366f1', label: 'ABRIÓ FICHA', icon: '📝' };
+      case 'FICHA_GUARDADA': return { color: '#059669', label: 'GESTIÓN LISTA', icon: '💾' };
+      case 'JORNADA_FINALIZADA': return { color: '#ef4444', label: 'FINALIZÓ DÍA', icon: '🏠' };
+      default: return { color: '#94a3b8', label: accion, icon: '📍' };
+    }
+  };
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: selectedWorker ? '1fr 450px' : '1fr', gap: '24px', transition: 'all 0.3s' }}>
       
       {/* MAIN TABLE */}
       <div>
+        <div style={{ marginBottom: '24px' }}>
+          <h1 className="text-2xl font-bold">Gestión de Workers - {sedeActual?.nombre || 'General'}</h1>
+          <p className="text-muted">Visualiza el estado de tus trabajadores en campo y su productividad en esta sede.</p>
+        </div>
+
         <div className="filter-bar">
           <div className="search-bar" style={{ width: '300px' }}>
             <SearchIcon size={16} color="var(--c-muted)"/>
@@ -183,7 +213,57 @@ export default function Workers() {
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             
-            {/* NIVEL 1: RUTAS ASIGNADAS */}
+            {/* NUEVA SECCIÓN: LÍNEA DE TIEMPO DE AUDITORÍA */}
+            <section>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <FileText size={16} color="var(--c-primary)"/>
+                <h4 style={{ fontSize: '12px', fontWeight: '900', color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Auditoría de Comportamiento</h4>
+              </div>
+
+              {loadingLogs ? (
+                <div style={{ padding: '20px', textAlign: 'center' }}><div className="spinner"></div></div>
+              ) : workerLogs.length === 0 ? (
+                <div style={{ padding: '24px', textAlign: 'center', background: 'var(--c-surface-2)', borderRadius: '16px', border: '1px dashed var(--c-border)' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--c-muted)', margin: 0 }}>Sin registros de actividad para hoy.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', paddingLeft: '10px', borderLeft: '2px solid var(--c-border)', gap: '20px', marginLeft: '5px' }}>
+                   {workerLogs.map((log, idx) => {
+                     const info = getActionInfo(log.accion);
+                     return (
+                       <div key={idx} style={{ position: 'relative' }}>
+                          <div style={{ 
+                            position: 'absolute', left: '-17px', top: '0', 
+                            width: '12px', height: '12px', borderRadius: '50%', 
+                            background: info.color, border: '2px solid var(--c-surface)' 
+                          }} />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                             <div>
+                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontSize: '12px' }}>{info.icon}</span>
+                                  <span style={{ fontSize: '11px', fontWeight: '900', color: info.color }}>{info.label}</span>
+                               </div>
+                               {log.cliente_nombre && (
+                                 <div style={{ fontSize: '12px', fontWeight: '700', marginTop: '2px' }}>
+                                   {log.cliente_nombre} {log.cliente_apellido}
+                                 </div>
+                               )}
+                               {log.metadata?.lat && (
+                                 <div style={{ fontSize: '10px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                    <MapPin size={8}/> {log.metadata.lat.toFixed(5)}, {log.metadata.lng.toFixed(5)}
+                                 </div>
+                               )}
+                             </div>
+                             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)' }}>
+                               {new Date(log.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                             </div>
+                          </div>
+                       </div>
+                     );
+                   })}
+                </div>
+              )}
+            </section>
             <section>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                 <MapPin size={16} color="var(--c-primary)"/>

@@ -1,7 +1,3 @@
-/* ============================================================
-   ROUTING — Total Visibility Edition (Final Stability Fix)
-   ============================================================ */
-
 @font-face {
   font-family: 'Serimi';
   src: url('../assets/tipografia/SERIMI.ttf') format('truetype');
@@ -12,46 +8,56 @@
   width: 100%;
   min-height: 100vh;
   background-color: #1E232F;
-  background-image: 
-    linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
-  background-size: 50px 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Arial', sans-serif;
+  overflow: hidden;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(circle at 50% 50%, black 20%, transparent 80%);
+  z-index: 1;
 }
 
 .auth-container {
   display: flex;
-  width: 950px;
-  min-height: 580px;
+  width: 1000px;
+  min-height: 600px;
   background: white;
-  border-radius: 24px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 50px 120px rgba(0, 0, 0, 0.6);
-  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 10;
+  animation: authFadeIn 0.6s ease-out;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
+@keyframes authFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* LADO IZQUIERDO */
+/* LADO IZQUIERDO: BRANDING */
 .auth-info-pane {
-  flex: 1.1;
-  background: #f8fafc;
+  flex: 1.2;
+  background: #F2F0EB;
   padding: 60px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-.auth-branding h1 {
+.brand-name-routing {
   font-family: 'Serimi', sans-serif;
-  font-size: 48px;
-  color: #111;
+  font-size: 64px;
+  color: #1A1A1A;
   margin: 0;
   letter-spacing: -1px;
 }
@@ -59,26 +65,25 @@
 .auth-features {
   display: flex;
   flex-direction: column;
-  gap: 40px;
-  margin-top: 50px;
+  gap: 30px;
   position: relative;
+  margin-top: 40px;
 }
 
-/* Línea vertical que une los puntos */
 .auth-features::before {
   content: "";
   position: absolute;
-  left: 5px; /* Mitad del ancho del punto */
+  left: 5px;
   top: 10px;
   bottom: 10px;
   width: 2px;
-  background: #e2e8f0;
+  background: #D1D1D1;
   z-index: 0;
 }
 
 .feature-item {
   display: flex;
-  gap: 25px;
+  gap: 20px;
   align-items: flex-start;
   position: relative;
   z-index: 1;
@@ -87,29 +92,29 @@
 .feature-dot {
   width: 12px;
   height: 12px;
-  background: #00A9BC;
+  background: #1A1A1A;
   border-radius: 50%;
   margin-top: 6px;
-  border: 3px solid #f8fafc; /* Para que parezca que corta la línea */
+  border: 2px solid white;
 }
 
 .feature-text h3 {
-  color: #111;
-  font-size: 17px;
-  font-weight: 800;
-  margin: 0 0 6px 0;
+  color: #1A1A1A;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
 }
 
 .feature-text p {
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.6;
+  color: #636E72;
+  font-size: 13px;
+  line-height: 1.5;
   margin: 0;
 }
 
-/* LADO DERECHO */
+/* LADO DERECHO: FORMULARIO */
 .auth-form-pane {
-  flex: 0.9;
+  flex: 0.8;
   background: white;
   padding: 60px;
   display: flex;
@@ -117,31 +122,26 @@
   justify-content: center;
 }
 
-.form-content {
-  width: 100%;
-}
-
 .form-title {
-  color: #111;
+  color: #1A1A1A;
   font-size: 24px;
   font-weight: 800;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 }
 
-/* FLOATING LABELS */
 .form-group-floating {
   position: relative;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .form-group-floating input {
   width: 100%;
   padding: 24px 16px 10px 16px;
-  background: #f9f9f9;
-  border: 1px solid #eee;
+  background: #F8F9FA;
+  border: 1px solid #E0E0E0;
   border-radius: 8px;
-  color: #111;
-  font-size: 16px;
+  color: #1A1A1A;
+  font-size: 15px;
   outline: none;
   transition: all 0.2s ease;
 }
@@ -149,87 +149,85 @@
 .form-group-floating label {
   position: absolute;
   left: 16px;
-  top: 18px;
-  color: #999;
-  font-size: 16px;
+  top: 20px;
+  color: #94A3B8;
+  font-size: 15px;
   pointer-events: none;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Animación cuando el input está enfocado o tiene valor */
-.form-group-floating input:focus,
-.form-group-floating input:not(:placeholder-shown) {
-  border-color: #00A9BC;
+.form-group-floating input:focus {
+  border-color: #1A1A1A;
   background: white;
-  padding-top: 28px;
-  padding-bottom: 6px;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.03);
 }
 
 .form-group-floating input:focus + label,
 .form-group-floating input:not(:placeholder-shown) + label {
   top: 8px;
   font-size: 11px;
-  font-weight: 700;
-  color: #00A9BC;
+  font-weight: 800;
+  color: #636E72;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .btn-continue {
   width: 100%;
   padding: 16px;
-  background: #d1d5db; /* Color gris suave como en la imagen */
-  color: #4b5563;
+  background: #1A1A1A;
+  color: white;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   margin-top: 10px;
 }
 
 .btn-continue:hover:not(:disabled) {
-  background: #00A9BC;
-  color: white;
+  background: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-continue:active {
+  transform: translateY(0);
 }
 
 .error-msg {
-  color: #ef4444;
-  font-size: 13px;
+  color: #D63031;
+  font-size: 12px;
   margin-bottom: 20px;
-  background: #fef2f2;
-  padding: 10px;
+  background: #FFF5F5;
+  padding: 12px;
   border-radius: 6px;
-  border-left: 3px solid #ef4444;
+  border: 1px solid #FFDCDC;
+  font-weight: 600;
 }
 
 .auth-footer {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  margin-top: 50px;
+  text-align: center;
 }
 
 .auth-footer p {
-  color: #ccc;
-  font-size: 10px;
-  font-weight: 800;
+  color: #B2BEC3;
+  font-size: 9px;
+  font-weight: 900;
   letter-spacing: 2px;
   margin: 0;
 }
 
-/* RESPONSIVE */
 @media (max-width: 900px) {
   .auth-container {
-    width: 95%;
+    width: 90%;
     flex-direction: column;
   }
-  .auth-info-pane {
-    padding: 30px;
-  }
-  .auth-features {
-    display: none; /* Simplificar en móviles */
-  }
-  .auth-form-pane {
-    padding: 40px 30px;
-  }
+  .auth-info-pane { padding: 40px; }
+  .auth-features { display: none; }
+  .auth-form-pane { padding: 40px; }
 }

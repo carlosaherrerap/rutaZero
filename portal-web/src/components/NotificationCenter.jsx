@@ -9,7 +9,8 @@ export default function NotificationCenter() {
   useEffect(() => {
     if (!user) return;
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000');
+    const API_HOST = window.location.hostname;
+    const socket = io(`http://${API_HOST}:4000`);
 
     socket.on('journey_started', (data) => {
       addNotification(`🚀 Worker ha iniciado jornada`, 'info');

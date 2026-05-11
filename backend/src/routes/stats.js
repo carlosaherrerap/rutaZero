@@ -16,21 +16,21 @@ router.get('/worker/:workerId', async (req, res) => {
 
     // 1. Obtener puntos de tracking ordenados
     const { rows: tracking } = await db.query(`
-      SELECT latitud, longitud, timestamp_at
+      SELECT latitud, longitud, created_at
       FROM ubicaciones_worker_tracking
-      WHERE worker_id = $1 AND DATE(timestamp_at AT TIME ZONE 'America/Lima') = $2
-      ORDER BY timestamp_at ASC
+      WHERE worker_id = $1 AND DATE(created_at AT TIME ZONE 'America/Lima') = $2
+      ORDER BY created_at ASC
     `, [workerId, fecha]);
 
     // 2. Obtener gestiones para saber cuándo estuvo con clientes
     const { rows: gestiones } = await db.query(`
-      SELECT gh.timestamp_at, c.nombres || ' ' || c.apellidos AS cliente,
+      SELECT gh.created_at, c.nombres || ' ' || c.apellidos AS cliente,
              ub.latitud, ub.longitud
       FROM gestiones_historial gh
       JOIN clientes c ON c.id = gh.cliente_id
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-      WHERE gh.worker_id = $1 AND DATE(gh.timestamp_at AT TIME ZONE 'America/Lima') = $2
-      ORDER BY gh.timestamp_at ASC
+      WHERE gh.worker_id = $1 AND DATE(gh.created_at AT TIME ZONE 'America/Lima') = $2
+      ORDER BY gh.created_at ASC
     `, [workerId, fecha]);
 
     // 3. Obtener ubicación base del worker (casa)
@@ -70,8 +70,8 @@ router.get('/worker/:workerId', async (req, res) => {
     const segmentos = [];
     if (home && home.latitud && home.longitud && gestiones.length > 0) {
       // Segmento 1: Casa -> Cliente 1
-      const firstGestionTime = new Date(gestiones[0].timestamp_at);
-      const pts1 = tracking.filter(t => new Date(t.timestamp_at) <= firstGestionTime);
+      const firstGestionTime = new Date(gestiones[0].created_at);
+      const pts1 = tracking.filter(t => new Date(t.created_at) <= firstGestionTime);
       
       if (gestiones[0].latitud && gestiones[0].longitud) {
         segmentos.push({
@@ -87,10 +87,10 @@ router.get('/worker/:workerId', async (req, res) => {
 
       // Segmentos entre clientes
       for (let i = 0; i < gestiones.length - 1; i++) {
-        const startTime = new Date(gestiones[i].timestamp_at);
-        const endTime = new Date(gestiones[i+1].timestamp_at);
+        const startTime = new Date(gestiones[i].created_at);
+        const endTime = new Date(gestiones[i+1].created_at);
         const pts = tracking.filter(t => {
-          const tTime = new Date(t.timestamp_at);
+          const tTime = new Date(t.created_at);
           return tTime > startTime && tTime <= endTime;
         });
 
@@ -113,7 +113,7 @@ router.get('/worker/:workerId', async (req, res) => {
       SELECT AVG(f.duracion_llenado_seg) as promedio
       FROM fichas f
       JOIN gestiones_historial gh ON gh.ficha_id = f.id
-      WHERE gh.worker_id = $1 AND DATE(gh.timestamp_at AT TIME ZONE 'America/Lima') = $2
+      WHERE gh.worker_id = $1 AND DATE(gh.created_at AT TIME ZONE 'America/Lima') = $2
     `, [workerId, fecha]);
 
     res.json({

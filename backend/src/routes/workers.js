@@ -45,7 +45,9 @@ router.get('/', async (req, res) => {
        LEFT JOIN ubicaciones ub ON ub.id = u.ubicacion_id
        LEFT JOIN jornadas j ON j.worker_id = u.id AND j.fecha = CURRENT_DATE
        WHERE u.rol = 'WORKER'
-       ORDER BY u.apellidos, u.nombres`
+       AND (u.sede_id = $1 OR $1 IS NULL)
+       ORDER BY u.apellidos, u.nombres`,
+       [req.headers['x-sede-id']]
     );
     res.json({ data: rows });
   } catch (err) {
@@ -110,11 +112,14 @@ router.post('/', adminOnly, async (req, res) => {
     // Crear ubicación si se proporciona
     let ubicacion_id = null;
     if (latitud && longitud) {
-      const bcrypt = require('bcryptjs');
+      // Obtener nombre de la ciudad de la sede para departamento/provincia
+      const sedeRes = await db.query('SELECT ciudad FROM sedes WHERE id = $1', [sedeId]);
+      const sedeCiudad = sedeRes.rows.length > 0 ? sedeRes.rows[0].ciudad : 'Lima';
+
       const ubResult = await db.query(
         `INSERT INTO ubicaciones (latitud, longitud, direccion, departamento, provincia, distrito)
-         VALUES ($1, $2, $3, 'Lima', 'Lima', $4) RETURNING id`,
-        [latitud, longitud, direccion || '', distrito || '']
+         VALUES ($1, $2, $3, $4, $4, $5) RETURNING id`,
+        [latitud, longitud, direccion || '', sedeCiudad, distrito || '']
       );
       ubicacion_id = ubResult.rows[0].id;
     }
@@ -123,11 +128,12 @@ router.post('/', adminOnly, async (req, res) => {
     const bcrypt = require('bcryptjs');
     const password_hash = await bcrypt.hash(password, 10);
 
+    const sedeId = req.headers['x-sede-id'];
     const { rows } = await db.query(
-      `INSERT INTO usuarios (username, password_hash, rol, nombres, apellidos, dni, telefono, email, ubicacion_id)
-       VALUES ($1, $2, 'WORKER', $3, $4, $5, $6, $7, $8)
+      `INSERT INTO usuarios (username, password_hash, rol, nombres, apellidos, dni, telefono, email, ubicacion_id, sede_id)
+       VALUES ($1, $2, 'WORKER', $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, username, nombres, apellidos, estado`,
-      [username, password_hash, nombres, apellidos, dni, telefono, email, ubicacion_id]
+      [username, password_hash, nombres, apellidos, dni, telefono, email, ubicacion_id, sedeId]
     );
 
     res.status(201).json({ data: rows[0] });

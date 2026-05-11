@@ -44,3 +44,7 @@ Thumbs.db
 .*/
 skills/
 skills-lock.json
+logs.txt
+backend/uploads/registros/
+backend/gen_hash_admin.js
+backend/gen_hash_direct.js

@@ -6,12 +6,14 @@ import {
   ClipboardList, X, Image, Map as MapIcon 
 } from 'lucide-react';
 
-// Mapa de estado → color (mismo que la app)
+// Mapa de estado → color (Premium Light Theme)
 const ESTADO_COLORS = {
-  LIBRE:         { bg: 'var(--c-surface-2)', text: 'var(--c-info)', label: 'LIBRE' },
-  EN_VISITA:     { bg: 'var(--c-surface-2)', text: 'var(--c-accent)', label: 'EN CAMINO' },
-  VISITADO_PAGO: { bg: 'var(--c-surface-2)', text: 'var(--c-success)', label: 'GESTIONADO' },
-  REPROGRAMADO:  { bg: 'var(--c-surface-2)', text: 'var(--c-warn)', label: 'REPROGRAMADO' },
+  LIBRE:         { bg: '#E8F5E9', text: '#2E7D32', label: 'LIBRE' },
+  EN_VISITA:     { bg: '#FFF3E0', text: '#EF6C00', label: 'EN CAMINO' },
+  VISITADO_PAGO: { bg: '#E3F2FD', text: '#1565C0', label: 'GESTIONADO' },
+  REPROGRAMADO:  { bg: '#F3E5F5', text: '#7B1FA2', label: 'REPROGRAMADO' },
+  NO_ENCONTRADO: { bg: '#FFEBEE', text: '#C62828', label: 'NO ENCONTRADO' },
+  NO_ECONTRADO:  { bg: '#FFEBEE', text: '#C62828', label: 'NO ENCONTRADO (TYPO)' },
 };
 
 function EstadoBadge({ estado }) {
@@ -20,12 +22,12 @@ function EstadoBadge({ estado }) {
     <span style={{
       background: cfg.bg,
       color: cfg.text,
-      fontWeight: 800,
-      fontSize: '10px',
-      padding: '3px 10px',
-      borderRadius: '20px',
+      fontWeight: '700',
+      fontSize: '11px',
+      padding: '4px 12px',
+      borderRadius: '6px',
       whiteSpace: 'nowrap',
-      letterSpacing: '0.3px'
+      letterSpacing: '0.2px'
     }}>
       {cfg.label}
     </span>
@@ -43,41 +45,41 @@ function FichaDetallePanel({ g }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>TIPO CRÉDITO</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.tipo_credito)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{fmt(g.tipo_credito)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>FECHA DESEMBOLSO</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmtDate(g.fecha_desembolso)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{fmtDate(g.fecha_desembolso)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>MONTO DESEMBOLSO</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{g.moneda || 'PEN'} {fmtNum(g.monto_desembolso)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{g.moneda || 'PEN'} {fmtNum(g.monto_desembolso)}</div>
         </div>
 
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>N° CUOTAS</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.nro_cuotas)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{fmt(g.nro_cuotas)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>CUOTAS PAGADAS</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{fmt(g.nro_cuotas_pagadas)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{fmt(g.nro_cuotas_pagadas)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>MONTO CUOTA</div>
-          <div style={{ fontSize: '13px', fontWeight: '900' }}>S/ {fmtNum(g.monto_cuota)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--c-text)' }}>S/ {fmtNum(g.monto_cuota)}</div>
         </div>
 
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>SALDO CAPITAL</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>S/ {fmtNum(g.saldo_capital)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>S/ {fmtNum(g.saldo_capital)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>COND. CONTABLE</div>
-          <div style={{ fontSize: '13px', fontWeight: '800' }}>{fmt(g.condicion_contable)}</div>
+          <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-text)' }}>{fmt(g.condicion_contable)}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>DURACIÓN LLENADO</div>
-          <div style={{ fontSize: '13px', fontWeight: '700' }}>{g.duracion_llenado_seg ? `${g.duracion_llenado_seg}s` : '—'}</div>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--c-text)' }}>{g.duracion_llenado_seg ? `${g.duracion_llenado_seg}s` : '—'}</div>
         </div>
       </div>
 
@@ -93,7 +95,7 @@ function FichaDetallePanel({ g }) {
           {g.evidencias.map((url, i) => (
             <img key={i} 
               src={url.startsWith('http') ? url : `${api.defaults.baseURL}${url}`} 
-              style={{ width: '64px', height: '64px', borderRadius: '12px', objectFit: 'cover', border: '1px solid var(--c-border)', cursor: 'pointer' }}
+              style={{ width: '64px', height: '64px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--c-border)', cursor: 'pointer' }}
               onClick={() => window.open(url.startsWith('http') ? url : `${api.defaults.baseURL}${url}`, '_blank')}
               onError={e => e.target.style.display = 'none'}
             />
@@ -107,12 +109,12 @@ function FichaDetallePanel({ g }) {
 const getTipColor = (tip) => {
   if (tip === 'PAGO') return 'var(--c-success)';
   if (tip === 'REPROGRAMARA') return 'var(--c-warn)';
-  if (tip === 'NO_ENCONTRADO') return 'var(--c-danger)';
+  if (tip === 'NO_ENCONTRADO' || tip === 'NO ENCONTRADO' || tip === 'NO_ECONTRADO') return 'var(--c-danger)';
   return 'var(--c-muted)';
 };
 
 export default function Clientes() {
-  const { api } = useContext(AuthContext);
+  const { api, sedeActual } = useContext(AuthContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 12, totalPages: 0 });
@@ -162,6 +164,10 @@ export default function Clientes() {
 
   return (
     <div>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 className="text-2xl font-bold">Gestión de Clientes - {sedeActual?.nombre || 'General'}</h1>
+        <p className="text-muted">Administra tu cartera de clientes y visualiza sus deudas en esta sede.</p>
+      </div>
       {/* FILTROS */}
       <div className="filter-bar" style={{ flexWrap: 'wrap', gap: '10px' }}>
         <div className="search-bar" style={{ flex: '1', minWidth: '300px' }}>
@@ -188,10 +194,16 @@ export default function Clientes() {
         </select>
 
         <select name="distrito" className="form-input" style={{ width: '180px' }} value={filters.distrito} onChange={handleFilterChange}>
-          <option value="">Distritos</option>
-          {['LIMA','SANTIAGO DE SURCO','SAN BORJA','MIRAFLORES','LA MOLINA','SAN ISIDRO','PUENTE PIEDRA','CARABAYLLO','INDEPENDENCIA','LOS OLIVOS','SAN MARTIN DE PORRES'].map(d => (
-            <option key={d} value={d}>{d}</option>
-          ))}
+          <option value="">[DISTRITOS] Todos</option>
+          {sedeActual?.nombre?.toLowerCase().includes('arequipa') ? (
+            ['AREQUIPA','CERRO COLORADO','CAYMA','YANAHUARA','JOSE LUIS BUSTAMANTE','PAUCARPATA','MIRAFLORES'].map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))
+          ) : (
+            ['LIMA','ATE','CALLAO','COMAS','CHORRILLOS','LOS OLIVOS','SAN JUAN DE LURIGANCHO','SAN MARTIN DE PORRES','VILLA EL SALVADOR'].map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))
+          )}
         </select>
       </div>
 
@@ -366,7 +378,7 @@ export default function Clientes() {
                               <div style={{ fontWeight: '800', fontSize: '14px' }}>{g.tipificacion === 'PAGO' ? 'Cobro Recaudado' : (g.tipificacion === 'REPROGRAMARA' ? 'Visita Reprogramada' : 'Entrega Fallida')}</div>
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <Calendar size={14}/> {new Date(g.timestamp_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} • {new Date(g.timestamp_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                              <Calendar size={14}/> {new Date(g.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} • {new Date(g.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>
 

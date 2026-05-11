@@ -32,9 +32,14 @@ export default function Ciclos() {
   const [importResult, setImportResult] = useState(null);
   const [importing, setImporting] = useState(false);
   const [activeTab, setActiveTab] = useState('gestionados');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   const fileRef = useRef();
 
-  useEffect(() => { fetchCiclos(); }, []);
+  useEffect(() => { 
+    setCurrentPage(1);
+    fetchCiclos(); 
+  }, [api]);
 
   const fetchCiclos = async () => {
     setLoading(true);
@@ -116,14 +121,18 @@ export default function Ciclos() {
     }
   };
 
-  const activeList = activeTab === 'gestionados' ? gestionados : noGestionados;
+  const activeListAll = activeTab === 'gestionados' ? gestionados : noGestionados;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const activeList = activeListAll.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(activeListAll.length / itemsPerPage);
 
   return (
     <div>
       {/* TABS */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--c-border)' }}>
         <button
-          onClick={() => setActiveTab('gestionados')}
+          onClick={() => { setActiveTab('gestionados'); setCurrentPage(1); }}
           style={{
             padding: '10px 20px', fontWeight: 800, fontSize: 13, background: 'none', border: 'none',
             borderBottom: activeTab === 'gestionados' ? '2px solid var(--c-primary)' : '2px solid transparent',
@@ -134,7 +143,7 @@ export default function Ciclos() {
           <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><RefreshCw size={14} /> Para Liberar ({gestionados.length})</span>
         </button>
         <button
-          onClick={() => setActiveTab('no_gestionados')}
+          onClick={() => { setActiveTab('no_gestionados'); setCurrentPage(1); }}
           style={{
             padding: '10px 20px', fontWeight: 800, fontSize: 13, background: 'none', border: 'none',
             borderBottom: activeTab === 'no_gestionados' ? '2px solid var(--c-danger)' : '2px solid transparent',
@@ -290,6 +299,27 @@ export default function Ciclos() {
               ))}
             </tbody>
           </table>
+
+          {/* PAGINACIÓN */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginTop: '20px', padding: '10px' }}>
+              <button 
+                className="btn btn-ghost btn-sm" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Anterior
+              </button>
+              <span style={{ fontSize: '13px', fontWeight: 'bold' }}>Página {currentPage} de {totalPages}</span>
+              <button 
+                className="btn btn-ghost btn-sm" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </div>
       )}
 

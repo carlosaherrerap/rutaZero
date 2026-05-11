@@ -12,6 +12,20 @@ import * as NavigationBar from 'expo-navigation-bar';
 
 const { width } = Dimensions.get('window');
 
+// Helper para calcular distancia entre dos puntos (Haversine)
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Radio de la Tierra en metros
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distancia en metros
+}
+
 const ESTADOS_GESTIONADOS = ['VISITADO_PAGO', 'REPROGRAMADO'];
 
 const DetalleClienteScreen = ({ route, navigation }) => {
@@ -38,6 +52,19 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     fetchClientDetails();
+    
+    // LOG DE MONITOREO: Apertura de detalle
+    const logOpen = async () => {
+      try {
+        const loc = await Location.getLastKnownPositionAsync();
+        api.post('/api/monitoreo/log', {
+          accion: 'FICHA_DETALLE_ABIERTA',
+          cliente_id: initialCliente.id || initialCliente.cliente_id,
+          metadata: { lat: loc?.coords.latitude, lng: loc?.coords.longitude }
+        }).catch(() => {});
+      } catch (e) {}
+    };
+    logOpen();
   }, [fetchClientDetails]);
 
   // 2. Obtener ubicación actual y trazar ruta inicial
@@ -133,6 +160,14 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       }
 
       await api.post(`/api/workers/clientes/${cliente.id}/visitar`);
+      
+      // LOG DE MONITOREO (Dato 1)
+      api.post('/api/monitoreo/log', { 
+        accion: 'VISITAR_PRESIONADO', 
+        cliente_id: cliente.id,
+        metadata: { lat: userLocation?.latitude, lng: userLocation?.longitude }
+      }).catch(e => console.log('Error logging monitor action'));
+
       // Sincronizar localmente para que persista si se va el internet
       await updateLocalClientStatus(cliente.id, 'EN_VISITA');
       
@@ -148,6 +183,19 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   };
 
   const handleGoToFicha = () => {
+    // Validar cercanía (200 metros) - SOLO SI ESTÁ ONLINE
+    if (isOnline) {
+      const dist = userLocation && cliente.latitud 
+        ? getDistance(userLocation.latitude, userLocation.longitude, parseFloat(cliente.latitud), parseFloat(cliente.longitud))
+        : 9999;
+      
+      if (dist > 200) {
+        Alert.alert('Fuera de Rango', `Debes estar a menos de 200m del cliente para abrir la ficha. Distancia actual: ${Math.round(dist)}m`);
+        return;
+      }
+    } else {
+      console.log('📶 [Ficha] Modo OFFLINE: Saltando validación de distancia');
+    }
     navigation.navigate('FichaForm', { cliente });
   };
 
@@ -163,12 +211,17 @@ const DetalleClienteScreen = ({ route, navigation }) => {
           onPress: async () => {
             setLoading(true);
             try {
-              await api.patch(`/api/workers/clientes/${cliente.id}/liberar`);
-              // Sincronizar localmente
+              if (isOnline) {
+                await api.patch(`/api/workers/clientes/${cliente.id}/liberar`);
+              } else {
+                console.log('📵 [Release] Liberando localmente (OFFLINE)');
+              }
+
+              // Sincronizar localmente siempre
               await updateLocalClientStatus(cliente.id, 'LIBRE');
               
               setCliente(prev => ({ ...prev, estado: 'LIBRE', bloqueado_por: null }));
-              Alert.alert('Liberado', 'Cliente disponible nuevamente.');
+              Alert.alert(isOnline ? 'Liberado' : 'Modo Offline', 'Visita cancelada con éxito.');
             } catch (err) {
               Alert.alert('Error', 'No se pudo liberar.');
             } finally {

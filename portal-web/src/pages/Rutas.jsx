@@ -35,7 +35,7 @@ function RecenterMap({ coords }) {
 }
 
 export default function Rutas() {
-  const { api } = useContext(AuthContext);
+  const { api, sedeActual } = useContext(AuthContext);
   const [rutas, setRutas] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -184,14 +184,19 @@ export default function Rutas() {
     return fechaCliente === fechaFiltro;
   });
 
+  // Centro dinámico basado en la sede actual
+  const mapCenter = sedeActual?.nombre?.toLowerCase().includes('arequipa') 
+    ? [-16.4090, -71.5374] 
+    : [-12.0464, -77.0428];
+
   if (loading) return <div className="p-8">Cargando datos del planificador...</div>;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Gestión de Rutas</h1>
-          <p className="text-muted">Planifica y asigna rutas a tus workers.</p>
+          <h1 className="text-2xl font-bold">Gestión de Rutas - {sedeActual?.nombre || 'General'}</h1>
+          <p className="text-muted">Planifica y asigna rutas a tus workers en esta sede.</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditMode(false); setShowModal(true); }}>+ CREAR RUTA</button>
       </div>
@@ -260,7 +265,7 @@ export default function Rutas() {
             {/* HEADER FIJO */}
             <div className="modal-header" style={{ borderBottom: '1px solid #1e293b', padding: '15px 25px' }}>
               <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.2rem', fontWeight: '800' }}>
-                {editMode ? `EDITANDO RUTA: ${newRuta.nombre}` : 'CENTRO DE PLANIFICACIÓN DE RUTAS'}
+                {editMode ? `EDITANDO RUTA: ${newRuta.nombre}` : `PLANIFICACIÓN DE RUTAS - ${sedeActual?.nombre}`}
               </span>
               <button className="btn-ghost" style={{ color: 'var(--c-muted)' }} onClick={() => { setShowModal(false); resetPlanner(); }}><X size={20}/></button>
             </div>
@@ -386,8 +391,8 @@ export default function Rutas() {
               {/* LADO DERECHO: MAPA (OCUPANDO TODO EL ESPACIO RESTANTE) */}
               <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
                 <MapContainer 
-                  key={showModal ? 'map-active' : 'map-inactive'}
-                  center={[-12.0464, -77.0428]} 
+                  key={showModal ? `map-${sedeActual?.id}` : 'map-inactive'}
+                  center={mapCenter} 
                   zoom={12} 
                   style={{ height: '100%', width: '100%' }}
                 >

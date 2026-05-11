@@ -6,6 +6,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 
 // Fallback seguro para ImagePicker
 let ImagePicker = null;
@@ -105,6 +106,16 @@ export default function FichaFormScreen({ route, navigation }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
+      // LOG DE MONITOREO (Dato 2 / Dato 1 Fin)
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        api.post('/api/monitoreo/log', { 
+          accion: 'FICHA_GUARDADA', 
+          cliente_id: cliente.id,
+          metadata: { lat: loc?.coords.latitude, lng: loc?.coords.longitude }
+        }).catch(e => {});
+      } catch (e) {}
+
       // SINCRONIZACIÓN LOCAL: Asegurar que el estado local coincida con el servidor
       const { updateLocalClientStatus } = require('../services/OfflineService');
       const finalStatus = formData.tipificacion === 'PAGO' ? 'VISITADO_PAGO' : 
@@ -168,63 +179,94 @@ export default function FichaFormScreen({ route, navigation }) {
         {/* PASO 2: FORMULARIO DE FICHA (DATOS DE NEGOCIO) */}
         {step === 2 && (() => {
           // Registrar apertura de ficha al entrar al paso 2
-          if (!horaAperturaFicha.current) horaAperturaFicha.current = new Date().toISOString();
+          if (!horaAperturaFicha.current) {
+            horaAperturaFicha.current = new Date().toISOString();
+            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).then(loc => {
+              api.post('/api/monitoreo/log', { 
+                accion: 'FICHA_ABIERTA', 
+                cliente_id: cliente.id,
+                metadata: { lat: loc?.coords.latitude, lng: loc?.coords.longitude }
+              }).catch(e => {});
+            }).catch(() => {});
+          }
           return (
           <View style={styles.stepContent}>
             <Text style={styles.stepTitle}>Información de Ficha</Text>
             <View style={styles.formGrid}>
-               {/* Tipo de Crédito */}
-               <InputRow label="Tipo Crédito" value={formData.tipo_credito} onChange={(v) => updateField('tipo_credito', v)} placeholder="Ej. Personal, Hipotecario" />
+               {cliente.plantilla_campos ? (
+                 <>
+                   <Text style={[styles.inputLabel, {color: 'var(--c-accent)', fontWeight: 'bold'}]}>Formulario: {cliente.plantilla_nombre}</Text>
+                   {(typeof cliente.plantilla_campos === 'string' ? JSON.parse(cliente.plantilla_campos) : cliente.plantilla_campos).map((field, idx) => (
+                     <InputRow 
+                       key={idx}
+                       label={field.label} 
+                       value={formData.dynamic_fields?.[field.label] || ''} 
+                       onChange={(v) => {
+                         const df = { ...(formData.dynamic_fields || {}) };
+                         df[field.label] = v;
+                         updateField('dynamic_fields', df);
+                       }} 
+                       placeholder={field.placeholder || ''} 
+                       keyboard={field.type === 'number' ? 'numeric' : 'default'}
+                     />
+                   ))}
+                 </>
+               ) : (
+                 <>
+                   {/* Tipo de Crédito */}
+                   <InputRow label="Tipo Crédito" value={formData.tipo_credito} onChange={(v) => updateField('tipo_credito', v)} placeholder="Ej. Personal, Hipotecario" />
 
-               {/* Fecha de Desembolso */}
-               <Text style={styles.inputLabel}>Fecha Desembolso</Text>
-               <View style={styles.dateDisplay}>
-                 <Ionicons name="calendar-outline" size={16} color="#64748b" />
-                 <Text style={styles.dateText}>{formData.fecha_desembolso}</Text>
-               </View>
+                   {/* Fecha de Desembolso */}
+                   <Text style={styles.inputLabel}>Fecha Desembolso</Text>
+                   <View style={styles.dateDisplay}>
+                     <Ionicons name="calendar-outline" size={16} color="#64748b" />
+                     <Text style={styles.dateText}>{formData.fecha_desembolso}</Text>
+                   </View>
 
-               {/* Monto + Moneda */}
-               <View style={styles.row}>
-                  <View style={{flex:1, marginRight:10}}>
-                     <InputRow label="Monto Desembolso" value={formData.monto_desembolso} onChange={(v) => updateField('monto_desembolso', v)} placeholder="0.00" keyboard="decimal-pad" />
-                  </View>
-                  <View style={{flex:0.6}}>
-                     <Text style={styles.inputLabel}>Moneda</Text>
-                     <View style={styles.pickerRow}>
-                        <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'PEN' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'PEN')}><Text style={styles.miniBtnText}>S/</Text></TouchableOpacity>
-                        <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'USD' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'USD')}><Text style={styles.miniBtnText}>$</Text></TouchableOpacity>
+                   {/* Monto + Moneda */}
+                   <View style={styles.row}>
+                      <View style={{flex:1, marginRight:10}}>
+                         <InputRow label="Monto Desembolso" value={formData.monto_desembolso} onChange={(v) => updateField('monto_desembolso', v)} placeholder="0.00" keyboard="decimal-pad" />
+                      </View>
+                      <View style={{flex:0.6}}>
+                         <Text style={styles.inputLabel}>Moneda</Text>
+                         <View style={styles.pickerRow}>
+                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'PEN' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'PEN')}><Text style={styles.miniBtnText}>S/</Text></TouchableOpacity>
+                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'USD' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'USD')}><Text style={styles.miniBtnText}>$</Text></TouchableOpacity>
+                         </View>
+                      </View>
+                   </View>
+
+                   {/* Cuotas */}
+                   <View style={styles.row}>
+                     <View style={{flex:1, marginRight:6}}>
+                       <InputRow label="Cuotas Totales" value={formData.nro_cuotas} onChange={(v) => updateField('nro_cuotas', v)} placeholder="16" keyboard="numeric" />
                      </View>
-                  </View>
-               </View>
+                     <View style={{flex:1}}>
+                       <InputRow label="Cuotas Pagadas" value={formData.nro_cuotas_pagadas} onChange={(v) => updateField('nro_cuotas_pagadas', v)} placeholder="14" keyboard="numeric" />
+                     </View>
+                   </View>
 
-               {/* Cuotas */}
-               <View style={styles.row}>
-                 <View style={{flex:1, marginRight:6}}>
-                   <InputRow label="Cuotas Totales" value={formData.nro_cuotas} onChange={(v) => updateField('nro_cuotas', v)} placeholder="16" keyboard="numeric" />
-                 </View>
-                 <View style={{flex:1}}>
-                   <InputRow label="Cuotas Pagadas" value={formData.nro_cuotas_pagadas} onChange={(v) => updateField('nro_cuotas_pagadas', v)} placeholder="14" keyboard="numeric" />
-                 </View>
-               </View>
-
-               {/* Monto Cuota + Saldo */}
-               <View style={styles.row}>
-                 <View style={{flex:1, marginRight:6}}>
-                   <InputRow label="Monto Cuota" value={formData.monto_cuota} onChange={(v) => updateField('monto_cuota', v)} placeholder="150.50" keyboard="decimal-pad" />
-                 </View>
-                 <View style={{flex:1}}>
-                   <InputRow label="Saldo Capital" value={formData.saldo_capital} onChange={(v) => updateField('saldo_capital', v)} placeholder="1200.00" keyboard="decimal-pad" />
-                 </View>
-               </View>
-               
-               <Text style={styles.inputLabel}>Condición Contable</Text>
-               <View style={styles.pickerRowMB}>
-                  {['MOROSO', 'RESPONSABLE'].map(c => (
-                    <TouchableOpacity key={c} style={[styles.condBtn, formData.condicion_contable === c && styles.condBtnActive]} onPress={() => updateField('condicion_contable', c)}>
-                      <Text style={[styles.condBtnText, formData.condicion_contable === c && styles.condBtnTextActive]}>{c}</Text>
-                    </TouchableOpacity>
-                  ))}
-               </View>
+                   {/* Monto Cuota + Saldo */}
+                   <View style={styles.row}>
+                     <View style={{flex:1, marginRight:6}}>
+                       <InputRow label="Monto Cuota" value={formData.monto_cuota} onChange={(v) => updateField('monto_cuota', v)} placeholder="150.50" keyboard="decimal-pad" />
+                     </View>
+                     <View style={{flex:1}}>
+                       <InputRow label="Saldo Capital" value={formData.saldo_capital} onChange={(v) => updateField('saldo_capital', v)} placeholder="1200.00" keyboard="decimal-pad" />
+                     </View>
+                   </View>
+                   
+                   <Text style={styles.inputLabel}>Condición Contable</Text>
+                   <View style={styles.pickerRowMB}>
+                      {['MOROSO', 'RESPONSABLE'].map(c => (
+                        <TouchableOpacity key={c} style={[styles.condBtn, formData.condicion_contable === c && styles.condBtnActive]} onPress={() => updateField('condicion_contable', c)}>
+                          <Text style={[styles.condBtnText, formData.condicion_contable === c && styles.condBtnTextActive]}>{c}</Text>
+                        </TouchableOpacity>
+                      ))}
+                   </View>
+                 </>
+               )}
             </View>
 
             <View style={styles.btnRow}>

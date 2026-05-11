@@ -1,20 +1,16 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
-import { MessageSquarePlus } from 'lucide-react';
 import './Login.css';
-import logoImg from '../assets/LOGO2.png';
-import heroImg from '../assets/image.png';
 
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,13 +29,14 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <div className="grid-bg"></div>
       <div className="auth-container">
-        {/* Lado Izquierdo: Información y Branding */}
+        {/* Lado Izquierdo: Branding */}
         <div className="auth-info-pane">
           <div className="auth-branding">
-            <h1>Routing</h1>
+            <h1 className="brand-name-routing">Routing</h1>
           </div>
-          
+
           <div className="auth-features">
             <div className="feature-item">
               <div className="feature-dot"></div>
@@ -67,47 +64,47 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Lado Derecho: Formulario de Login */}
+        {/* Lado Derecho: Formulario */}
         <div className="auth-form-pane">
           <div className="form-content">
-            <h2 className="form-title">Inicie sesión</h2>
-            
+            <h2 className="form-title">Iniciar Sesión</h2>
+
             <form onSubmit={handleSubmit}>
               {error && <div className="error-msg">{error}</div>}
-              
+
               <div className="form-group-floating">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   id="username"
-                  className={username ? 'has-value' : ''}
+                  autoComplete="off"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   placeholder=" "
                   required
                 />
-                <label htmlFor="username">Usuario</label>
+                <label htmlFor="username">Username</label>
               </div>
 
               <div className="form-group-floating">
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   id="password"
-                  className={password ? 'has-value' : ''}
+                  autoComplete="off"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder=" "
                   required
                 />
-                <label htmlFor="password">Contraseña</label>
+                <label htmlFor="password">Password</label>
               </div>
 
               <button type="submit" className="btn-continue" disabled={loading}>
-                {loading ? 'Validando...' : 'Continuar'}
+                {loading ? 'Validando...' : 'Entrar'}
               </button>
             </form>
 
             <div className="auth-footer">
-              <p>BY INFORMAPERU</p>
+              <p>BY INFORMATECH</p>
             </div>
           </div>
         </div>

@@ -42,6 +42,13 @@ app.use('/api/rutas', require('./routes/rutas'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/asistencia', require('./routes/asistencia'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/monitoreo', require('./routes/monitoreo'));
+app.use('/api/tracking', require('./routes/tracking'));
+app.use('/api/formularios', require('./routes/formularios'));
+app.use('/api/public', require('./routes/public'));
+app.use('/api/config', require('./routes/config'));
+app.use('/api/amonestaciones', require('./routes/amonestaciones'));
+app.use('/api/permisos', require('./routes/permisos'));
 
 // Socket.io events
 io.on('connection', (socket) => {

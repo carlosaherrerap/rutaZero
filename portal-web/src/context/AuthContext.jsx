@@ -8,12 +8,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const isAuthenticated = !!token;
 
-  // configure axios instance
-  const API_HOST = typeof window !== 'undefined' ? window.location.hostname : '192.168.1.69';
-  const api = axios.create({
-    baseURL: `http://${API_HOST}:4000`,
-    headers: { Authorization: token ? `Bearer ${token}` : undefined },
+  const [sedeActual, setSedeActual] = useState(() => {
+    const saved = localStorage.getItem('sedeActual');
+    return saved ? JSON.parse(saved) : { id: '11111111-1111-1111-1111-000000000001', nombre: 'Lima' };
   });
+
+  // useMemo for the api instance so it recreates only when token or sedeActual changes
+  const api = React.useMemo(() => {
+    const API_HOST = typeof window !== 'undefined' ? window.location.hostname : '192.168.1.69';
+    const instance = axios.create({
+      baseURL: `http://${API_HOST}:4000`,
+      headers: { 
+        Authorization: token ? `Bearer ${token}` : undefined,
+        'x-sede-id': sedeActual?.id
+      },
+    });
+    return instance;
+  }, [token, sedeActual]);
 
   const login = async (username, password) => {
     const response = await api.post('/api/auth/login', { username, password });
@@ -21,8 +32,6 @@ export const AuthProvider = ({ children }) => {
     setToken(accessToken);
     setUser(loggedUser);
     localStorage.setItem('token', accessToken);
-    // update axios default header
-    api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
     return response.data;
   };
 
@@ -30,7 +39,6 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
   };
 
   // optional: verify token on mount
@@ -39,17 +47,58 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const res = await api.get('/api/auth/me');
-          setUser(res.data);
+          setUser(res.data.user);
         } catch (e) {
           logout();
         }
       }
     };
     verify();
-  }, []);
+  }, [token]); // depend on token
+
+  const cambiarSede = (sede) => {
+    setSedeActual(sede);
+    localStorage.setItem('sedeActual', JSON.stringify(sede));
+  };
+
+  // Fetch and apply theme on mount/auth
+  const fetchAndApplyTheme = async () => {
+    try {
+      const res = await api.get('/api/config');
+      const s = res.data;
+      if (s.sidebar_bg) {
+        applyStyles(s);
+      }
+    } catch (err) {
+      console.error('Error applying theme:', err);
+    }
+  };
+
+  const applyStyles = (s) => {
+    const root = document.documentElement;
+    root.style.setProperty('--c-surface', s.sidebar_bg);
+    root.style.setProperty('--c-bg', s.main_bg);
+    root.style.setProperty('--c-text', s.main_text);
+    root.style.setProperty('--c-sidebar-text', s.sidebar_text);
+    root.style.setProperty('--c-primary', s.primary_color);
+    root.style.setProperty('--logo-filter', s.logo_filter || 'none');
+    root.style.setProperty('--font-main', s.font_family);
+    
+    // Also update data-theme attribute for CSS selectors
+    const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000';
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) fetchAndApplyTheme();
+  }, [isAuthenticated]); 
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated, login, logout, api }}>
+    <AuthContext.Provider value={{ 
+      token, user, isAuthenticated, login, logout, api, sedeActual, cambiarSede, 
+      applyStyles, fetchAndApplyTheme 
+    }}>
       {children}
     </AuthContext.Provider>
   );

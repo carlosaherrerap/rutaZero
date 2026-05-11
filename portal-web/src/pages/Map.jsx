@@ -18,9 +18,17 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function MapPage() {
-  const { api } = useContext(AuthContext);
+  const { api, sedeActual } = useContext(AuthContext);
   const [data, setData] = useState({ clientes: [], workers: [] });
   const [loading, setLoading] = useState(true);
+
+  // Coordenadas por defecto según sede
+  const getSedeCenter = () => {
+    if (sedeActual?.nombre?.toLowerCase().includes('arequipa')) {
+      return [-16.4090, -71.5375];
+    }
+    return [-12.0464, -77.0428]; // Lima
+  };
 
   // Filtros
   const todayStr = new Date().toISOString().split('T')[0];
@@ -80,7 +88,7 @@ export default function MapPage() {
     popupAnchor: [0, -45]
   });
 
-  const center = [-12.0464, -77.0428];
+  const center = getSedeCenter();
 
   return (
     <div className="map-page" style={{ height: 'calc(100vh - 110px)', margin: '-24px', display: 'flex', flexDirection: 'column' }}>
@@ -120,7 +128,7 @@ export default function MapPage() {
       </div>
       
       <div className="map-container" style={{ flex: 1, position: 'relative' }}>
-        <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
+        <MapContainer key={sedeActual?.id || 'map'} center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           
           {/* MARCADORES DE CLIENTES */}

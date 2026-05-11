@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Clientes - InformaTech</title>
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --accent: #6366f1;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #1e293b;
+            min-height: 100vh;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .header-logo {
+            font-weight: 800;
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-align: center;
+            letter-spacing: -1px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 12px;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            padding: 14px;
+            border-radius: 14px;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .preview-img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .location-badge {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px dashed #cbd5e1;
+            margin-top: 10px;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span class="mt-2 fw-bold">Procesando registro...</span>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <div class="header-logo">
+                <i class="bi bi-shield-check"></i> InformaTech <span class="text-dark">| Registro Cliente</span>
+            </div>
+
+            <div id="connStatus"
+                class="alert alert-info py-2 px-3 mb-4 d-flex align-items-center justify-content-between"
+                style="font-size: 13px; border-radius: 12px;">
+                <span><i class="bi bi-wifi"></i> Estado del Servidor: <strong
+                        id="statusLabel">Verificando...</strong></span>
+                <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none fw-bold"
+                    onclick="checkConnection()">Reintentar</button>
+            </div>
+
+            <form id="registroForm" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <!-- Datos Personales -->
+                    <div class="col-md-6">
+                        <label class="form-label">Nombres</label>
+                        <input type="text" name="nombres" class="form-control" required placeholder="Ej. Juan Pedro">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Apellidos</label>
+                        <input type="text" name="apellidos" class="form-control" required
+                            placeholder="Ej. Pérez García">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo de Documento</label>
+                        <select name="tipo_documento" class="form-select" required>
+                            <option value="DNI">DNI</option>
+                            <option value="RUC">RUC</option>
+                            <option value="CE">Carnet Extranjería</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número de Documento</label>
+                        <input type="text" name="numero_documento" class="form-control" required placeholder="12345678">
+                    </div>
+
+                    <!-- Datos de Contacto / Empresa -->
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3 mt-2 text-primary border-bottom pb-2">Información de Negocio / Contacto</h6>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Nombre Comercial / Negocio</label>
+                        <input type="text" name="nombre_comercial" class="form-control" placeholder="Ej. Tienda Don Pepe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Teléfono / WhatsApp</label>
+                        <input type="tel" name="telefono" class="form-control" placeholder="999888777">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Correo Electrónico</label>
+                        <input type="email" name="email" class="form-control" placeholder="cliente@correo.com">
+                    </div>
+
+                    <!-- Ubicación Política -->
+                    <div class="col-md-4">
+                        <label class="form-label">Departamento</label>
+                        <select id="departamento" name="departamento" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Provincia</label>
+                        <select id="provincia" name="provincia" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Distrito</label>
+                        <select id="distrito" name="distrito" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Dirección</label>
+                        <input type="text" name="direccion" class="form-control" required
+                            placeholder="Av. Principal 123">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Referencia de Ubicación</label>
+                        <textarea name="referencia" class="form-control" rows="2"
+                            placeholder="Ej: Portón azul frente al parque"></textarea>
+                    </div>
+
+                    <!-- Coordenadas -->
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label mb-0">Ubicación GPS</label>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="detectLocation()">
+                                <i class="bi bi-geo-alt-fill"></i> Detectar automáticamente
+                            </button>
+                        </div>
+                        <div class="row g-2 mt-1">
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">Latitud (Auto)</label>
+                                <input type="text" id="latitud" name="latitud" class="form-control form-control-sm bg-light" readonly placeholder="0.000000">
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted mb-1">Longitud (Auto)</label>
+                                <input type="text" id="longitud" name="longitud" class="form-control form-control-sm bg-light" readonly placeholder="0.000000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fotos -->
+                    <div class="col-12">
+                        <label class="form-label">Fotos / Evidencia</label>
+                        <input type="file" name="fotos" id="fotos" class="form-control" multiple accept="image/*"
+                            capture="environment">
+                        <div id="photoPreview" class="photo-preview"></div>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            REGISTRAR INFORMACIÓN
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN: 'http://localhost:4000' para local
+        const API_BASE = 'http://localhost:4000';
+
+        // Ubigeo simplificado para el ejemplo
+        const ubigeoData = {
+            "LIMA": {
+                "LIMA": ["LIMA", "SANTIAGO DE SURCO", "SAN BORJA", "MIRAFLORES", "LA MOLINA", "SAN ISIDRO", "LOS OLIVOS", "SAN MARTIN DE PORRES"],
+                "CAÑETE": ["SAN VICENTE", "MALA", "ASIA"]
+            },
+            "AREQUIPA": {
+                "AREQUIPA": ["AREQUIPA", "CERRO COLORADO", "YANAHUARA"],
+                "CAMANA": ["CAMANA", "JOSE MARIA QUIMPER"]
+            }
+        };
+
+        const depSel = document.getElementById('departamento');
+        const provSel = document.getElementById('provincia');
+        const distSel = document.getElementById('distrito');
+
+        // Poblar departamentos
+        Object.keys(ubigeoData).forEach(dep => {
+            depSel.innerHTML += `<option value="${dep}">${dep}</option>`;
+        });
+
+        depSel.onchange = () => {
+            provSel.innerHTML = '<option value="">Seleccione...</option>';
+            distSel.innerHTML = '<option value="">Seleccione...</option>';
+            if (depSel.value) {
+                Object.keys(ubigeoData[depSel.value]).forEach(prov => {
+                    provSel.innerHTML += `<option value="${prov}">${prov}</option>`;
+                });
+            }
+        };
+
+        provSel.onchange = () => {
+            distSel.innerHTML = '<option value="">Seleccione...</option>';
+            if (provSel.value) {
+                ubigeoData[depSel.value][provSel.value].forEach(dist => {
+                    distSel.innerHTML += `<option value="${dist}">${dist}</option>`;
+                });
+            }
+        };
+
+        // Detección de ubicación
+        function detectLocation() {
+            const overlay = document.getElementById('loadingOverlay');
+            const statusText = overlay.querySelector('span');
+
+            if (navigator.geolocation) {
+                statusText.innerText = "Encendiendo GPS y obteniendo señal...";
+                overlay.style.display = 'flex';
+
+                navigator.geolocation.getCurrentPosition(pos => {
+                    document.getElementById('latitud').value = pos.coords.latitude.toFixed(8);
+                    document.getElementById('longitud').value = pos.coords.longitude.toFixed(8);
+                    overlay.style.display = 'none';
+                    statusText.innerText = "Procesando registro..."; // Reset para el submit
+                }, err => {
+                    overlay.style.display = 'none';
+                    alert("No se pudo obtener la ubicación. Verifique que el GPS esté encendido y que haya dado permisos.");
+                    statusText.innerText = "Procesando registro...";
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            } else {
+                alert("Geolocalización no soportada en este navegador.");
+            }
+        }
+
+        // Preview de fotos
+        document.getElementById('fotos').onchange = (e) => {
+            const container = document.getElementById('photoPreview');
+            container.innerHTML = '';
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    container.innerHTML += `<img src="${ev.target.result}" class="preview-img">`;
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        async function checkConnection() {
+            const label = document.getElementById('statusLabel');
+            const statusBox = document.getElementById('connStatus');
+            label.innerText = "Conectando...";
+            try {
+                const res = await fetch(`${API_BASE}/api/health`, { method: 'GET' });
+                if (res.ok) {
+                    label.innerText = "ONLINE";
+                    statusBox.classList.replace('alert-info', 'alert-success');
+                    statusBox.classList.replace('alert-danger', 'alert-success');
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                label.innerText = "OFFLINE (Verifique URL o Firewall)";
+                statusBox.classList.replace('alert-info', 'alert-danger');
+                statusBox.classList.replace('alert-success', 'alert-danger');
+            }
+        }
+        checkConnection();
+
+        // Envío de formulario
+        document.getElementById('registroForm').onsubmit = async (e) => {
+            e.preventDefault();
+            document.getElementById('loadingOverlay').style.display = 'flex';
+
+            const formData = new FormData(e.target);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/public/registro-cliente`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("¡Registro exitoso!");
+                    location.reload();
+                } else {
+                    alert("Error en el Servidor:\n" + (data.details || data.error || "Error desconocido"));
+                    console.error("Detalles del error:", data);
+                }
+            } catch (err) {
+                alert("No se pudo conectar con el servidor.");
+            } finally {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        };
+
+        //health 
+
+
+    </script>
+</body>
+
+</html>
