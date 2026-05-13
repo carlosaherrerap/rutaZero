@@ -1,9 +1,9 @@
 services:
-  # 1. Backend API (Web Service)
+  # 1. Backend API (Web Service - Plan Free)
   - type: web
     name: rutazero-backend
     env: node
-    plan: pro # Recomendado para 1,000 clientes/día
+    plan: free 
     region: ohio
     buildCommand: npm install
     startCommand: npm start
@@ -25,25 +25,26 @@ services:
         value: 4000
     rootDirectory: backend
 
-  # 2. Portal Web (Static Site)
-  - type: static
+  # 2. Portal Web (Static Site - Plan Free)
+  - type: web
     name: rutazero-portal
     env: static
+    plan: free
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     rootDirectory: portal-web
     envVars:
       - key: VITE_API_URL
-        value: https://rutazero-backend.onrender.com # Cambiar esto si el nombre del servicio cambia
+        value: https://rutazero-backend.onrender.com
 
 databases:
-  # 3. PostgreSQL Database
+  # 3. PostgreSQL Database (Plan Free)
   - name: rutazero-db
-    plan: pro # Recomendado para 1,000 clientes/día
+    plan: free
     region: ohio
 
-# 4. Redis (Real-time Sync)
+# 4. Redis (Real-time Sync - Plan Free)
 redis:
   name: rutazero-redis
-  plan: starter
+  plan: free
   region: ohio
