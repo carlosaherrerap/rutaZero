@@ -176,7 +176,7 @@ const Amonestaciones = () => {
                   onChange={e => setFormData({...formData, worker_id: e.target.value})}
                 >
                   <option value="">Seleccione un trabajador...</option>
-                  {workers.map(w => (
+                  {Array.isArray(workers) && workers.map(w => (
                     <option key={w.id} value={w.id}>{w.nombres} {w.apellidos}</option>
                   ))}
                 </select>

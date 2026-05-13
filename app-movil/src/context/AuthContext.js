@@ -10,8 +10,13 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // URL de producción en Render (Cambiar por tu URL de Render una vez desplegado)
+  const CLOUD_URL = 'https://rutazero-backend.onrender.com'; 
+  
   // Si es Web usamos localhost, si es móvil usamos la IP de la PC para que el celular la vea
-  const BASE_URL = Platform.OS === 'web' ? 'http://localhost:4000' : 'http://192.168.1.69:4000';
+  const BASE_URL = __DEV__ 
+    ? (Platform.OS === 'web' ? 'http://localhost:4000' : 'http://192.168.1.69:4000')
+    : CLOUD_URL;
 
   // Creamos la instancia de API
   useEffect(() => {

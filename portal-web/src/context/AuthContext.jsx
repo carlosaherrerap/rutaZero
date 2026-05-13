@@ -15,9 +15,13 @@ export const AuthProvider = ({ children }) => {
 
   // useMemo for the api instance so it recreates only when token or sedeActual changes
   const api = React.useMemo(() => {
-    const API_HOST = typeof window !== 'undefined' ? window.location.hostname : '192.168.1.69';
+    // En producción usamos VITE_API_URL (definida en Render)
+    // En local usamos el hostname actual para que funcione en red local/móvil
+    const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const PROD_URL = import.meta.env.VITE_API_URL;
+    
     const instance = axios.create({
-      baseURL: `http://${API_HOST}:4000`,
+      baseURL: PROD_URL || `http://${API_HOST}:4000`,
       headers: { 
         Authorization: token ? `Bearer ${token}` : undefined,
         'x-sede-id': sedeActual?.id
@@ -75,6 +79,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const applyStyles = (s) => {
+    if (!s) return;
     const root = document.documentElement;
     root.style.setProperty('--c-surface', s.sidebar_bg);
     root.style.setProperty('--c-bg', s.main_bg);
@@ -82,17 +87,20 @@ export const AuthProvider = ({ children }) => {
     root.style.setProperty('--c-sidebar-text', s.sidebar_text);
     root.style.setProperty('--c-primary', s.primary_color);
     root.style.setProperty('--logo-filter', s.logo_filter || 'none');
-    root.style.setProperty('--font-main', s.font_family);
+    root.style.setProperty('--font-main', s.font_family || 'Inter');
     
     // Also update data-theme attribute for CSS selectors
     const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000';
     root.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+    // Forced re-render of components listening to theme if needed
+    // (though CSS variables usually handle this)
   };
 
   useEffect(() => {
     if (isAuthenticated) fetchAndApplyTheme();
-  }, [isAuthenticated]); 
+  }, [isAuthenticated, sedeActual.id]); // Re-fetch or re-apply on sede change to be safe
 
   return (
     <AuthContext.Provider value={{ 

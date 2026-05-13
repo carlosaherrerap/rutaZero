@@ -110,15 +110,15 @@ export default function Workers() {
 
   const getActionInfo = (accion) => {
     switch (accion) {
-      case 'JORNADA_INICIADA': return { color: '#10b981', label: 'INICIÓ DÍA', icon: '🚀' };
-      case 'ALMUERZO_INICIADO': return { color: '#f59e0b', label: 'INICIÓ RECESO', icon: '🍱' };
-      case 'ALMUERZO_FINALIZADO': return { color: '#10b981', label: 'FIN RECESO', icon: '✅' };
-      case 'FICHA_DETALLE_ABIERTA': return { color: '#3b82f6', label: 'VIO DETALLE', icon: '👀' };
-      case 'VISITAR_PRESIONADO': return { color: '#a855f7', label: 'EN CAMINO', icon: '🚴' };
-      case 'FICHA_ABIERTA': return { color: '#6366f1', label: 'ABRIÓ FICHA', icon: '📝' };
-      case 'FICHA_GUARDADA': return { color: '#059669', label: 'GESTIÓN LISTA', icon: '💾' };
-      case 'JORNADA_FINALIZADA': return { color: '#ef4444', label: 'FINALIZÓ DÍA', icon: '🏠' };
-      default: return { color: '#94a3b8', label: accion, icon: '📍' };
+      case 'JORNADA_INICIADA': return { color: '#10b981', label: 'INICIÓ DÍA', icon: '' };
+      case 'ALMUERZO_INICIADO': return { color: '#f59e0b', label: 'INICIÓ RECESO', icon: '' };
+      case 'ALMUERZO_FINALIZADO': return { color: '#10b981', label: 'FIN RECESO', icon: '' };
+      case 'FICHA_DETALLE_ABIERTA': return { color: '#3b82f6', label: 'VIO DETALLE', icon: '' };
+      case 'VISITAR_PRESIONADO': return { color: '#a855f7', label: 'EN CAMINO', icon: '' };
+      case 'FICHA_ABIERTA': return { color: '#6366f1', label: 'ABRIÓ FICHA', icon: '' };
+      case 'FICHA_GUARDADA': return { color: '#059669', label: 'GESTIÓN LISTA', icon: '' };
+      case 'JORNADA_FINALIZADA': return { color: '#ef4444', label: 'FINALIZÓ DÍA', icon: '' };
+      default: return { color: '#94a3b8', label: accion, icon: '' };
     }
   };
 

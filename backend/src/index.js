@@ -4,6 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 
+const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
@@ -15,6 +16,22 @@ const io = new Server(server, {
   },
 });
 
+// Configuración de Redis Adapter para escalabilidad en Render
+if (process.env.REDIS_URL) {
+  const { createClient } = require('redis');
+  const { createAdapter } = require('@socket.io/redis-adapter');
+  
+  const pubClient = createClient({ url: process.env.REDIS_URL });
+  const subClient = pubClient.duplicate();
+  
+  Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('📡 Redis Adapter conectado para Socket.io');
+  }).catch(err => {
+    console.error('❌ Error conectando Redis Adapter:', err);
+  });
+}
+
 // Middleware
 app.use(cors({
   origin: true, // Echoes the request origin back to allow any client
@@ -22,6 +39,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use('/uploads', express.static('uploads'));
+app.use('/public-site', express.static(path.join(__dirname, '../../hosting')));
 
 // Crear carpeta de evidencias si no existe
 const fs = require('fs');

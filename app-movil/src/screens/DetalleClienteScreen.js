@@ -183,19 +183,7 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   };
 
   const handleGoToFicha = () => {
-    // Validar cercanía (200 metros) - SOLO SI ESTÁ ONLINE
-    if (isOnline) {
-      const dist = userLocation && cliente.latitud 
-        ? getDistance(userLocation.latitude, userLocation.longitude, parseFloat(cliente.latitud), parseFloat(cliente.longitud))
-        : 9999;
-      
-      if (dist > 200) {
-        Alert.alert('Fuera de Rango', `Debes estar a menos de 200m del cliente para abrir la ficha. Distancia actual: ${Math.round(dist)}m`);
-        return;
-      }
-    } else {
-      console.log('📶 [Ficha] Modo OFFLINE: Saltando validación de distancia');
-    }
+    // Validación de distancia eliminada para mayor flexibilidad operativa
     navigation.navigate('FichaForm', { cliente });
   };
 

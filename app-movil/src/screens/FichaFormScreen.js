@@ -64,7 +64,7 @@ export default function FichaFormScreen({ route, navigation }) {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.7, // REDUCIDO para mejorar velocidad de subida
+      quality: 0.5, // REDUCIDO aún más para optimizar velocidad de subida
     });
 
     if (!result.canceled && fotos.length < 5) {
@@ -106,15 +106,20 @@ export default function FichaFormScreen({ route, navigation }) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       
-      // LOG DE MONITOREO (Dato 2 / Dato 1 Fin)
-      try {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      // LOG DE MONITOREO (Segundo plano para no bloquear al usuario)
+      const saveLog = (coords) => {
         api.post('/api/monitoreo/log', { 
           accion: 'FICHA_GUARDADA', 
           cliente_id: cliente.id,
-          metadata: { lat: loc?.coords.latitude, lng: loc?.coords.longitude }
+          metadata: coords ? { lat: coords.latitude, lng: coords.longitude } : {}
         }).catch(e => {});
-      } catch (e) {}
+      };
+
+      Location.getLastKnownPositionAsync().then(loc => {
+        saveLog(loc?.coords);
+      }).catch(() => {
+        saveLog(null);
+      });
 
       // SINCRONIZACIÓN LOCAL: Asegurar que el estado local coincida con el servidor
       const { updateLocalClientStatus } = require('../services/OfflineService');

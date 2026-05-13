@@ -46,5 +46,12 @@ skills/
 skills-lock.json
 logs.txt
 backend/uploads/registros/
+backend/uploads/evidencias/
 backend/gen_hash_admin.js
 backend/gen_hash_direct.js
+
+
+
+CLOUD_INFRA_archivos/
+CLOUD_INFRA.doc 
+CLOUD_INFRA.md

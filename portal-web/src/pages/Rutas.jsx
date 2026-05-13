@@ -263,11 +263,16 @@ export default function Rutas() {
             overflow: 'hidden'
           }}>
             {/* HEADER FIJO */}
-            <div className="modal-header" style={{ borderBottom: '1px solid #1e293b', padding: '15px 25px' }}>
-              <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.2rem', fontWeight: '800' }}>
-                {editMode ? `EDITANDO RUTA: ${newRuta.nombre}` : `PLANIFICACIÓN DE RUTAS - ${sedeActual?.nombre}`}
-              </span>
-              <button className="btn-ghost" style={{ color: 'var(--c-muted)' }} onClick={() => { setShowModal(false); resetPlanner(); }}><X size={20}/></button>
+            <div className="modal-header" style={{ borderBottom: '1px solid var(--c-border)', padding: '20px 25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="modal-title" style={{ color: 'var(--c-text)', fontSize: '1.4rem', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  {editMode ? 'Editando Ruta' : 'Planificación de Rutas'}
+                </span>
+                <span style={{ color: 'var(--c-primary)', fontSize: '0.8rem', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '2px' }}>
+                  {sedeActual?.nombre || 'Sede No Definida'}
+                </span>
+              </div>
+              <button className="btn-ghost" style={{ color: 'var(--c-muted)', padding: '8px', borderRadius: '50%' }} onClick={() => { setShowModal(false); resetPlanner(); }}><X size={24}/></button>
             </div>
             
             {/* BODY USANDO GRID PARA EVITAR DESBORDAMIENTOS */}
@@ -288,7 +293,7 @@ export default function Rutas() {
                   <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>NOMBRE DE LA RUTA</label>
                   <input 
                     className="form-input" 
-                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', height: '45px' }} 
                     placeholder="Ej: Ruta Sur - Lunes" 
                     value={newRuta.nombre} 
                     onChange={e => setNewRuta({...newRuta, nombre: e.target.value})} 
@@ -299,12 +304,12 @@ export default function Rutas() {
                   <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>WORKER ASIGNADO</label>
                   <select 
                     className="form-input" 
-                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', height: '45px' }} 
                     value={newRuta.worker_id} 
                     onChange={e => setNewRuta({...newRuta, worker_id: e.target.value})}
                   >
                     <option value="">-- Seleccionar Worker --</option>
-                    {workers.map(w => <option key={w.id} value={w.id}>{w.nombres} {w.apellidos}</option>)}
+                    {workers.map(w => <option key={w.id} value={w.id} style={{ color: 'var(--c-text)', backgroundColor: 'var(--c-surface)' }}>{w.nombres} {w.apellidos}</option>)}
                   </select>
                 </div>
 
@@ -313,7 +318,7 @@ export default function Rutas() {
                   <input 
                     type="date" 
                     className="form-input" 
-                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', height: '45px' }} 
+                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', height: '45px' }} 
                     value={newRuta.fecha_asignacion} 
                     onChange={e => setNewRuta({...newRuta, fecha_asignacion: e.target.value})} 
                   />
@@ -324,7 +329,7 @@ export default function Rutas() {
                    <input 
                      type="date" 
                      className="form-input" 
-                     style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-on-primary)', marginTop: '10px' }} 
+                     style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', marginTop: '10px' }} 
                      value={filterPago} 
                      onChange={e => setFilterPago(e.target.value)} 
                    />
@@ -336,7 +341,7 @@ export default function Rutas() {
                        checked={heatZoneActive} 
                        onChange={e => setHeatZoneActive(e.target.checked)} 
                      />
-                     <label htmlFor="heat-zone" style={{ color: 'var(--c-on-primary)', fontSize: '0.8rem' }}>Activar zona de calor</label>
+                     <label htmlFor="heat-zone" style={{ color: 'var(--c-text)', fontSize: '0.8rem' }}>Activar zona de calor</label>
                      <button 
                        className="btn-ghost" 
                        style={{ padding: 0, color: 'var(--c-info)' }}
@@ -353,7 +358,7 @@ export default function Rutas() {
                        checked={showAllWorkers} 
                        onChange={e => setShowAllWorkers(e.target.checked)} 
                      />
-                     <label htmlFor="show-workers" style={{ color: 'var(--c-on-primary)', fontSize: '0.8rem' }}>Ver todos los workers</label>
+                     <label htmlFor="show-workers" style={{ color: 'var(--c-text)', fontSize: '0.8rem' }}>Ver todos los workers</label>
                    </div>
                 </div>
 
@@ -492,8 +497,8 @@ export default function Rutas() {
                         }}
                       >
                          <Popup>
-                            <div style={{ minWidth: '180px', padding: '10px' }}>
-                               <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>{c.nombres} {c.apellidos}</h4>
+                          <div style={{ minWidth: '180px', padding: '10px 5px', color: 'var(--c-text)' }}>
+                               <h4 style={{ margin: '0 0 8px 0', fontSize: '15px', color: 'var(--c-text)', borderBottom: '1px solid var(--c-border)', paddingBottom: '5px' }}>{c.nombres} {c.apellidos}</h4>
                                <p style={{ margin: '4px 0', fontSize: '12px' }}>Deuda: <b>S/ {c.deuda_total}</b></p>
                                <p style={{ margin: '4px 0', fontSize: '12px' }}>Atraso: <b>{c.dias_atraso || 0} días</b></p>
                                <p style={{ margin: '4px 0', fontSize: '12px' }}>Estado: <b style={{ color: isOccupied ? 'var(--c-danger)' : 'var(--c-success)' }}>{c.estado}</b></p>
@@ -522,7 +527,7 @@ export default function Rutas() {
                  }}>
                    <div className="flex items-center gap-3 mb-2">
                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--c-info)' }}></div>
-                     <span style={{ color: 'var(--c-on-primary)', fontSize: '0.7rem' }}>SELECCIONADO</span>
+                     <span style={{ color: 'var(--c-text)', fontSize: '0.7rem' }}>SELECCIONADO</span>
                    </div>
                    <div className="flex items-center gap-3">
                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--c-muted)' }}></div>

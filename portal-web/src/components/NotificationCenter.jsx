@@ -13,19 +13,19 @@ export default function NotificationCenter() {
     const socket = io(`http://${API_HOST}:4000`);
 
     socket.on('journey_started', (data) => {
-      addNotification(`🚀 Worker ha iniciado jornada`, 'info');
+      addNotification(`Worker ha iniciado jornada`, 'info');
     });
 
     socket.on('journey_finished', (data) => {
-      addNotification(`🏁 Worker ha finalizado jornada`, 'success');
+      addNotification(`Worker ha finalizado jornada`, 'success');
     });
 
     socket.on('visit_started', (data) => {
-      addNotification(`📍 Visita iniciada en cliente #${data.cliente_id.substring(0,5)}`, 'warning');
+      addNotification(`Visita iniciada en cliente #${data.cliente_id.substring(0,5)}`, 'warning');
     });
 
     socket.on('ficha_completed', (data) => {
-      addNotification(`📝 Gestión completada: ${data.tipificacion}`, 'success');
+      addNotification(`Gestión completada: ${data.tipificacion}`, 'success');
     });
 
     return () => socket.disconnect();

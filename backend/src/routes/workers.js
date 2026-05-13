@@ -5,25 +5,60 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Configurar multer para evidencias de fichas
-const uploadDir = path.join(__dirname, '../../uploads/evidencias');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// Configurar multer para evidencias de fichas (S3/R2 o Local)
+const { S3Client } = require('@aws-sdk/client-s3');
+const multerS3 = require('multer-s3');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname) || '.jpg';
-    cb(null, `ev_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
-  }
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB máx por imagen
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Solo se permiten imágenes'));
-  }
-});
+let upload;
+
+if (process.env.S3_BUCKET) {
+  // Configuración para Cloudflare R2 o S3
+  const s3 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.S3_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    },
+  });
+
+  upload = multer({
+    storage: multerS3({
+      s3: s3,
+      bucket: process.env.S3_BUCKET,
+      acl: 'public-read',
+      contentType: multerS3.AUTO_CONTENT_TYPE,
+      key: (req, file, cb) => {
+        const ext = path.extname(file.originalname) || '.jpg';
+        cb(null, `evidencias/ev_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+      }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 }
+  });
+  console.log('☁️ Almacenamiento en la nube (S3/R2) activado');
+} else {
+  // Fallback a almacenamiento local
+  const uploadDir = path.join(__dirname, '../../uploads/evidencias');
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname) || '.jpg';
+      cb(null, `ev_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+    }
+  });
+
+  upload = multer({
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) cb(null, true);
+      else cb(new Error('Solo se permiten imágenes'));
+    }
+  });
+  console.log('📂 Almacenamiento local activado');
+}
 
 const router = Router();
 router.use(authMiddleware);
@@ -109,6 +144,8 @@ router.post('/', adminOnly, async (req, res) => {
       return res.status(400).json({ error: 'Campos obligatorios: username, password, nombres, apellidos' });
     }
 
+    const sedeId = req.headers['x-sede-id'];
+    
     // Crear ubicación si se proporciona
     let ubicacion_id = null;
     if (latitud && longitud) {
@@ -128,7 +165,6 @@ router.post('/', adminOnly, async (req, res) => {
     const bcrypt = require('bcryptjs');
     const password_hash = await bcrypt.hash(password, 10);
 
-    const sedeId = req.headers['x-sede-id'];
     const { rows } = await db.query(
       `INSERT INTO usuarios (username, password_hash, rol, nombres, apellidos, dni, telefono, email, ubicacion_id, sede_id)
        VALUES ($1, $2, 'WORKER', $3, $4, $5, $6, $7, $8, $9)
@@ -297,7 +333,7 @@ router.get('/me/ruta', async (req, res) => {
     const { rows } = await db.query(
       `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion,
               rc.orden, c.id as cliente_id, c.nombres, c.apellidos, c.deuda_total, ub.direccion as cliente_direccion, 
-              c.estado as cliente_estado, ub.latitud, ub.longitud, ub.distrito
+              c.estado as cliente_estado, c.bloqueado_por, ub.latitud, ub.longitud, ub.distrito
        FROM rutas r
        LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
        LEFT JOIN clientes c ON c.id = rc.cliente_id
@@ -386,7 +422,8 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
     const cliente_id = req.params.id;
 
     // Fotos subidas via multer (req.files)
-    const evidenciaUrls = req.files ? req.files.map(f => `/uploads/evidencias/${f.filename}`) : [];
+    // En S3, el campo es 'location'. En Local, construimos la URL relativa.
+    const evidenciaUrls = req.files ? req.files.map(f => f.location || `/uploads/evidencias/${f.filename}`) : [];
 
     // Helpers de sanitización
     const safeNum   = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };

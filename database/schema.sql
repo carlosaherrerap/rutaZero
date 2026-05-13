@@ -95,7 +95,8 @@ CREATE TABLE IF NOT EXISTS plantillas_formularios (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre          VARCHAR(100) NOT NULL,
     descripcion     TEXT,
-    configuracion   JSONB NOT NULL,
+    campos          JSONB NOT NULL,
+    requiere_firma  BOOLEAN DEFAULT FALSE,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -116,6 +117,14 @@ CREATE TABLE IF NOT EXISTS clientes (
     deuda_total     DECIMAL(12,2) DEFAULT 0,
     dias_retraso    INTEGER DEFAULT 0,
     fecha_gestion   DATE,
+    tipo_documento  VARCHAR(20) DEFAULT 'DNI',
+    departamento    VARCHAR(100),
+    provincia       VARCHAR(100),
+    distrito        VARCHAR(100),
+    direccion       TEXT,
+    referencia      TEXT,
+    fotos_registro  JSONB DEFAULT '[]'::JSONB,
+    nombre_comercial VARCHAR(200),
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );

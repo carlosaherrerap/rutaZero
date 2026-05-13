@@ -159,9 +159,9 @@ export default function Localizar() {
                 icon={workerIcon}
               >
                 <Popup>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontWeight: 'bold' }}>{w.nombres} {w.apellidos}</div>
-                    <div style={{ fontSize: '12px' }}>{w.estado_jornada || 'Offline'}</div>
+                  <div style={{ textAlign: 'center', color: 'var(--c-text)' }}>
+                    <div style={{ fontWeight: 'bold', color: 'var(--c-text)' }}>{w.nombres} {w.apellidos}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--c-text)' }}>{w.estado_jornada || 'Offline'}</div>
                     <button 
                       className="btn btn-primary btn-sm" 
                       style={{ marginTop: '8px', padding: '4px 8px', fontSize: '11px' }}

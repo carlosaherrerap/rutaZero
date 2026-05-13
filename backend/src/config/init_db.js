@@ -7,49 +7,33 @@ const bcrypt = require('bcryptjs');
  */
 const verifySchema = async () => {
   console.log('🔍 [InitDB] Verificando esquema de base de datos...');
-  const migrations = [
-    // EXTENSIONES
-    'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"',
-    'CREATE EXTENSION IF NOT EXISTS "postgis"',
-
-    // CLIENTES
-    "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS plantilla_id UUID",
-    "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS bloqueado_por UUID",
-
-    // TABLA DE SEDES (Sucursales)
-    `CREATE TABLE IF NOT EXISTS sedes (
-      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      nombre VARCHAR(100) NOT NULL UNIQUE,
-      ciudad VARCHAR(100),
-      activo BOOLEAN DEFAULT TRUE,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    )`,
-
-    // AGREGAR COLUMNA DE SEDE A TABLAS PRINCIPALES
-    "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS sede_id UUID REFERENCES sedes(id)",
-    "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS sede_id UUID REFERENCES sedes(id)",
-    "ALTER TABLE rutas ADD COLUMN IF NOT EXISTS sede_id UUID REFERENCES sedes(id)",
-
-    // TABLA DE PLANTILLAS DE FORMULARIOS
-    `CREATE TABLE IF NOT EXISTS plantillas_formularios (
-      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      nombre VARCHAR(100) NOT NULL,
-      descripcion TEXT,
-      configuracion JSONB NOT NULL,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-    )`
-  ];
-
-  for (const sql of migrations) {
-    try {
-      await db.query(sql);
-    } catch (err) {
-      console.warn(`⚠️ [InitDB] Error en migración: ${sql.slice(0, 50)}... -> ${err.message}`);
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    
+    // Intentar leer el archivo schema.sql desde la raíz (funciona en Render con la nueva config)
+    const schemaPath = path.join(__dirname, '../../../database/schema.sql');
+    
+    if (fs.existsSync(schemaPath)) {
+      console.log('📖 [InitDB] Ejecutando schema.sql...');
+      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+      await db.query(schemaSql);
+      console.log('✅ [InitDB] schema.sql ejecutado con éxito.');
+    } else {
+      console.warn('⚠️ [InitDB] No se encontró schema.sql en:', schemaPath);
+      // Fallback a las migraciones manuales si el archivo no está
+      const migrations = [
+        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"',
+        'CREATE EXTENSION IF NOT EXISTS "postgis"',
+        "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS requiere_firma BOOLEAN DEFAULT FALSE"
+      ];
+      for (const sql of migrations) {
+        await db.query(sql);
+      }
     }
+  } catch (err) {
+    console.error('❌ [InitDB] Error al inicializar esquema:', err.message);
   }
-  console.log('✅ [InitDB] Esquema verificado.');
 };
 
 const ensureAdminUser = async () => {

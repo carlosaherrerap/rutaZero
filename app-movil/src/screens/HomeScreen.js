@@ -173,19 +173,19 @@ export default function HomeScreen({ navigation }) {
 
       // MODO ONLINE
       if (pageNum === 1 || shouldRefresh) {
-        const resWorker = await api.get(`/api/workers/${user.id}`);
-        const freshJourney = resWorker.data.data;
-        setJourney(freshJourney);
+        // Ejecutamos las peticiones en paralelo para mayor velocidad
+        const [resWorker, resRutas, resClients] = await Promise.all([
+          api.get(`/api/workers/${user.id}`),
+          api.get('/api/workers/me/ruta'),
+          api.get(`/api/clientes?page=${pageNum}&limit=100&fecha_pago=${todayStr}`)
+        ]);
 
-        const resRutas = await api.get('/api/workers/me/ruta');
+        const freshJourney = resWorker.data.data;
         const rutasData = resRutas.data.data || [];
-        
-        // FILTRAR POR HOY EN LA API
-        const limit = 100;
-        const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}&fecha_pago=${todayStr}`);
         const newData = resClients.data.data || [];
         
-        setHasMore(newData.length === limit);
+        setJourney(freshJourney);
+        setHasMore(newData.length === 100);
         setAllClients(newData);
         setPage(pageNum);
 
@@ -276,22 +276,22 @@ export default function HomeScreen({ navigation }) {
         }
         await api.post('/api/workers/jornada/iniciar');
         
-        // LOG MONITOREO
-        try {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          if (loc) {
-            api.post('/api/monitoreo/log', {
-              accion: 'JORNADA_INICIADA',
-              metadata: { lat: loc.coords.latitude, lng: loc.coords.longitude }
-            }).catch(() => {});
-          }
-        } catch (e) {
-          console.log('⚠️ [Home] No se pudo obtener ubicación para log inicial');
-        }
+        // LOG MONITOREO (En segundo plano para no bloquear al usuario)
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+          .then(loc => {
+            if (loc) {
+              api.post('/api/monitoreo/log', {
+                accion: 'JORNADA_INICIADA',
+                metadata: { lat: loc.coords.latitude, lng: loc.coords.longitude }
+              }).catch(() => {});
+            }
+          })
+          .catch(e => console.log('⚠️ [Home] No se pudo obtener ubicación para log inicial'));
 
         await updateLocalJourneyStatus('JORNADA_INICIADA'); 
-        await fetchData();
         setShowJourneyModal(false);
+        // Actualizamos la data en paralelo
+        fetchData(); 
         Alert.alert('¡Listo!', 'Jornada iniciada. ¡Buen día!');
       } catch (e) {
         Alert.alert('Error', 'No se pudo iniciar la jornada.');
@@ -616,10 +616,10 @@ export default function HomeScreen({ navigation }) {
                   jornadaEstado === 'JORNADA_FINALIZADA' ? '#f1f5f9' : '#f8fafc'
               }]}>
                 <Text style={styles.estadoLabel}>
-                  {jornadaEstado === 'JORNADA_INICIADA' ? '✅ Jornada activa' :
-                   jornadaEstado === 'EN_REFRIGERIO' ? `🍽️ En receso: ${timerAlmuerzo}` :
-                   jornadaEstado === 'JORNADA_FINALIZADA' ? '🔒 Día finalizado' :
-                   '⏳ Sin iniciar'}
+                  {jornadaEstado === 'JORNADA_INICIADA' ? 'Jornada activa' :
+                   jornadaEstado === 'EN_REFRIGERIO' ? `En receso: ${timerAlmuerzo}` :
+                   jornadaEstado === 'JORNADA_FINALIZADA' ? 'Día finalizado' :
+                   'Sin iniciar'}
                 </Text>
               </View>
 

@@ -1,0 +1,49 @@
+services:
+  # 1. Backend API (Web Service)
+  - type: web
+    name: rutazero-backend
+    env: node
+    plan: pro # Recomendado para 1,000 clientes/día
+    region: ohio
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rutazero-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rutazero-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 4000
+    rootDirectory: backend
+
+  # 2. Portal Web (Static Site)
+  - type: static
+    name: rutazero-portal
+    env: static
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    rootDirectory: portal-web
+    envVars:
+      - key: VITE_API_URL
+        value: https://rutazero-backend.onrender.com # Cambiar esto si el nombre del servicio cambia
+
+databases:
+  # 3. PostgreSQL Database
+  - name: rutazero-db
+    plan: pro # Recomendado para 1,000 clientes/día
+    region: ohio
+
+# 4. Redis (Real-time Sync)
+redis:
+  name: rutazero-redis
+  plan: starter
+  region: ohio

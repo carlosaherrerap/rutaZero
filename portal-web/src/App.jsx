@@ -72,7 +72,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid var(--c-border)', marginBottom: '10px' }}>
-        <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px' }} />
+        <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px', filter: 'var(--logo-filter)' }} />
 
         <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease' }}>
           <div style={{ fontSize: '9px', color: isHighlighting ? 'var(--c-primary)' : 'var(--c-muted)', fontWeight: '900', marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>SEDE ACTUAL</div>
@@ -185,7 +185,12 @@ function Topbar({ title }) {
     const selected = presets[newTheme];
     applyStyles(selected);
     // Persist to DB
-    try { await api.post('/api/config', selected); } catch (e) { console.error(e); }
+    try { 
+      await api.post('/api/config', selected);
+    } catch (e) { 
+      console.error(e); 
+    }
+
   };
 
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';

@@ -49,13 +49,20 @@ router.post('/registro-cliente', upload.array('fotos', 5), async (req, res) => {
     );
     const ubicacion_id = ubRes.rows[0].id;
 
+    // Determinar sede_id basado en departamento
+    let sede_id = '11111111-1111-1111-1111-000000000001'; // Default Lima
+    if (departamento && departamento.toUpperCase() === 'AREQUIPA') {
+      sede_id = '11111111-1111-1111-1111-000000000002';
+    }
+
     // 2. Crear cliente
     const clientRes = await db.query(
       `INSERT INTO clientes (
         nombres, apellidos, tipo_documento, dni, 
         departamento, provincia, distrito, direccion, referencia,
-        ubicacion_id, fotos_registro, estado, telefono, email, nombre_comercial, fecha_pago
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_DATE) RETURNING id`,
+        ubicacion_id, fotos_registro, estado, telefono, email, nombre_comercial, 
+        sede_id, fecha_pago
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, CURRENT_DATE) RETURNING id`,
       [
         nombres || '', 
         apellidos || '', 
@@ -71,10 +78,10 @@ router.post('/registro-cliente', upload.array('fotos', 5), async (req, res) => {
         'LIBRE',
         telefono || '',
         email || '',
-        nombre_comercial || ''
+        nombre_comercial || '',
+        sede_id
       ]
     );
-
     console.log('✅ Cliente registrado ID:', clientRes.rows[0].id);
 
     res.json({ success: true, message: 'Cliente registrado con éxito', id: clientRes.rows[0].id });

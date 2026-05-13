@@ -103,7 +103,7 @@ export default function Dashboard() {
           <h1 
             key={`title-${sedeActual?.id}`}
             style={{ 
-              fontFamily: 'Serimi, sans-serif', fontSize: '42px', letterSpacing: '1px', color: 'var(--c-text)',
+              fontFamily: 'var(--font-main), Serimi, sans-serif', fontSize: '42px', letterSpacing: '1px', color: 'var(--c-text)',
               animation: 'slideLeftRight 0.8s ease-out forwards'
             }}
           >

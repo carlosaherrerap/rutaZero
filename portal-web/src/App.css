@@ -370,6 +370,10 @@ tbody td { padding: 14px; font-size: 13.5px; vertical-align: middle; }
   outline: none;
   width: 100%;
 }
+select.form-input option {
+  background-color: var(--c-surface);
+  color: var(--c-text);
+}
 .form-input:focus { border-color: var(--c-primary); }
 .form-input::placeholder { color: var(--c-text); opacity: 0.3; }
 .form-row { display: grid; gap: 16px; }
@@ -460,7 +464,7 @@ tbody td { padding: 14px; font-size: 13.5px; vertical-align: middle; }
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.6);
   display: flex; align-items: center; justify-content: center;
-  z-index: 1000;
+  z-index: 20000;
   padding: 20px;
 }
 .modal {
@@ -543,8 +547,46 @@ tbody td { padding: 14px; font-size: 13.5px; vertical-align: middle; }
 .mb-4 { margin-bottom: 16px; }
 .text-muted { color: var(--c-muted); }
 .text-sm { font-size: 12px; }
-.font-bold { font-weight: 700; }
+.font-bold { font-weight: 700; color: var(--c-text); }
 .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ─── Custom Classes ───────────────────────────────────────── */
+.sidebar-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  border: 2px solid var(--c-border);
+}
+
+.avatar-small {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Ensure all cards have proper text color */
+.card, .modal {
+  color: var(--c-text) !important;
+}
+
+.card h1, .card h2, .card h3, .card h4 {
+  color: var(--c-text) !important;
+}
+
 
 /* Colors semantic */
 .c-green { color: var(--c-success); }

@@ -16,7 +16,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 1. PLANTILLAS
 -- ────────────────────────────────────────────────────────────────────────────
 
-INSERT INTO plantillas_formularios (id, nombre, descripcion, configuracion) VALUES
+INSERT INTO plantillas_formularios (id, nombre, descripcion, campos) VALUES
 ('22222222-2222-2222-2222-000000000001', 'Formulario Estándar de Gestión', 'Plantilla base para visitas de cobranza y verificación.', '{
     "campos": [
         {"id": "c1", "label": "Observación de Fachada", "tipo": "text", "required": true},
@@ -33,7 +33,7 @@ ON CONFLICT (id) DO NOTHING;
 -- UBICACIONES PARA USUARIOS (LIMA: ~ -12.04, -77.03 | AREQUIPA: ~ -16.40, -71.53)
 INSERT INTO ubicaciones (id, latitud, longitud, direccion, distrito, provincia, departamento) VALUES
 ('10000000-0000-0000-0000-000000000001', '-12.0600', '-77.0360', 'Oficina Central Lima', 'Jesús María', 'Lima', 'Lima'),
--- LIMA WORKERS
+-- LIMA WORKERS (1-10)
 ('10000000-0001-0001-0000-000000000001', '-12.1191', '-77.0300', 'Base Pedro', 'Miraflores', 'Lima', 'Lima'),
 ('10000000-0001-0001-0000-000000000002', '-12.0000', '-77.0800', 'Base Daniel', 'Los Olivos', 'Lima', 'Lima'),
 ('10000000-0001-0001-0000-000000000003', '-12.0500', '-76.9500', 'Base Maria', 'Ate', 'Lima', 'Lima'),
@@ -44,8 +44,19 @@ INSERT INTO ubicaciones (id, latitud, longitud, direccion, distrito, provincia, 
 ('10000000-0001-0001-0000-000000000008', '-12.1200', '-77.0400', 'Base Jorge', 'Magdalena', 'Lima', 'Lima'),
 ('10000000-0001-0001-0000-000000000009', '-12.1300', '-77.0000', 'Base Elena', 'Surco', 'Lima', 'Lima'),
 ('10000000-0001-0001-0000-000000000010', '-12.0400', '-77.0300', 'Base Juan', 'Cercado', 'Lima', 'Lima'),
--- AREQUIPA WORKERS
-('10000000-0002-0001-0000-000000000001', '-16.3989', '-71.5350', 'Base Mario', 'Cercado', 'Arequipa', 'Arequipa'),
+-- LIMA WORKERS (11-20)
+('10000000-0001-0001-0000-000000000011', '-12.0200', '-77.0500', 'Base Carlos P', 'San Martin de Porres', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000012', '-11.9800', '-77.0700', 'Base Ana G', 'Comas', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000013', '-12.1500', '-77.0100', 'Base Luis T', 'Barranco', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000014', '-12.1800', '-77.0200', 'Base Rosa D', 'Chorrillos', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000015', '-12.2000', '-76.9400', 'Base Jorge S', 'Villa El Salvador', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000016', '-12.1000', '-76.9700', 'Base Elena R', 'San Borja', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000017', '-12.0600', '-77.0800', 'Base Juan Q', 'San Miguel', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000018', '-12.0400', '-76.9800', 'Base Maria J', 'Santa Anita', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000019', '-12.1100', '-77.0400', 'Base Pedro V', 'Miraflores', 'Lima', 'Lima'),
+('10000000-0001-0001-0000-000000000020', '-12.0000', '-77.0300', 'Base Daniel O', 'Independencia', 'Lima', 'Lima'),
+-- AREQUIPA WORKERS (1-10)
+('10000000-0002-0001-0000-000000000001', '-16.3988', '-71.5350', 'Base Mario', 'Cercado', 'Arequipa', 'Arequipa'),
 ('10000000-0002-0001-0000-000000000002', '-16.3800', '-71.5500', 'Base Sofia', 'Cayma', 'Arequipa', 'Arequipa'),
 ('10000000-0002-0001-0000-000000000003', '-16.4100', '-71.5200', 'Base Diego', 'Yanahuara', 'Arequipa', 'Arequipa'),
 ('10000000-0002-0001-0000-000000000004', '-16.4200', '-71.5400', 'Base Carmen', 'Jose Luis Bustamante', 'Arequipa', 'Arequipa'),
@@ -54,8 +65,23 @@ INSERT INTO ubicaciones (id, latitud, longitud, direccion, distrito, provincia, 
 ('10000000-0002-0001-0000-000000000007', '-16.4400', '-71.5700', 'Base Javier', 'Sachaca', 'Arequipa', 'Arequipa'),
 ('10000000-0002-0001-0000-000000000008', '-16.3500', '-71.5300', 'Base Paulina', 'Alto Selva Alegre', 'Arequipa', 'Arequipa'),
 ('10000000-0002-0001-0000-000000000009', '-16.4000', '-71.5800', 'Base Roberto', 'Tiabaya', 'Arequipa', 'Arequipa'),
-('10000000-0002-0001-0000-000000000010', '-16.4500', '-71.5100', 'Base Andrea', 'Socabaya', 'Arequipa', 'Arequipa')
-ON CONFLICT DO NOTHING;
+('10000000-0002-0001-0000-000000000010', '-16.4500', '-71.5100', 'Base Andrea', 'Socabaya', 'Arequipa', 'Arequipa'),
+-- AREQUIPA WORKERS (11-20)
+('10000000-0002-0001-0000-000000000011', '-16.3900', '-71.5400', 'Base Jose M', 'Yanahuara', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000012', '-16.3700', '-71.5300', 'Base Lucero F', 'Selva Alegre', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000013', '-16.4200', '-71.5200', 'Base Ricardo C', 'Miraflores', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000014', '-16.4100', '-71.5500', 'Base Diana P', 'Yanahuara', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000015', '-16.3800', '-71.5600', 'Base Raul L', 'Cerro Colorado', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000016', '-16.4300', '-71.5300', 'Base Marta L', 'Cercado', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000017', '-16.4400', '-71.5500', 'Base Juan P', 'Hunter', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000018', '-16.3600', '-71.5400', 'Base Sofia C', 'Cayma', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000019', '-16.4600', '-71.5200', 'Base Pedro A', 'Sabandia', 'Arequipa', 'Arequipa'),
+('10000000-0002-0001-0000-000000000020', '-16.3900', '-71.5100', 'Base Claudia R', 'Mariano Melgar', 'Arequipa', 'Arequipa')
+ON CONFLICT (id) DO NOTHING;
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 2. USUARIOS (20 LIMA + 20 AREQUIPA)
+-- ────────────────────────────────────────────────────────────────────────────
 
 -- USUARIOS (Admin: Informatech/informaperu | Workers: ruta123)
 -- Hash para 'ruta123': $2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK
@@ -63,7 +89,7 @@ INSERT INTO usuarios (id, username, password_hash, nombres, apellidos, rol, sede
 -- ADMIN
 ('c0000001-0001-0001-0001-000000000001', 'Informatech', '$2a$10$tUUg3uHBg11lYAuLWXIg3.KPq4QvFcbAfBNGFD5mZV0mR2JfthunK', 'Administrador', 'General', 'ADMIN', '11111111-1111-1111-1111-000000000001', '10000000-0000-0000-0000-000000000001'),
 
--- 10 LIMA WORKERS
+-- 20 LIMA WORKERS
 ('c0000001-0001-0001-0002-000000000001', 'pedro.garcia', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Pedro', 'García', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000001'),
 ('c0000001-0001-0001-0002-000000000002', 'daniel.lopez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Daniel', 'López', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000002'),
 ('c0000001-0001-0001-0002-000000000003', 'maria.sanchez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Maria', 'Sánchez', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000003'),
@@ -74,8 +100,18 @@ INSERT INTO usuarios (id, username, password_hash, nombres, apellidos, rol, sede
 ('c0000001-0001-0001-0002-000000000018', 'jorge.chavez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Jorge', 'Chavez', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000008'),
 ('c0000001-0001-0001-0002-000000000019', 'elena.ramos', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Elena', 'Ramos', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000009'),
 ('c0000001-0001-0001-0002-000000000020', 'juan.alvarado', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Juan', 'Alvarado', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000010'),
+('c0000001-0001-0001-0002-000000000031', 'carlos.perez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Carlos', 'Perez', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000011'),
+('c0000001-0001-0001-0002-000000000032', 'ana.gomez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Ana', 'Gomez', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000012'),
+('c0000001-0001-0001-0002-000000000033', 'luis.torres', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Luis', 'Torres', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000013'),
+('c0000001-0001-0001-0002-000000000034', 'rosa.diaz', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Rosa', 'Diaz', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000014'),
+('c0000001-0001-0001-0002-000000000035', 'jorge.soto', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Jorge', 'Soto', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000015'),
+('c0000001-0001-0001-0002-000000000036', 'elena.ruiz', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Elena', 'Ruiz', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000016'),
+('c0000001-0001-0001-0002-000000000037', 'juan.quispe', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Juan', 'Quispe', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000017'),
+('c0000001-0001-0001-0002-000000000038', 'maria.jara', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Maria', 'Jara', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000018'),
+('c0000001-0001-0001-0002-000000000039', 'pedro.vilca', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Pedro', 'Vilca', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000019'),
+('c0000001-0001-0001-0002-000000000040', 'daniel.ortiz', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Daniel', 'Ortiz', 'WORKER', '11111111-1111-1111-1111-000000000001', '10000000-0001-0001-0000-000000000020'),
 
--- 10 AREQUIPA WORKERS
+-- 20 AREQUIPA WORKERS
 ('c0000001-0001-0001-0002-000000000004', 'mario.luna', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Mario', 'Luna', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000001'),
 ('c0000001-0001-0001-0002-000000000005', 'sofia.vargas', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Sofia', 'Vargas', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000002'),
 ('c0000001-0001-0001-0002-000000000021', 'diego.portales', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Diego', 'Portales', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000003'),
@@ -85,10 +121,18 @@ INSERT INTO usuarios (id, username, password_hash, nombres, apellidos, rol, sede
 ('c0000001-0001-0001-0002-000000000025', 'javier.diez', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Javier', 'Diez', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000007'),
 ('c0000001-0001-0001-0002-000000000026', 'paulina.astorga', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Paulina', 'Astorga', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000008'),
 ('c0000001-0001-0001-0002-000000000027', 'roberto.carlos', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Roberto', 'Carlos', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000009'),
-('c0000001-0001-0001-0002-000000000028', 'andrea.paz', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Andrea', 'Paz', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000010')
-ON CONFLICT DO NOTHING;
-
-ON CONFLICT DO NOTHING;
+('c0000001-0001-0001-0002-000000000028', 'andrea.paz', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Andrea', 'Paz', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000010'),
+('c0000001-0001-0001-0002-000000000041', 'jose.mamani', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Jose', 'Mamani', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000011'),
+('c0000001-0001-0001-0002-000000000042', 'lucero.flores', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Lucero', 'Flores', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000012'),
+('c0000001-0001-0001-0002-000000000043', 'ricardo.cusi', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Ricardo', 'Cusi', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000013'),
+('c0000001-0001-0001-0002-000000000044', 'diana.pari', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Diana', 'Pari', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000014'),
+('c0000001-0001-0001-0002-000000000045', 'raul.lazo', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Raul', 'Lazo', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000015'),
+('c0000001-0001-0001-0002-000000000046', 'marta.luna2', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Marta', 'Luna', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000016'),
+('c0000001-0001-0001-0002-000000000047', 'juan.puma', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Juan', 'Puma', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000017'),
+('c0000001-0001-0001-0002-000000000048', 'sofia.ccama', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Sofia', 'Ccama', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000018'),
+('c0000001-0001-0001-0002-000000000049', 'pedro.apaza', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Pedro', 'Apaza', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000019'),
+('c0000001-0001-0001-0002-000000000050', 'claudia.roque', '$2a$10$cDM3vvoYVMvzDOaMS/QZlO/bo6v8vAX4BUzvuBgZb.5/B4Kv2PdAK', 'Claudia', 'Roque', 'WORKER', '11111111-1111-1111-1111-000000000002', '10000000-0002-0001-0000-000000000020')
+ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 3. CLIENTES Y UBICACIONES (MASIVO)

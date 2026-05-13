@@ -135,8 +135,8 @@ export default function MapPage() {
           {data.clientes.map((c) => (
             <Marker key={c.id} position={[parseFloat(c.latitud), parseFloat(c.longitud)]} icon={getClientIcon(c.estado)}>
               <Popup>
-                <div style={{minWidth: '150px'}}>
-                  <strong style={{fontSize:'14px'}}>{c.nombres} {c.apellidos}</strong>
+                <div style={{minWidth: '150px', color: 'var(--c-text)'}}>
+                  <strong style={{fontSize:'14px', color: 'var(--c-text)'}}>{c.nombres} {c.apellidos}</strong>
                   <div style={{color: 'var(--c-danger)', fontWeight: 'bold', fontSize: '13px', margin: '3px 0'}}>
                     DEUDA: S/ {parseFloat(c.deuda_total || 0).toFixed(2)}
                   </div>
@@ -153,7 +153,7 @@ export default function MapPage() {
           {data.workers.map((w) => (
             <Marker key={w.id} position={[parseFloat(w.latitud || 0), parseFloat(w.longitud || 0)]} icon={workerIcon}>
               <Popup>
-                <div style={{minWidth: '120px'}}>
+                <div style={{minWidth: '120px', color: 'var(--c-text)'}}>
                   <strong style={{color:'var(--c-text)'}}>{w.nombres} {w.apellidos}</strong>
                   <div style={{marginTop:'5px'}}>
                     <span style={{fontSize:'10px', fontWeight:'bold', color: w.estado_jornada === 'EN_REFRIGERIO' ? 'var(--c-warn)' : 'var(--c-muted)'}}>

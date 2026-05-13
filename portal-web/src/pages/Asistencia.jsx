@@ -111,7 +111,7 @@ export default function Asistencia() {
                   aspectRatio: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: '12px',
                   cursor: d ? 'pointer' : 'default',
                   background: d?.date === selectedDay ? 'var(--c-primary)' : (d?.hasActivity ? 'var(--c-surface-2)' : 'transparent'),
-                  color: d?.date === selectedDay ? 'white' : 'var(--c-text)',
+                  color: d?.date === selectedDay ? 'var(--c-on-primary)' : 'var(--c-text)',
                   border: d?.date === selectedDay ? 'none' : '1px solid var(--c-border)',
                   position: 'relative', transition: 'all 0.2s'
                 }}
@@ -186,7 +186,7 @@ export default function Asistencia() {
             <div className="card" style={{ padding: '24px' }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--c-border)' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'white', fontSize: '22px' }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--c-on-primary)', fontSize: '22px' }}>
                   {selectedWorkerDetails.nombres[0]}
                 </div>
                 <div>
