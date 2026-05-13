@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   // useMemo for the api instance so it recreates only when token or sedeActual changes
+  const apiData = React.useMemo(() => {
     // Lógica de URLs para Producción vs Local
     const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('192.168');
     const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
