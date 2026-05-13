@@ -10,28 +10,30 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // URL de producción en Render (Cambiar por tu URL de Render una vez desplegado)
+  // URL de producción en Render
   const CLOUD_URL = 'https://rutazero-backend.onrender.com'; 
   
-  // Si es Web usamos localhost, si es móvil usamos la IP de la PC para que el celular la vea
-  const BASE_URL = __DEV__ 
-    ? (Platform.OS === 'web' ? 'http://localhost:4000' : 'http://192.168.1.69:4000')
-    : CLOUD_URL;
+  // Forzamos la conexión a la nube para el APK de producción y pruebas
+  const BASE_URL = CLOUD_URL;
 
   // Creamos la instancia de API
   useEffect(() => {
     let isMounted = true;
     const loadStoredData = async () => {
       try {
+        console.log('📦 [Auth] Recuperando sesión guardada...');
         const savedToken = await storage.getItem('token');
         const savedUser = await storage.getItem('user');
 
         if (isMounted && savedToken && savedUser) {
+          console.log('✅ [Auth] Sesión recuperada de caché.');
           setToken(savedToken);
           setUser(JSON.parse(savedUser));
+        } else {
+          console.log('⚠️ [Auth] No hay sesión previa guardada.');
         }
       } catch (e) {
-        console.log('Error loading security data', e);
+        console.log('❌ [Auth] Error cargando datos de seguridad:', e);
       } finally {
         if (isMounted) setLoading(false);
       }

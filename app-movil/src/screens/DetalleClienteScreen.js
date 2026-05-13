@@ -6,7 +6,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { ErrorBoundary, saveCrashLog } from '../services/CrashLogService';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import * as NavigationBar from 'expo-navigation-bar';
 
@@ -237,78 +238,74 @@ const DetalleClienteScreen = ({ route, navigation }) => {
         contentContainerStyle={styles.scroll} 
         scrollEnabled={!isMapFullscreen}
       >
-        <View style={[styles.mapContainer, isMapFullscreen && styles.mapContainerFullscreen]}>
-           <MapView
-             style={styles.map}
-             initialRegion={{
-               latitude: parseFloat(cliente.latitud) || -12.046374,
-               longitude: parseFloat(cliente.longitud) || -77.042793,
-               latitudeDelta: 0.015,
-               longitudeDelta: 0.015,
-             }}
-           >
-             {isOnline && (
-               <>
-                 <Marker
-                   coordinate={{
-                     latitude: parseFloat(cliente.latitud) || -12.046374,
-                     longitude: parseFloat(cliente.longitud) || -77.042793,
-                   }}
-                 >
-                    <Ionicons name="location" size={35} color={statusInfo.color} />
-                 </Marker>
-
-                 {userLocation && (
-                   <Marker coordinate={userLocation} title="Tu ubicación">
-                      <View style={styles.workerMarker}>
-                         <Ionicons name="bicycle" size={20} color="#fff" />
-                      </View>
-                   </Marker>
-                 )}
-
-                 {routeCoords.length > 0 && (
-                   <Polyline
-                     coordinates={routeCoords}
-                     strokeWidth={5}
-                     strokeColor="#a855f7"
-                   />
-                 )}
-               </>
-             )}
-           </MapView>
-
-           {!isOnline && (
-             <View style={styles.offlineOverlay}>
-                <Ionicons name="wifi-outline" size={40} color="#fff" />
-                <Text style={styles.offlineText}>NO TIENES SEÑAL AQUÍ</Text>
-                <Text style={styles.offlineSub}>El mapa no está disponible offline</Text>
-             </View>
-           )}
-
-            <View style={styles.mapActions}>
-              {isMapFullscreen && (
-                <TouchableOpacity 
-                  style={[styles.mapBtn, styles.mapBtnBack]} 
-                  onPress={() => setIsMapFullscreen(false)}
-                >
-                   <Ionicons name="arrow-back" size={24} color="#fff" />
-                   <Text style={[styles.mapBtnText, { color: '#fff' }]}>VOLVER AL DETALLE</Text>
-                </TouchableOpacity>
+        <View style={styles.mapSafeContainer}>
+          {cliente.latitud ? (
+            <WebView
+              style={styles.map}
+              originWhitelist={['*']}
+              source={{ html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+                  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                  <style>
+                    html, body, #map { height: 100%; margin: 0; padding: 0; background: #1e293b; }
+                  </style>
+                </head>
+                <body>
+                  <div id="map"></div>
+                  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                  <script>
+                    var lat = ${parseFloat(cliente.latitud) || -12.046374};
+                    var lng = ${parseFloat(cliente.longitud) || -77.042793};
+                    var map = L.map('map').setView([lat, lng], 16);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                      attribution: '© OpenStreetMap'
+                    }).addTo(map);
+                    var clientIcon = L.divIcon({
+                      html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
+                      iconSize: [20, 20], iconAnchor: [10, 10]
+                    });
+                    L.marker([lat, lng], {icon: clientIcon})
+                      .addTo(map)
+                      .bindPopup('<b>${(cliente.nombres || '').replace(/'/g, "\\'")} ${(cliente.apellidos || '').replace(/'/g, "\\'")}</b><br>${(cliente.direccion || '').replace(/'/g, "\\'")}')
+                      .openPopup();
+                    ${userLocation ? `
+                    var workerIcon = L.divIcon({
+                      html: '<div style="background:#10b981;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
+                      iconSize: [16, 16], iconAnchor: [8, 8]
+                    });
+                    L.marker([${userLocation.latitude}, ${userLocation.longitude}], {icon: workerIcon})
+                      .addTo(map)
+                      .bindPopup('<b>Tu ubicación</b>');
+                    ` : ''}
+                  </script>
+                </body>
+                </html>
+              `}}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={true}
+              renderLoading={() => (
+                <View style={styles.mapLoading}>
+                  <ActivityIndicator size="large" color="#3b82f6" />
+                  <Text style={styles.mapLoadingText}>Cargando mapa...</Text>
+                </View>
               )}
+            />
+          ) : (
+            <View style={styles.mapPlaceholder}>
+              <Ionicons name="location-outline" size={50} color="#475569" />
+              <Text style={styles.mapPlaceholderText}>Sin coordenadas registradas</Text>
+            </View>
+          )}
 
-              <TouchableOpacity 
-                style={[styles.mapBtn, { marginBottom: 8 }]} 
-                onPress={() => setIsMapFullscreen(!isMapFullscreen)}
-              >
-                 <Ionicons name={isMapFullscreen ? "contract" : "expand"} size={22} color="#3b82f6" />
-                 <Text style={styles.mapBtnText}>{isMapFullscreen ? "Reducir" : "Agrandar"}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.mapBtn} onPress={openExternalMaps}>
-                 <Ionicons name="navigate-circle" size={24} color="#3b82f6" />
-                 <Text style={styles.mapBtnText}>Waze / Google</Text>
-              </TouchableOpacity>
-           </View>
+          {/* Botón flotante para abrir en app externa */}
+          <TouchableOpacity style={styles.externalMapBtn} onPress={openExternalMaps}>
+            <Ionicons name="navigate" size={18} color="#fff" />
+            <Text style={styles.externalMapBtnText}>Abrir en Maps / Waze</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.infoSection}>
@@ -383,15 +380,29 @@ const InfoRow = ({ icon, label, value }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   scroll: { paddingBottom: 100 },
-  mapContainer: { width: width, height: 300, backgroundColor: '#e2e8f0', zIndex: 10 },
-  mapContainerFullscreen: { position: 'absolute', top: 0, left: 0, width: width, height: Dimensions.get('window').height, zIndex: 1000 },
-  map: { width: '100%', height: '100%' },
-  mapActions: { position: 'absolute', bottom: 20, right: 15, left: 15, alignItems: 'flex-end' },
-  mapBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 12, borderRadius: 12, elevation: 8, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
-  mapBtnBack: { alignSelf: 'flex-start', position: 'absolute', top: -Dimensions.get('window').height + 150, backgroundColor: '#1e293b', paddingHorizontal: 20 },
-  mapBtnText: { marginLeft: 8, fontWeight: '800', fontSize: 13, color: '#3b82f6' },
-  workerMarker: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
-  infoSection: { backgroundColor: '#fff', marginTop: -20, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, elevation: 10 },
+  mapSafeContainer: { width: width, height: 280, backgroundColor: '#1e293b' },
+  map: { flex: 1 },
+  mapLoading: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center' },
+  mapLoadingText: { color: '#64748b', marginTop: 10, fontSize: 13 },
+  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
+  mapPlaceholderText: { color: '#475569', fontSize: 15, fontWeight: '600', marginTop: 10 },
+  externalMapBtn: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3b82f6',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    elevation: 10,
+    shadowColor: '#3b82f6',
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  externalMapBtnText: { color: '#fff', fontSize: 12, fontWeight: '800', marginLeft: 6 },
+  infoSection: { backgroundColor: '#fff', marginTop: -25, borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 30, elevation: 15 },
   clientName: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
   clientSub: { fontSize: 14, color: '#64748b', marginTop: 5 },
   divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 20 },
@@ -410,9 +421,16 @@ const styles = StyleSheet.create({
   mainBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
   releaseBtn: { flex: 1, height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ef4444', backgroundColor: '#fff' },
   releaseBtnText: { color: '#ef4444', fontSize: 14, fontWeight: 'bold', marginLeft: 5 },
-  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
+  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
   offlineText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginTop: 10 },
   offlineSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 }
 });
 
-export default DetalleClienteScreen;
+// Envuelve la pantalla con ErrorBoundary para capturar cualquier crash
+const DetalleClienteScreenSafe = ({ route, navigation }) => (
+  <ErrorBoundary context="DetalleClienteScreen" onBack={() => navigation.goBack()}>
+    <DetalleClienteScreen route={route} navigation={navigation} />
+  </ErrorBoundary>
+);
+
+export default DetalleClienteScreenSafe;

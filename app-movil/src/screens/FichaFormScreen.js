@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
+import { saveCrashLog } from '../services/CrashLogService';
 
 // Fallback seguro para ImagePicker
 let ImagePicker = null;
@@ -64,7 +65,9 @@ export default function FichaFormScreen({ route, navigation }) {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.5, // REDUCIDO aún más para optimizar velocidad de subida
+      quality: 0.5,
+      maxWidth: 1200, // Limitar ancho para reducir peso
+      maxHeight: 1200, // Limitar alto
     });
 
     if (!result.canceled && fotos.length < 5) {
@@ -104,6 +107,7 @@ export default function FichaFormScreen({ route, navigation }) {
 
       await api.post(`/api/workers/clientes/${cliente.id}/ficha`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000, // 2 minutos de espera para subidas con fotos
       });
       
       // LOG DE MONITOREO (Segundo plano para no bloquear al usuario)
@@ -131,7 +135,11 @@ export default function FichaFormScreen({ route, navigation }) {
         { text: 'Finalizar', onPress: () => navigation.popToTop() }
       ]);
     } catch (err) {
-      console.log('Error saving ficha, attempting offline storage:', err);
+      const errorDetail = err.response?.data?.message || err.message;
+      console.log('Error saving ficha, attempting offline storage:', errorDetail);
+      
+      // GUARDAR LOG PARA SOPORTE (Inspector de errores)
+      await saveCrashLog(err, `SAVE_FICHA_ONLINE_FAIL_${cliente.id}`);
       
       // FALLBACK OFFLINE
       const { saveFichaOffline } = require('../services/OfflineService');

@@ -5,6 +5,7 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import { saveCrashLog } from './CrashLogService';
 
 const QUEUE_KEY = 'rz_pending_fichas';
 const DAY_DATA_KEY = 'rz_day_data';
@@ -285,12 +286,18 @@ export const syncAllOfflineData = async (api) => {
         });
 
         await api.post(`/api/workers/clientes/${item.clienteId}/ficha`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 120000, // 2 minutos para subidas de fotos pesadas
         });
 
         console.log(`✅ Ficha ${item.id} sincronizada correctamente`);
       } catch (e) {
-        console.error(`❌ No se pudo sincronizar ficha ${item.id}:`, e.message);
+        const errorMsg = e.response?.data?.message || e.message;
+        console.error(`❌ No se pudo sincronizar ficha ${item.id}:`, errorMsg);
+        
+        // GUARDAR LOG PARA EL USUARIO/SOPORTE
+        await saveCrashLog(e, `SYNC_FICHA_${item.clienteId}`);
+        
         remainingQueue.push(item);
       }
     }

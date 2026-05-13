@@ -1,25 +1,30 @@
 {
   "expo": {
-    "name": "app-movil",
+    "name": "InformaTech",
     "slug": "app-movil",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logo-pixi.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo-pixi.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0f172a"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "package": "com.routing.app",
+      "package": "com.informatech.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logo-pixi.png",
+        "backgroundColor": "#0f172a"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyB9tMBzBOy1jdpov_EPv4IUh0h3KV1mvCc"
+        }
       },
       "edgeToEdgeEnabled": true,
       "permissions": [

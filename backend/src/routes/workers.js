@@ -26,14 +26,13 @@ if (process.env.S3_BUCKET) {
     storage: multerS3({
       s3: s3,
       bucket: process.env.S3_BUCKET,
-      acl: 'public-read',
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (req, file, cb) => {
         const ext = path.extname(file.originalname) || '.jpg';
         cb(null, `evidencias/ev_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
       }
     }),
-    limits: { fileSize: 10 * 1024 * 1024 }
+    limits: { fileSize: 15 * 1024 * 1024 } // 15MB
   });
   console.log('☁️ Almacenamiento en la nube (S3/R2) activado');
 } else {
