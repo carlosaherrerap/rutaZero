@@ -28,7 +28,7 @@ services:
     plan: free
     rootDir: portal-web
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
         value: https://rutazero-backend.onrender.com
