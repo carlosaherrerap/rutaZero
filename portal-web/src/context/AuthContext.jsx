@@ -14,21 +14,26 @@ export const AuthProvider = ({ children }) => {
   });
 
   // useMemo for the api instance so it recreates only when token or sedeActual changes
-  const api = React.useMemo(() => {
-    // En producción usamos VITE_API_URL (definida en Render)
-    // En local usamos el hostname actual para que funcione en red local/móvil
+    // Lógica de URLs para Producción vs Local
+    const isProd = window.location.hostname !== 'localhost' && !window.location.hostname.includes('192.168');
     const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    const PROD_URL = import.meta.env.VITE_API_URL;
+    const PROD_URL = import.meta.env.VITE_API_URL || 'https://rutazero-backend.onrender.com';
     
+    // Exportamos la URL base para sockets y otros componentes
+    const BASE_URL = isProd ? PROD_URL : `http://${API_HOST}:4000`;
+
     const instance = axios.create({
-      baseURL: PROD_URL || `http://${API_HOST}:4000`,
+      baseURL: BASE_URL,
       headers: { 
         Authorization: token ? `Bearer ${token}` : undefined,
         'x-sede-id': sedeActual?.id
       },
     });
-    return instance;
+    return { instance, BASE_URL };
   }, [token, sedeActual]);
+
+  const api = apiData.instance;
+  const API_BASE_URL = apiData.BASE_URL;
 
   const login = async (username, password) => {
     const response = await api.post('/api/auth/login', { username, password });

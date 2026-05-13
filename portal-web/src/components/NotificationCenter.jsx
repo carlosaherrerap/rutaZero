@@ -3,14 +3,13 @@ import { io } from 'socket.io-client';
 import { AuthContext } from '../context/AuthContext';
 
 export default function NotificationCenter() {
-  const { user } = useContext(AuthContext);
+  const { user, API_BASE_URL } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !API_BASE_URL) return;
 
-    const API_HOST = window.location.hostname;
-    const socket = io(`http://${API_HOST}:4000`);
+    const socket = io(API_BASE_URL);
 
     socket.on('journey_started', (data) => {
       addNotification(`Worker ha iniciado jornada`, 'info');

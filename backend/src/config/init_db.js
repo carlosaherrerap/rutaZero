@@ -81,8 +81,35 @@ const ensureAdminUser = async () => {
     await db.query(query, values);
     console.log('✅ [InitDB] Usuario Admin verificado/actualizado');
     
-    // El worker daniel.flores ya está en el seed.sql con el formato correcto, 
-    // no es necesario recrearlo aquí con datos distintos.
+    // Seed Configuración del Portal (Tema Oscuro por defecto)
+    await db.query(`
+      INSERT INTO configuracion_portal (clave, valor) VALUES 
+      ('main_bg', '#0B0E11'),
+      ('sidebar_bg', '#15191C'),
+      ('primary_color', '#00A9BC'),
+      ('main_text', '#FFFFFF'),
+      ('sidebar_text', '#B2BEC3'),
+      ('logo_filter', 'invert(1) brightness(2)')
+      ON CONFLICT (clave) DO NOTHING;
+    `);
+
+    // Verificar si necesitamos correr el SEED masivo
+    const { rows: clientCount } = await db.query('SELECT COUNT(*) FROM clientes');
+    if (parseInt(clientCount[0].count) === 0) {
+      console.log('🌱 [InitDB] Base de datos vacía. Iniciando carga de 1,000 clientes (seed.sql)...');
+      const path = require('path');
+      const fs = require('fs');
+      const seedPath = path.join(__dirname, '../../../database/seed.sql');
+      
+      if (fs.existsSync(seedPath)) {
+        const seedSql = fs.readFileSync(seedPath, 'utf8');
+        // El seed.sql es grande, lo ejecutamos en un solo bloque
+        await db.query(seedSql);
+        console.log('✅ [InitDB] Carga masiva de clientes completada.');
+      } else {
+        console.error('❌ [InitDB] No se encontró seed.sql en:', seedPath);
+      }
+    }
 
   } catch (err) {
     console.error('❌ [InitDB] Error en inicialización:', err.message);

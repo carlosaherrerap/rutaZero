@@ -31,7 +31,7 @@ function RecenterMap({ coords }) {
 }
 
 export default function Localizar() {
-  const { api, token } = useContext(AuthContext);
+  const { api, token, API_BASE_URL } = useContext(AuthContext);
   const [workers, setWorkers] = useState([]);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [breadcrumb, setBreadcrumb] = useState([]);
@@ -41,9 +41,9 @@ export default function Localizar() {
   useEffect(() => {
     fetchWorkers();
     
-    // Configurar Socket.io
-    const API_HOST = window.location.hostname;
-    const newSocket = io(`http://${API_HOST}:4000`);
+    // Configurar Socket.io usando la URL centralizada
+    if (!API_BASE_URL) return;
+    const newSocket = io(API_BASE_URL);
     setSocket(newSocket);
 
     newSocket.on('worker_gps_update', (data) => {
