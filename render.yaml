@@ -38,6 +38,9 @@ services:
     name: rutazero-redis
     plan: free
     region: ohio
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: "Allow all connections"
 
 databases:
   # 4. PostgreSQL Database
