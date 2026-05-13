@@ -11,12 +11,23 @@ import RutaDetalleScreen from './src/screens/RutaDetalleScreen';
 import DetalleClienteScreen from './src/screens/DetalleClienteScreen';
 import FichaFormScreen from './src/screens/FichaFormScreen';
 import AsistenciaScreen from './src/screens/AsistenciaScreen';
+import PermisosScreen from './src/screens/PermisosScreen';
+import AmonestacionesScreen from './src/screens/AmonestacionesScreen';
 import DebugStorageScreen from './src/screens/DebugStorageScreen';
+import { TrackingService } from './src/services/TrackingService';
 
 const Stack = createNativeStackNavigator();
 
 function NavigationStack() {
   const { user, loading } = useContext(AuthContext);
+
+  React.useEffect(() => {
+    if (user) {
+      TrackingService.startTracking();
+    } else {
+      TrackingService.stopTracking();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -44,6 +55,8 @@ function NavigationStack() {
             <Stack.Screen name="DetalleCliente" component={DetalleClienteScreen} />
             <Stack.Screen name="FichaForm" component={FichaFormScreen} />
             <Stack.Screen name="Asistencia" component={AsistenciaScreen} />
+            <Stack.Screen name="Permisos" component={PermisosScreen} />
+            <Stack.Screen name="Amonestaciones" component={AmonestacionesScreen} />
             <Stack.Screen name="DebugStorage" component={DebugStorageScreen} />
           </>
         )}

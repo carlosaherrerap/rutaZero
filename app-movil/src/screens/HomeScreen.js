@@ -9,6 +9,7 @@ import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { TrackingService } from '../services/TrackingService';
 
 const { width } = Dimensions.get('window');
 
@@ -289,6 +290,8 @@ export default function HomeScreen({ navigation }) {
           .catch(e => console.log('⚠️ [Home] No se pudo obtener ubicación para log inicial'));
 
         await updateLocalJourneyStatus('JORNADA_INICIADA'); 
+        await TrackingService.setStatus('LIBRE');
+        await TrackingService.startTracking();
         setShowJourneyModal(false);
         // Actualizamos la data en paralelo
         fetchData(); 
@@ -315,6 +318,7 @@ export default function HomeScreen({ navigation }) {
         api.post('/api/monitoreo/log', { accion: 'ALMUERZO_INICIADO' }).catch(() => {});
 
         await updateLocalJourneyStatus('EN_REFRIGERIO', { hora_inicio_almuerzo: new Date().toISOString() });
+        await TrackingService.setStatus('LIBRE'); // O podrías crear un estado 'RECESO'
         await fetchData();
       } catch (e) {
         Alert.alert('Error', 'No se pudo iniciar el receso.');
@@ -363,6 +367,8 @@ export default function HomeScreen({ navigation }) {
         api.post('/api/monitoreo/log', { accion: 'JORNADA_FINALIZADA' }).catch(() => {});
 
         await updateLocalJourneyStatus('JORNADA_FINALIZADA');
+        await TrackingService.stopTracking();
+        await TrackingService.setStatus('INACTIVO');
         await clearOfflineCache(); 
         await fetchData();
         setShowJourneyModal(false);
@@ -597,8 +603,16 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.tabLabel}>MIS RUTAS</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Asistencia')}>
-            <Ionicons name="calendar" size={24} color="#94a3b8" />
+            <Ionicons name="calendar" size={22} color="#94a3b8" />
             <Text style={styles.tabLabel}>ASISTENCIA</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Permisos')}>
+            <Ionicons name="document-text" size={22} color="#94a3b8" />
+            <Text style={styles.tabLabel}>PERMISOS</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Amonestaciones')}>
+            <Ionicons name="warning" size={22} color="#94a3b8" />
+            <Text style={styles.tabLabel}>FALTAS</Text>
           </TouchableOpacity>
         </View>
 

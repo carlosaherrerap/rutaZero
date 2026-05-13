@@ -432,7 +432,7 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
     const safeEnum  = (v, allowed) => (allowed.includes(String(v || '').trim()) ? String(v).trim() : null);
 
     const cleanData = {
-      tipificacion:       safeEnum(tipificacion, ['PAGO', 'REPROGRAMARA', 'NO_ENCONTRADO']),
+      tipificacion:       tipificacion === 'REPROGRAMAR' ? 'REPROGRAMARA' : safeEnum(tipificacion, ['PAGO', 'REPROGRAMARA', 'NO_ENCONTRADO']),
       observacion:        safeStr(observacion) || '',
       monto_cuota:        safeNum(monto_cuota),
       tipo_credito:       safeStr(tipo_credito),
@@ -478,7 +478,7 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
         nro_cuotas, nro_cuotas_pagadas, condicion_contable, saldo_capital,
         hora_inicio_visita, hora_apertura_ficha, duracion_llenado_seg,
         estado, hora_cierre_ficha
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'COMPLETADA',NOW())
+      ) VALUES ($1,$2,$3::tipificacion_gestion,$4,$5,$6,$7,$8,$9,$10,$11,$12::condicion_contable,$13,$14,$15,$16,'COMPLETADA',NOW())
       RETURNING id`,
       [
         cliente_id,               // $1

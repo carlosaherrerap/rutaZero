@@ -40,6 +40,14 @@ const DetalleClienteScreen = ({ route, navigation }) => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
+  // Alternar pantalla completa
+  const toggleFullscreen = () => {
+    setIsMapFullscreen(!isMapFullscreen);
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync(isMapFullscreen ? 'visible' : 'hidden');
+    }
+  };
+
   // 1. Cargar datos frescos del cliente al montar para asegurar estado actual y bloqueo
   const fetchClientDetails = useCallback(async () => {
     try {
@@ -238,74 +246,89 @@ const DetalleClienteScreen = ({ route, navigation }) => {
         contentContainerStyle={styles.scroll} 
         scrollEnabled={!isMapFullscreen}
       >
-        <View style={styles.mapSafeContainer}>
+        <View style={[styles.mapContainer, isMapFullscreen && styles.mapFullscreen]}>
           {cliente.latitud ? (
-            <WebView
-              style={styles.map}
-              originWhitelist={['*']}
-              source={{ html: `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-                  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-                  <style>
-                    html, body, #map { height: 100%; margin: 0; padding: 0; background: #1e293b; }
-                  </style>
-                </head>
-                <body>
-                  <div id="map"></div>
-                  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-                  <script>
-                    var lat = ${parseFloat(cliente.latitud) || -12.046374};
-                    var lng = ${parseFloat(cliente.longitud) || -77.042793};
-                    var map = L.map('map').setView([lat, lng], 16);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                      attribution: '© OpenStreetMap'
-                    }).addTo(map);
-                    var clientIcon = L.divIcon({
-                      html: '<div style="background:#3b82f6;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
-                      iconSize: [20, 20], iconAnchor: [10, 10]
-                    });
-                    L.marker([lat, lng], {icon: clientIcon})
-                      .addTo(map)
-                      .bindPopup('<b>${(cliente.nombres || '').replace(/'/g, "\\'")} ${(cliente.apellidos || '').replace(/'/g, "\\'")}</b><br>${(cliente.direccion || '').replace(/'/g, "\\'")}')
-                      .openPopup();
-                    ${userLocation ? `
-                    var workerIcon = L.divIcon({
-                      html: '<div style="background:#10b981;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>',
-                      iconSize: [16, 16], iconAnchor: [8, 8]
-                    });
-                    L.marker([${userLocation.latitude}, ${userLocation.longitude}], {icon: workerIcon})
-                      .addTo(map)
-                      .bindPopup('<b>Tu ubicación</b>');
-                    ` : ''}
-                  </script>
-                </body>
-                </html>
-              `}}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View style={styles.mapLoading}>
-                  <ActivityIndicator size="large" color="#3b82f6" />
-                  <Text style={styles.mapLoadingText}>Cargando mapa...</Text>
-                </View>
-              )}
-            />
+            <>
+              <WebView
+                style={{ flex: 1 }}
+                originWhitelist={['*']}
+                source={{ html: `
+                  <!DOCTYPE html>
+                  <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                    <style>
+                      html, body, #map { height: 100%; margin: 0; padding: 0; background: #1e293b; touch-action: none; }
+                      .recenter-btn {
+                        position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+                        background: white; width: 40px; height: 40px; border-radius: 8px;
+                        display: flex; align-items: center; justify-content: center;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div id="map"></div>
+                    <div class="recenter-btn" onclick="recenter()">📍</div>
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                      var lat = ${parseFloat(cliente.latitud)};
+                      var lng = ${parseFloat(cliente.longitud)};
+                      var map = L.map('map', { zoomControl: false }).setView([lat, lng], 17);
+                      
+                      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '© OSM'
+                      }).addTo(map);
+
+                      L.control.zoom({ position: 'topright' }).addTo(map);
+
+                      var clientIcon = L.divIcon({
+                        html: '<div style="background:#3b82f6;width:24px;height:24px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.5)"></div>',
+                        iconSize: [24, 24], iconAnchor: [12, 12]
+                      });
+
+                      L.marker([lat, lng], {icon: clientIcon}).addTo(map)
+                        .bindPopup("<b>${(cliente.nombres || '').replace(/"/g, '')}</b>")
+                        .openPopup();
+
+                      ${userLocation ? `
+                        var workerIcon = L.divIcon({
+                          html: '<div style="background:#10b981;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.5)"></div>',
+                          iconSize: [18, 18], iconAnchor: [9, 9]
+                        });
+                        L.marker([${userLocation.latitude}, ${userLocation.longitude}], {icon: workerIcon}).addTo(map);
+                      ` : ''}
+
+                      function recenter() {
+                        map.setView([lat, lng], 17);
+                      }
+                    </script>
+                  </body>
+                  </html>
+                `}}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                scrollEnabled={isMapFullscreen}
+              />
+              
+              <TouchableOpacity style={styles.fullscreenBtn} onPress={toggleFullscreen}>
+                <Ionicons name={isMapFullscreen ? "contract" : "expand"} size={22} color="#fff" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.externalMapBtn} onPress={openExternalMaps}>
+                <Ionicons name="navigate" size={18} color="#fff" />
+                <Text style={styles.externalMapBtnText}>Abrir en Maps / Waze</Text>
+              </TouchableOpacity>
+            </>
           ) : (
             <View style={styles.mapPlaceholder}>
               <Ionicons name="location-outline" size={50} color="#475569" />
               <Text style={styles.mapPlaceholderText}>Sin coordenadas registradas</Text>
             </View>
           )}
-
-          {/* Botón flotante para abrir en app externa */}
-          <TouchableOpacity style={styles.externalMapBtn} onPress={openExternalMaps}>
-            <Ionicons name="navigate" size={18} color="#fff" />
-            <Text style={styles.externalMapBtnText}>Abrir en Maps / Waze</Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.infoSection}>
@@ -380,28 +403,31 @@ const InfoRow = ({ icon, label, value }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   scroll: { paddingBottom: 100 },
-  mapSafeContainer: { width: width, height: 280, backgroundColor: '#1e293b' },
+  mapContainer: { width: width, height: 280, backgroundColor: '#1e293b', overflow: 'hidden' },
+  mapFullscreen: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: '100%', zIndex: 100, marginTop: 0 },
   map: { flex: 1 },
+  fullscreenBtn: {
+    position: 'absolute', top: 12, right: 12,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)', padding: 10,
+    borderRadius: 12, zIndex: 110, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)'
+  },
   mapLoading: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#1e293b', justifyContent: 'center', alignItems: 'center' },
   mapLoadingText: { color: '#64748b', marginTop: 10, fontSize: 13 },
-  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
+  mapPlaceholder: { width: width, height: 280, alignItems: 'center', justifyContent: 'center', padding: 20 },
   mapPlaceholderText: { color: '#475569', fontSize: 15, fontWeight: '600', marginTop: 10 },
   externalMapBtn: {
     position: 'absolute',
-    bottom: 12,
-    right: 12,
+    bottom: 20,
+    left: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#3b82f6',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    elevation: 10,
-    shadowColor: '#3b82f6',
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
+    backgroundColor: '#1e293b',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    elevation: 5,
   },
-  externalMapBtnText: { color: '#fff', fontSize: 12, fontWeight: '800', marginLeft: 6 },
+  externalMapBtnText: { color: '#fff', fontSize: 12, fontWeight: '800', marginLeft: 8 },
   infoSection: { backgroundColor: '#fff', marginTop: -25, borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 30, elevation: 15 },
   clientName: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
   clientSub: { fontSize: 14, color: '#64748b', marginTop: 5 },
