@@ -22,8 +22,9 @@ services:
         generateValue: true
 
   # 2. Portal Web (Static Site)
-  - type: static_site
+  - type: web
     name: rutazero-portal
+    runtime: static
     plan: free
     rootDir: portal-web
     buildCommand: npm install && npm run build
