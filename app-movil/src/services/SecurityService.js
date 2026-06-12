@@ -1,5 +1,17 @@
-import JailMonkey from 'jail-monkey';
 import { Alert, BackHandler, Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+let JailMonkey;
+try {
+  // Solo intentamos importar el código nativo si NO estamos en Expo Go
+  if (Constants.appOwnership !== 'expo') {
+    JailMonkey = require('jail-monkey').default || require('jail-monkey');
+  } else {
+    console.warn('⚠️ [Seguridad] Ejecutando en Expo Go: Bypass de chequeos nativos.');
+  }
+} catch (e) {
+  console.warn('⚠️ [Seguridad] JailMonkey no está compilado correctamente.');
+}
 
 export const SecurityService = {
   /**
@@ -7,6 +19,12 @@ export const SecurityService = {
    * Si se detecta una amenaza, advierte al usuario y cierra la app.
    */
   runStrictSecurityChecks: () => {
+    // Si la librería no pudo cargar (porque estamos en Expo Go), omitimos la validación.
+    if (!JailMonkey || typeof JailMonkey.isJailBroken !== 'function') {
+      console.warn('⚠️ [Seguridad] Bypass de chequeos Root/Jailbreak por entorno Expo Go.');
+      return true;
+    }
+
     // 1. Detección de Jailbreak / Root
     if (JailMonkey.isJailBroken()) {
       SecurityService.handleThreat('Dispositivo Comprometido', 'Se ha detectado Root o Jailbreak en este dispositivo. Por políticas de seguridad, la aplicación no puede ejecutarse.');

@@ -19,6 +19,7 @@
     "crypto-js": "^4.2.0",
     "expo": "~54.0.33",
     "expo-build-properties": "^56.0.18",
+    "expo-constants": "~18.0.13",
     "expo-image-picker": "~17.0.10",
     "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
