@@ -180,7 +180,7 @@ export default function AsistenciaScreen({ navigation }) {
           {mesJornadas.length === 0 ? (
             <Text style={styles.emptyText}>No hay jornadas registradas este mes.</Text>
           ) : mesJornadas.map((j, idx) => (
-            <View key={idx} style={styles.jornadaCard}>
+            <View key={j.id || `jor-${idx}`} style={styles.jornadaCard}>
               <View style={styles.jornadaHeader}>
                 <Text style={styles.jornadaFecha}>
                   {new Date(j.fecha).toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'short' })}
@@ -204,20 +204,7 @@ export default function AsistenciaScreen({ navigation }) {
       </ScrollView>
 
       {/* BARRA INFERIOR */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
-          <Ionicons name="people" size={24} color="#94a3b8" />
-          <Text style={styles.tabLabel}>CLIENTES</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Ruta')}>
-          <Ionicons name="map" size={24} color="#94a3b8" />
-          <Text style={styles.tabLabel}>MIS RUTAS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="calendar" size={24} color="#3b82f6" />
-          <Text style={[styles.tabLabel, { color: '#3b82f6' }]}>ASISTENCIA</Text>
-        </TouchableOpacity>
-      </View>
+      {/* TAB BAR ELIMINADO - GLOBAL EN APP.JS */}
     </SafeAreaView>
   );
 }

@@ -1,59 +1,23 @@
 services:
-  # 1. Base de Datos
+  # Base de Datos con PostGIS
   db:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:15-3.3
     container_name: rutazero_db
     restart: unless-stopped
-    ports:
-      - "5433:5432" # Accesible desde el host en 5433
     environment:
-      POSTGRES_DB: rutazero
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pass123
-      TZ: America/Lima
-      PGTZ: America/Lima
+      - POSTGRES_DB=rutazero
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pass123
+    ports:
+      - "5433:5432" # Mapeo: Puerto 5433 en tu PC -> 5432 dentro de Docker
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+      - ./database:/docker-entrypoint-initdb.d # Para inicializar el esquema si es necesario
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d rutazero"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 10
-
-  # 2. Backend API
-  backend:
-    build: ./backend
-    container_name: rutazero_backend
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=rutazero
-      - DB_USER=postgres
-      - DB_PASSWORD=pass123
-      - JWT_SECRET=rutazero_super_secret_key_2026
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./backend/uploads:/app/uploads
-
-  # 3. Plataforma Web
-  frontend:
-    build: ./portal-web
-    container_name: rutazero_frontend
-    restart: unless-stopped
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:4000
-    depends_on:
-      - backend
+      retries: 5
 
 volumes:
   pgdata:
-

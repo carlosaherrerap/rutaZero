@@ -1,309 +1,225 @@
-# 🗺️ Routing — Diagrama de Flujo del Sistema
-
-> **Versión:** 1.0 · **Fecha:** 2026-04-16
-> **Metodología:** 3F (Forma · Fondo · Flujo)
+# 🗺️ Routing — Diagrama de Flujo y Reglas de Negocio del Sistema
+### Versión 2.0 · Mayo 2026
+#### Metodología: 3F (Forma · Fondo · Flujo) — Edición Empresa y Finanzas
 
 ---
 
-## 1. Arquitectura General
+## 1. Arquitectura General y Flujo de Datos
+
+El sistema funciona mediante una arquitectura **Offline-First**, donde el cliente web de administración interactúa con PostgreSQL en tiempo real vía WebSockets/HTTPS, mientras que los operadores de campo consumen la base de datos interna SQLite de sus dispositivos móviles, sincronizando deltas al detectar conexión.
 
 ```mermaid
 graph TB
     subgraph "Frontend"
         WEB["🖥️ Portal Web<br/>(Administrador)"]
-        APP["📱 App Móvil<br/>(Trabajador)"]
+        APP["📱 App Móvil (Asesor)<br/>[Indicador GPS en Home]"]
     end
 
-    subgraph "Backend"
+    subgraph "Backend (Render)"
         API["⚙️ API REST / WebSocket"]
-        SYNC["🔄 Motor de Sincronización"]
+        SYNC["🔄 Motor de Sincronización Delta"]
     end
 
-    subgraph "Almacenamiento"
-        PG["🐘 PostgreSQL<br/>(Base de datos principal)"]
-        CACHE["📦 SQLite Local<br/>(Cache offline móvil)"]
-        FS["📁 File Storage<br/>(Imágenes/Evidencias)"]
+    subgraph "Almacenamiento y Persistencia"
+        PG_C["🐘 Tabla: clientes (PostgreSQL)<br/>[Nombres, Ape_Pat, Ape_Mat, Direccion, Sede, Estado]"]
+        PG_D["🐘 Tabla: deudas_cliente (PostgreSQL)<br/>[Cuotas, Mora, Proximo Pago, Ultimo Pago]"]
+        PG_F["🐘 Tabla: fichas (PostgreSQL)<br/>[cliente_id, worker_id, data JSONB]"]
+        CACHE["📦 SQLite Local (Móvil)<br/>[local_clientes, local_deudas, local_jornada]"]
+        R2["📁 Cloudflare R2 / S3 Storage<br/>[Evidencias Fotográficas Públicas]"]
     end
 
-    WEB -->|HTTPS| API
+    WEB -->|HTTPS / WSS| API
     APP -->|HTTPS + WS| API
-    APP -->|Sin señal| CACHE
+    APP -->|Sin señal / Consultas| CACHE
     CACHE -->|Al recuperar señal| SYNC
-    SYNC --> API
-    API --> PG
-    API --> FS
+    SYNC -->|Validación / Push| API
+    API --> PG_C
+    API --> PG_D
+    API --> PG_F
+    API --> R2
 ```
 
 ---
 
 ## 2. Catálogo de Estados
 
-### 2.1 Estados del Cliente (respecto a gestión)
+### 2.1 Estados del Cliente (Respecto a Gestión)
 
 | Estado | Color Card | Significado | ¿Visitable? |
 |---|---|---|---|
-| `LIBRE` | 🔵 Azul | Sin gestión, disponible | ✅ Sí |
-| `EN_VISITA` | 🟣 Morado | Un worker está en camino / visitando | ❌ No (bloqueado) |
-| `VISITADO_PAGO` | 🟢 Verde | Ficha completa, cliente pagó | ❌ No |
-| `REPROGRAMADO` | 🟡 Amarillo | Ficha guardada, se reprogramará visita | ⚠️ Solo admin reasigna fecha |
-| `NO_ENCONTRADO` | 🔴 Rojo | No se encontró al cliente (con fecha/hora) | ✅ Sí (otro worker o mismo, pasado un tiempo) |
+| `LIBRE` | 🔵 Azul | Cliente sin gestión activa en el día, disponible para visita. | ✅ Sí |
+| `EN_VISITA` | 🟣 Morado | Un operador ha iniciado visita. Bloqueado exclusivamente para otros operadores. | ❌ No |
+| `VISITADO_PAGO` | 🟢 Verde | Visita completada. Se guardó ficha con tipificación de PAGO. | ❌ No |
+| `REPROGRAMADO` | 🟡 Amarillo | Visita completada. Se reprogramó la fecha de cobro. | ⚠️ Solo Admin / Ingesta |
+| `NO_ENCONTRADO` | 🔴 Rojo | El asesor no ubicó al cliente. El cliente vuelve a estar disponible para visita. | ✅ Sí |
 
-> **IMPORTANTE:** El estado del cliente es **global**: todos los workers ven el mismo estado en tiempo real, independientemente de si el cliente les fue asignado.
+> **REGLA DE ORO:** El estado del cliente es **global** en PostgreSQL y se actualiza al instante en la app mediante sincronización o WebSockets (`ficha_completed`, `visit_started`).
 
-### 2.2 Estados del Worker (jornada laboral)
+### 2.2 Estados del Operador (Jornada Laboral)
 
 | Estado | Significado |
 |---|---|
-| `INACTIVO` | No ha iniciado sesión hoy |
-| `JORNADA_INICIADA` | Inició su día de trabajo |
-| `EN_CAMINO` | Se dirige a visitar a un cliente |
-| `LLENANDO_FICHA` | Está completando el formulario de un cliente |
-| `ALMUERZO` | En horario de almuerzo |
-| `TIEMPO_MUERTO` | Sin actividad registrada / sin señal |
-| `JORNADA_FINALIZADA` | Marcó fin de jornada |
+| `INACTIVO` | No ha iniciado sesión hoy o jornada cerrada. |
+| `JORNADA_INICIADA` | Entrada marcada. Se registra hora de inicio de sesión y corre el cronómetro. |
+| `EN_REFRIGERIO` | Horario de refrigerio/almuerzo activo. Descuenta del cálculo de horas trabajadas. |
+| `JORNADA_FINALIZADA` | Salida marcada. Termina el día laboral. |
 
 ### 2.3 Estados de la Ficha
-
-| Estado | Significado |
-|---|---|
-| `SIN_DATOS` | Ficha vacía, nunca se abrió |
-| `EN_PROCESO` | Se abrió pero no se completó |
-| `COMPLETADA` | Guardada exitosamente con tipificación |
+*   `SIN_DATOS`: Cliente nunca visitado.
+*   `EN_PROCESO`: El asesor inició la visita, pero aún no guarda el formulario.
+*   `COMPLETADA`: Ficha guardada con tipificación y firma de evidencias en la nube.
 
 ---
 
-## 3. Flujo de Autenticación (App Móvil)
+## 3. Flujo de Autenticación y Carga Offline (SQLite)
+
+Este flujo garantiza que el operador comience su día con todos los datos necesarios descargados localmente en su SQLite, filtrando estrictamente por clientes cuya **fecha de pago es hoy**.
 
 ```mermaid
 flowchart TD
-    A["Trabajador abre la app"] --> B{"¿Tiene sesión activa?"}
-    B -- Sí --> D
-    B -- No --> C["Pantalla de Login<br/>(usuario + contraseña)"]
-    C --> V{"¿Credenciales válidas<br/>Y estado = ACTIVO?"}
-    V -- No --> E["❌ Acceso denegado<br/>Mensaje: cuenta inactiva"]
-    V -- Sí --> D["✅ Sesión iniciada"]
-    D --> F["Descargar snapshot diario<br/>(clientes con fecha_gestion = HOY)"]
-    F --> G["Guardar en SQLite local"]
-    G --> H["Mostrar menú principal"]
+    A["Operador abre App Móvil"] --> B{"¿Sesión activa?"}
+    B -- No --> C["Pantalla de Login"]
+    C --> D{"¿Credenciales correctas Y Estado = ACTIVO?"}
+    D -- No --> E["❌ Acceso denegado"]
+    D -- Sí --> F["Establecer Sesión y Token JWT"]
+    B -- Sí --> G["Validar fecha actual"]
+    F --> G
+    
+    G --> H["Forzar descarga inicial del día<br/>(Filtro: deudas_cliente.fecha_pago = HOY)"]
+    H --> I["Transacción SQLite:<br/>1. Borrar tablas locales<br/>2. Insertar local_clientes<br/>3. Insertar local_deudas<br/>4. Insertar local_jornada"]
+    I --> J["🏠 Mostrar HomeScreen<br/>(Indicador GPS ACTIVO, estado online/offline)"]
 ```
-
-> **NOTA:** Al iniciar sesión se descarga el **snapshot del día**: todos los clientes cuya `fecha_gestion` es la fecha actual. Este snapshot alimenta la app durante toda la jornada, incluso sin internet.
 
 ---
 
-## 4. Flujo del Administrador — Creación de Rutas
+## 4. Flujo de Auto-Asignación por Proximidad (Self-Routing)
+
+Permite que el asesor se asigne a sí mismo clientes libres que se encuentren dentro de su rango GPS, inyectándolos en su ruta diaria sin intervención manual del administrador.
 
 ```mermaid
 flowchart TD
-    A["Admin abre Portal Web"] --> B["Vista de Mapa General"]
-    B --> B1["Mapa muestra:<br/>📌 Pins de TODOS los clientes<br/>🧑 Markers de TODOS los workers"]
-    B1 --> C["Hover sobre pin de cliente:<br/>nombre, fecha_pago, retraso, deuda"]
-    C --> D{"¿Filtrar?"}
-    D -- "Por fecha de pago" --> D1["Filtro aplicado"]
-    D -- "Por gestión REPROGRAMADO" --> D2["Ver clientes reprogramados<br/>→ Reasignar fecha_pago"]
-    D -- "Continuar" --> E
-    D1 --> E
-    D2 --> E
-    E["Seleccionar un Worker<br/>(ej: PEDRO)"]
-    E --> F["Click sobre pins de clientes<br/>para agregar a la ruta"]
-    F --> G["Lista lateral muestra<br/>clientes seleccionados<br/>(se pueden quitar)"]
-    G --> H["Asignar nombre de ruta<br/>(ej: LIMA SUR)"]
-    H --> I["💾 Guardar ruta"]
-    I --> J["Ruta asignada al worker<br/>y visible en su app"]
+    A["Operador abre pestaña 'Clientes Cercanos' en Mapa"] --> B["Detección GPS actual del Operador"]
+    B --> C["Consulta espacial (Radio de 500m, 1km o 2km)<br/>Filtro: estado = LIBRE en sede"]
+    C --> D{"¿Conexión a internet?"}
+    
+    D -- Sí --> E["Backend calcula Haversine en PostgreSQL<br/>Retorna lista ordenada por distancia"]
+    D -- No --> F["SQLite calcula Haversine localmente<br/>Retorna lista desde local_clientes"]
+    
+    E --> G["Operador selecciona un pin y pulsa 'Añadir a mi Ruta'"]
+    F --> G
+    
+    G --> H{"¿Cliente sigue LIBRE en BD?"}
+    H -- No --> I["❌ Alerta: Cliente ya asignado o en visita"]
+    H -- Sí --> J["1. Actualizar estado cliente a EN_VISITA con bloqueo<br/>2. Inyectar UUID en array 'clientes_ordenados' en rutas<br/>3. Emitir WebSocket 'self_route_created' al portal Admin"]
+    J --> K["Apertura automática de Ficha en celular"]
 ```
 
 ---
 
-## 5. Flujo del Worker — Visita a Cliente
+## 5. Flujo del Administrador — Creación y Control de Rutas
 
-Este es el flujo principal de la app móvil.
+El administrador gestiona todo el mapa operativo y define las asignaciones de rutas optimizadas a través de arrays compactados de UUIDs de clientes.
 
 ```mermaid
 flowchart TD
-    HOME["🏠 HOME<br/>Lista de TODOS los clientes<br/>(con filtros por gestión,<br/>departamento, provincia, distrito)"]
-    RUTAS["📋 MIS RUTAS<br/>Cards de rutas asignadas<br/>(icono/mapa + nombre + progreso)"]
-    
-    HOME --> RUTAS
-    RUTAS --> R1{"¿Todos los clientes<br/>de esta ruta visitados?"}
-    R1 -- Sí --> R2["Card de ruta OPACA<br/>Botones bloqueados"]
-    R1 -- No --> R3["Abrir ruta → Lista de clientes"]
-    
-    R3 --> CL["Card del cliente<br/>(color según estado)"]
-    CL --> MAP["Vista Mapa:<br/>Punto del worker ↔ Punto del cliente<br/>+ línea de ruta<br/>+ distancia en metros + tiempo estimado"]
-    
-    MAP --> V{"¿Presiona VISITAR?"}
-    V -- Sí --> V1{"¿Worker ya tiene<br/>otro cliente EN_VISITA?"}
-    V1 -- Sí --> V2["❌ Debe cancelar<br/>visita actual primero"]
-    V1 -- No --> V3{"¿Cliente está LIBRE<br/>o NO_ENCONTRADO?"}
-    V3 -- No --> V4["❌ Cliente no disponible<br/>(bloqueado por otro worker)"]
-    V3 -- Sí --> V5["✅ Estado cliente → EN_VISITA<br/>Botón cambia a CANCELAR VISITA<br/>Se registra timestamp"]
-    
-    V5 --> F{"¿Qué acción toma?"}
-    F -- "Cancelar visita" --> F1["Estado cliente → LIBRE<br/>Se libera bloqueo"]
-    F -- "Presiona LLENAR FICHA" --> F2["Abrir flujo de ficha<br/>(requiere haber presionado VISITAR)"]
+    A["Admin abre Módulo de Rutas"] --> B["Visualizar Mapa interactivo y Workers activos"]
+    B --> C["Hover / Detalle de pines de clientes<br/>(Ver nombres, ape_pat, deudas, mora y fechas de pago)"]
+    C --> D["Filtrar mapa (Ej: mora > 7 días, distrito o reprogramados)"]
+    D --> E["Seleccionar Worker y hacer click en pines de clientes"]
+    E --> F["Preservar orden de clicks para definir orden de visitas"]
+    F --> G["💾 Guardar Ruta"]
+    G --> H["Backend inserta un único registro en tabla 'rutas'<br/>con el array 'clientes_ordenados' conteniendo los UUIDs"]
+    H --> I["Socket.io emite alerta y actualiza al worker al instante"]
 ```
-
-> **ADVERTENCIA — Bloqueo exclusivo:** Un worker solo puede tener **un cliente en estado `EN_VISITA`** a la vez. Ningún otro worker puede visitar ese cliente mientras esté bloqueado.
 
 ---
 
-## 6. Flujo de Llenado de Ficha (3 Pasos)
+## 6. Flujo de Llenado de Ficha Dinámica (3 Pasos Críticos)
+
+El flujo de ficha requiere control estricto de tiempos y de lectura dinámica para adaptarse a las plantillas creadas en el sistema.
 
 ```mermaid
 flowchart TD
-    PASO1["📄 PASO 1: Validación de Identidad<br/>─────────────────────<br/>Datos personales del cliente<br/>(solo lectura, no editables)<br/>Nombre, DNI, dirección, etc."]
-    PASO1 --> PASO2
-
-    PASO2["📝 PASO 2: Formulario de Ficha<br/>─────────────────────<br/>Tipo de Crédito - entero<br/>Fecha de Desembolso - calendario<br/>Monto de Desembolso - entero<br/>Moneda - flotante<br/>Nro de Cuotas - entero<br/>Nro de Cuotas Pagadas - entero<br/>Monto de la Cuota - flotante<br/>Condición Contable - MOROSO o RESPONSABLE<br/>Saldo Capital - flotante"]
-    PASO2 --> PASO3
-
-    PASO3["📸 PASO 3: Evidencia<br/>─────────────────────<br/>Adjuntar hasta 5 imágenes<br/>como prueba de visita"]
-    PASO3 --> TIP
-
-    TIP{"Seleccionar tipificación"}
-    TIP -- "PAGÓ" --> G1["Estado → VISITADO_PAGO 🟢<br/>Ficha → COMPLETADA"]
-    TIP -- "REPROGRAMARÁ" --> G2["Estado → REPROGRAMADO 🟡<br/>Ficha → COMPLETADA"]
-    TIP -- "NO SE ENCONTRÓ" --> G3["Estado → NO_ENCONTRADO 🔴<br/>Se registra fecha + hora<br/>Ficha → COMPLETADA"]
-
-    G1 --> SAVE["💾 Guardar en BD<br/>(o en cache si offline)"]
-    G2 --> SAVE
-    G3 --> SAVE
-    SAVE --> BACK["← Regresar a vista RUTAS"]
-```
-
-> **TIP:** Al guardar, se registran automáticamente los **timestamps de monitoreo**: hora de apertura de ficha, hora de cierre, y duración total.
-
----
-
-## 7. Flujo de Sincronización Offline / Online
-
-```mermaid
-flowchart TD
-    A["Worker realiza acción<br/>(visitar, llenar ficha, etc.)"]
-    A --> B{"¿Hay conexión<br/>a internet?"}
+    A["Operador presiona 'Iniciar Visita' en Detalle de Cliente"] --> B["1. Se registra timestamp 'hora_inicio_visita'<br/>2. Cliente cambia a estado EN_VISITA (bloqueado)"]
+    B --> C["Presionar 'Llenar Ficha'"]
     
-    B -- Sí --> C["Guardar en BD remota PostgreSQL<br/>+ Actualizar SQLite local"]
-    B -- No --> D["Guardar SOLO en SQLite local<br/>Marcar como pendiente de sync"]
+    C --> D["📋 PASO 1: Validación y Deudas<br/>─────────────────────────────<br/>Ver datos del cliente (nombres, ape_pat, dirección)<br/>Visualizar panel financiero (deuda_total, mora, salto,<br/>monto_proximo_pago, monto_total_proximo_pago)<br/>[Todo en solo lectura]"]
     
-    D --> E{"¿Recuperó señal?"}
-    E -- No --> F["Continuar trabajando<br/>con datos locales"]
-    F --> E
-    E -- Sí --> G["Motor de sincronización<br/>detecta conexión"]
-    G --> H["Enviar cambios pendientes<br/>al servidor por lotes"]
-    H --> I{"¿Conflictos?"}
-    I -- No --> J["✅ Sincronización exitosa"]
-    I -- Sí --> K["Resolver por timestamp<br/>(último cambio gana)"]
-    K --> J
-```
-
-> **IMPORTANTE:** Los datos que se cachean localmente al inicio de sesión incluyen: `id_cliente`, `id_ficha`, `id_worker`, y toda la información necesaria para operar sin conexión durante la jornada.
-
----
-
-## 8. Flujo de Alertas y Notificaciones
-
-```mermaid
-flowchart TD
-    subgraph "Alerta: Cercanía"
-        A1["Worker DANIEL detecta que<br/>está más cerca del cliente PABLO"]
-        A1 --> A2["DANIEL envía alerta personalizada:<br/>LIBERA AL CLIENTE XXXXX<br/>yo estoy más cerca"]
-        A2 --> A3["Worker PEDRO recibe notificación<br/>y decide si liberar al cliente"]
-    end
-
-    subgraph "Notificación: Cliente registrado por otro"
-        B1["Worker DANIEL visita y registra<br/>al cliente PABLO asignado a PEDRO"]
-        B1 --> B2["Notificación automática a PEDRO:<br/>El worker DANIEL ha registrado<br/>un cliente tuyo"]
-    end
-
-    subgraph "Filtro por ubicación"
-        C1["Worker abre HOME"]
-        C1 --> C2["Filtrar por:<br/>Departamento → Provincia → Distrito"]
-        C2 --> C3["Ver solo clientes<br/>de su zona cercana"]
-    end
+    D --> E["Se registra timestamp 'hora_apertura_ficha' al entrar al Paso 2"]
+    
+    E --> F["📝 PASO 2: Formulario Dinámico (Google Forms Style)<br/>─────────────────────────────<br/>Campos e inputs dinámicos en base a plantilla JSONB<br/>(Inputs de texto, checkbox, radio buttons, etc.)<br/>Almacenamiento final en campo único 'data JSONB'"]
+    
+    F --> G["📸 PASO 3: Evidencias y Cierre<br/>─────────────────────────────<br/>Captura de fotos (Máx 5)<br/>Selección de Tipificación Final:<br/>PAGO | REPROGRAMARA | NO_ENCONTRADO"]
+    
+    G --> H["Guardar Ficha"]
+    H --> I["1. Se calcula 'duracion_llenado_seg'<br/>2. Se libera bloqueo y cambia estado de cliente<br/>3. Se suben fotos a Cloudflare R2 / local<br/>4. Se redirige al asesor automáticamente a la pestaña de Rutas"]
 ```
 
 ---
 
-## 9. Navegación de la App Móvil (Mapa de Pantallas)
+## 7. Flujo del Motor de Ingesta Masiva y Exportación
 
-```mermaid
-flowchart LR
-    subgraph "Menú Principal"
-        HOME["🏠 HOME<br/>Todos los clientes"]
-        RUTAS["📋 Mis Rutas"]
-        STATS["📊 Stats"]
-        PERFIL["👤 Mi Perfil"]
-    end
+Manejo de archivos de entrada y salida para integrarse con el core financiero.
 
-    HOME --> FILTROS["Filtros:<br/>Gestión · Ubicación"]
-    HOME --> CARD_C["Card Cliente<br/>→ Detalle"]
+### 7.1 Ingesta Masiva (Excel Input)
+```
+[Admin sube Excel .xlsx] ──> [Validar cabeceras requeridas]
+                                     │
+                             ¿Todo correcto?
+                                     │
+          ┌──────────────────────────┴──────────────────────────┐
+         (SÍ)                                                  (NO)
+          │                                                     │
+[Iniciar bloque TRANSACCION (BEGIN)]                      [Rechazar archivo]
+  │
+  ├─> 1. Insertar dirección en 'ubicaciones' (obtener ID)
+  ├─> 2. Insertar datos personales en 'clientes'
+  ├─> 3. Insertar datos de cobro en 'deudas_cliente'
+  │
+  ├─> ¿Falla alguna fila o DNI duplicado?
+  │         ├── Sí ──> [Deshacer lote completo (ROLLBACK)] ──> Registrar error en log
+  │         └── No ──> [Confirmar lote completo (COMMIT)] ──> Retornar éxito
+```
 
-    RUTAS --> RUTA_DET["Detalle de Ruta<br/>lista clientes"]
-    RUTA_DET --> CLI_MAP["Mapa + Ruta al cliente"]
-    CLI_MAP --> VISITAR["Botón VISITAR"]
-    VISITAR --> FICHA["Flujo Ficha 3 pasos"]
-    FICHA --> RUTAS
-
-    STATS --> ST1["Total asignados"]
-    STATS --> ST2["Total visitados"]
-    STATS --> ST3["Fichas completadas"]
-    STATS --> ST4["No encontrados"]
+### 7.2 Exportación de Fichas (Excel Output)
+```
+[Admin pulsa 'Exportar Excel'] ──> [Consultar fichas en rango de fechas]
+                                             │
+                              [Analizar dinámicamente claves del JSONB]
+                                             │
+                                    [Construir columnas]
+                                             │
+                       ├─> Encabezados base (ID, Worker, Cliente, etc.)
+                       ├─> Encabezados dinámicos extraídos de data JSONB
+                       └─> Evidencias (Concatenar URLs de R2 separadas por saltos de línea)
+                                             │
+                                   [Enviar Excel .xlsx]
 ```
 
 ---
 
-## 10. Panel del Administrador (Portal Web)
+## 8. Reglas de Negocio Consolidadas y Críticas
 
-```mermaid
-flowchart TB
-    subgraph "Portal Web — Módulos"
-        DASH["📊 Dashboard<br/>KPIs y métricas"]
-        WORKERS["👷 Gestión Workers<br/>CRUD + estados"]
-        CLIENTS["👥 Gestión Clientes<br/>Fichas + búsqueda"]
-        ROUTES["🗺️ Creador de Rutas<br/>Mapa interactivo"]
-        LOGS["📋 Logs de Gestión<br/>Avances por worker"]
-        ALERTS["🔔 Alertas"]
-    end
-
-    DASH --> D1["Clientes totales vs visitados"]
-    DASH --> D2["Workers activos / almuerzo / finalizados"]
-    DASH --> D3["Rutas completadas"]
-    DASH --> D4["Clientes por estado"]
-
-    WORKERS --> W1["Crear / Editar / Desactivar"]
-    WORKERS --> W2["Ver estado en tiempo real"]
-    WORKERS --> W3["Ver jornada: inicio, almuerzo, fin"]
-
-    CLIENTS --> C1["Búsqueda por nombre/DNI"]
-    CLIENTS --> C2["Ver ficha completa"]
-    CLIENTS --> C3["Historial de gestiones"]
-
-    ROUTES --> CREAR_RUTA["Flujo de creación<br/>(ver sección 4)"]
-```
-
----
-
-## 11. Reglas de Negocio Consolidadas
-
-| # | Regla | Módulo |
+| ID | Regla de Negocio | Módulo |
 |---|---|---|
-| RN-01 | Un worker solo puede tener **1 cliente en `EN_VISITA`** a la vez | App Móvil |
-| RN-02 | Solo se puede llenar ficha si previamente se presionó `VISITAR` | App Móvil |
-| RN-03 | Un cliente `EN_VISITA` está **bloqueado** para todos los demás workers | Global |
-| RN-04 | Los estados de cliente son **globales y en tiempo real** | Global |
-| RN-05 | `NO_ENCONTRADO` registra fecha+hora y el cliente **vuelve a ser visitable** | App Móvil |
-| RN-06 | Si todos los clientes de una ruta fueron visitados, la card se pone **opaca** y botones se **bloquean** | App Móvil |
-| RN-07 | Al guardar ficha/tipificación se retorna automáticamente a la vista de Rutas | App Móvil |
-| RN-08 | El snapshot diario se descarga al iniciar sesión (clientes con `fecha_gestion = HOY`) | App Móvil |
-| RN-09 | Los datos offline se sincronizan automáticamente al recuperar conexión | App Móvil |
-| RN-10 | Las imágenes de evidencia se almacenan en filesystem, solo la ruta en BD | Backend |
-| RN-11 | El admin puede filtrar clientes por fecha de pago y por gestión `REPROGRAMADO` | Portal Web |
-| RN-12 | Un worker solo puede loguearse si su estado en BD es `ACTIVO` | Backend |
-| RN-13 | Cada acción del worker se registra con timestamp para monitoreo | Backend |
+| **RN-01** | **Bloqueo exclusivo de cliente:** Un asesor solo puede tener un cliente en estado `EN_VISITA` a la vez. No se puede iniciar otra visita sin cancelar o terminar la actual. | App Móvil |
+| **RN-02** | **Acceso condicionado:** Solo se permite abrir y guardar la Ficha de Gestión si el operador ha presionado previamente el botón "Iniciar Visita" (`EN_VISITA`). | App Móvil |
+| **RN-03** | **Seguridad de Asistencia:** Las jornadas diarias de asistencia de los operadores son validadas **únicamente por usuarios con el rol `ADMIN`**. | Portal Web |
+| **RN-04** | **Fichas dinámicas:** Todos los campos variables del formulario deben consolidarse en una sola columna PostgreSQL llamada `data` de tipo `JSONB`. | Base de Datos |
+| **RN-05** | **Sincronización en Login:** En el inicio de sesión exitoso, la app móvil debe vaciar la base de datos local SQLite y descargar únicamente los clientes correspondientes a la sede del asesor cuyo campo `fecha_pago` de la tabla `deudas_cliente` sea igual al día de hoy. | App Móvil / API |
+| **RN-06** | **Integridad en Ingesta:** La importación de cartera de clientes desde Excel debe ejecutarse bajo un único bloque transaccional con `ROLLBACK` completo en caso de cualquier fallo crítico, asegurando que no queden clientes sin ubicación o deudas registradas. | Backend |
+| **RN-07** | **Visualización de deudas:** Todos los campos informativos de cobro de `deudas_cliente` deben ser visibles para el asesor de forma obligatoria en la primera pantalla (Paso 1) del formulario. | App Móvil |
+| **RN-08** | **Optimización de Rutas:** El orden de los clientes de una ruta no se almacena en una tabla intermedia relacional. Se almacena en la tabla `rutas` como un array ordenado de identificadores únicos (`clientes_ordenados UUID[]`). | Base de Datos |
+| **RN-09** | **Monitoreo de Ubicación:** La pantalla Home de la aplicación móvil debe contar con un **indicador visual del estado del GPS** del dispositivo, mostrando si está encendido y transmitiendo coordenadas al radar en tiempo real. | App Móvil |
+| **RN-10** | **Retorno automático:** Al guardar la ficha de gestión (PAGO, REPROGRAMARA o NO_ENCONTRADO), el operador es redirigido automáticamente a la pestaña de Rutas para continuar su trabajo sin demoras. | App Móvil |
+| **RN-11** | **Fórmula de distancia Haversine**: El cálculo para clientes cercanos en la autoasignación debe realizarse mediante fórmulas trigonométricas de distancia en arco, tanto en backend (SQL) como en móvil (JS) para garantizar precisión métrica de geocercas. | Global |
+| **RN-12** | **Sanción por mora automática**: Si el cliente presenta más de 7 días de retraso en su pago, el backend calcula automáticamente un cargo por mora adicional equivalente al 1% de la deuda de la cuota próxima. | Backend |
+| **RN-13** | **Evidencias fotográficas**: Cada ficha de gestión completada debe incluir obligatoriamente al menos una foto de evidencia y un máximo de 5 fotos. Las imágenes se almacenan en la nube pública y la base de datos solo contiene las URLs. | App Móvil / R2 |
+| **RN-14** | **Auto-Asignación Limitada por Rango (Self-Routing)**: El operador de campo puede visualizar en el mapa y autoasignarse clientes que estén libres (`LIBRE` o `NO_ENCONTRADO`) y dentro de su radio configurado (500m, 1km o 2km). Esto actualiza el estado a `EN_VISITA` con bloqueo exclusivo, inserta el cliente en su ruta del día actual, y emite un evento instantáneo vía Socket.io para alertar a la plataforma web de administración. | App Móvil / Backend |
 
 ---
 
-> **3F Aplicadas:**
-> - **Forma:** Catálogos normalizados de estados, colores y tipificaciones. Nomenclatura consistente.
-> - **Fondo:** Todas las reglas de negocio documentadas. Datos del cliente, ficha, evidencias y monitoreo sin pérdida.
-> - **Flujo:** Navegación lineal en la app (Rutas → Cliente → Mapa → Visitar → Ficha → Regreso). Sincronización bidireccional offline/online.
+> **Cumplimiento 3F Aplicado:**
+> - **Forma (Aesthetics & Normalization):** Separación de la tabla `clientes` de su tabla financiera `deudas_cliente` para claridad de datos.
+> - **Fondo (Completeness):** 14 reglas de negocio críticas cubiertas, incluyendo control de mora, array de UUIDs de rutas, geolocalización, sincronización por fecha de pago y validación de jornadas exclusivas.
+> - **Flujo (Process):** Diagramación completa de ingesta de Excel, exportación dinámica con JSONB y autogestión de rutas por proximidad en campo.

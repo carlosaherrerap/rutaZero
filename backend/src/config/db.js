@@ -21,10 +21,22 @@ pool.on('connect', (client) => {
   client.query("SET timezone = 'America/Lima'");
 });
 
-// Test connection
-pool.query('SELECT NOW()')
-  .then(() => console.log('✅ PostgreSQL conectado'))
-  .catch(err => console.error('❌ Error de conexión a PostgreSQL:', err.message));
+// Test connection con reintentos para entornos Docker
+const testConnection = async (retries = 5) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await pool.query('SELECT NOW()');
+      console.log('✅ PostgreSQL conectado');
+      return;
+    } catch (err) {
+      console.log(`⚠️ [DB] Intento ${i + 1}/${retries} fallido, reintentando en 2s...`);
+      await new Promise(res => setTimeout(res, 2000));
+    }
+  }
+  console.error('❌ Error de conexión a PostgreSQL tras varios intentos.');
+};
+
+testConnection();
 
 module.exports = {
   query: (text, params) => pool.query(text, params),

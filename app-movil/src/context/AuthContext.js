@@ -2,6 +2,9 @@ import React, { createContext, useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import CryptoJS from 'crypto-js';
+
+import { BASE_URL } from '../config';
 
 export const AuthContext = createContext();
 
@@ -9,12 +12,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // URL de producción en Render
-  const CLOUD_URL = 'https://rutazero-backend.onrender.com'; 
-  
-  // Forzamos la conexión a la nube para el APK de producción y pruebas
-  const BASE_URL = CLOUD_URL;
 
   // Creamos la instancia de API
   useEffect(() => {
@@ -107,6 +104,20 @@ export const AuthProvider = ({ children }) => {
     setUser(loggedUser);
     await storage.setItem('token', accessToken);
     await storage.setItem('user', JSON.stringify(loggedUser));
+
+    // 100% STRICT SECURITY: Generate hardware-backed AES Key for offline DB
+    const aesKey = CryptoJS.lib.WordArray.random(32).toString();
+    await storage.setItem('AES_OFFLINE_KEY', aesKey);
+
+    // Limpiar caché offline al iniciar sesión para evitar sincronizar
+    // fichas de una sesión/base de datos anterior
+    try {
+      const { clearOfflineCache } = require('../services/OfflineService');
+      await clearOfflineCache();
+      console.log('🧹 [Auth] Caché offline limpiado al iniciar sesión.');
+    } catch (e) {
+      console.warn('[Auth] No se pudo limpiar caché offline:', e.message);
+    }
   };
 
   const logout = async () => {
@@ -114,6 +125,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     await storage.deleteItem('token');
     await storage.deleteItem('user');
+    
+    // 100% STRICT SECURITY: Crypto-shredding. Destruye la llave maestra AES.
+    // Todos los datos en AsyncStorage/SQLite se vuelven ruido estocástico irrecuperable.
+    await storage.deleteItem('AES_OFFLINE_KEY');
+    console.log('🛡️ [Auth] Crypto-shredding ejecutado. Datos offline destruidos criptográficamente.');
   };
 
   return (

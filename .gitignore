@@ -11,11 +11,14 @@ dist/
 build/
 web-build/
 
-# Expo
+# Expo / Seguridad / BD Locales
 .expo/
 *.jks
 *.p8
+*.keystore
 *.pyc
+*.sqlite
+*.db
 
 # Local env files
 .env
@@ -42,6 +45,17 @@ Thumbs.db
 
 # Ignorar todas las carpetas que empiezan con punto
 .*/
+.*
+
+# EXCEPCIONES CRÍTICAS: Permitir que Git suba la configuración de DevSecOps y Seguridad
+!/.gitignore
+!/.github/
+!/.github/**
+!/.husky/
+!/.husky/**
+!/.secretlintrc.json
+!.eslintrc*
+!/.prettierrc*
 skills/
 skills-lock.json
 logs.txt
@@ -55,3 +69,6 @@ backend/gen_hash_direct.js
 CLOUD_INFRA_archivos/
 CLOUD_INFRA.doc 
 CLOUD_INFRA.md
+
+/docs
+/scratch

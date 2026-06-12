@@ -92,6 +92,29 @@ export default function MapPage() {
 
   return (
     <div className="map-page" style={{ height: 'calc(100vh - 110px)', margin: '-24px', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .map-filters-input {
+          background-color: var(--c-surface-2) !important;
+          color: var(--c-text) !important;
+          border: 1px solid var(--c-border) !important;
+          padding: 8px 12px !important;
+          border-radius: var(--radius) !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+          outline: none !important;
+          appearance: none;
+          -webkit-appearance: none;
+        }
+        .map-filters-input option {
+          background-color: var(--c-surface) !important;
+          color: var(--c-text) !important;
+        }
+        /* Fix for date icon color in some browsers */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          filter: invert(1);
+          cursor: pointer;
+        }
+      `}</style>
       <div className="map-topbar" style={{ display: 'flex', alignItems: 'center', padding: '10px 15px', backgroundColor: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)', gap: '15px', flexWrap: 'wrap' }}>
         <div className="map-stat">
           <span className="badge badge-activo" style={{backgroundColor:'var(--c-info)'}}></span>
@@ -106,16 +129,14 @@ export default function MapPage() {
           <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Filtros:</label>
           <input 
             type="date" 
-            className="input" 
+            className="map-filters-input" 
             value={fechaPago} 
             onChange={(e) => setFechaPago(e.target.value)} 
-            style={{ padding: '5px' }}
           />
           <select 
-            className="input" 
+            className="map-filters-input" 
             value={tipoGestion} 
             onChange={(e) => setTipoGestion(e.target.value)}
-            style={{ padding: '5px' }}
           >
             <option value="TODOS">Todas las Gestiones</option>
             <option value="LIBRE">LIBRE</option>

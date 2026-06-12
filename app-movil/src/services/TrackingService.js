@@ -1,10 +1,26 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDistance } from 'geolib'; // Necesitamos instalar geolib o usar nuestra función helper
+
+import { BASE_URL } from '../config';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const LAST_POS_KEY = 'rz_last_sent_pos';
+
+// Helper nativo para calcular distancia (Haversine)
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 // 1. Definir la tarea de fondo
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
@@ -26,26 +42,20 @@ async function processLocationUpdate(coords) {
     const lastPosStr = await AsyncStorage.getItem(LAST_POS_KEY);
     const lastPos = lastPosStr ? JSON.parse(lastPosStr) : null;
 
-    // Calcular distancia si existe una posición previa
     if (lastPos) {
       const distance = getDistance(
-        { latitude: coords.latitude, longitude: coords.longitude },
-        { latitude: lastPos.latitude, longitude: lastPos.longitude }
+        coords.latitude, coords.longitude,
+        lastPos.latitude, lastPos.longitude
       );
-
-      // Si se movió menos de 5 metros, no enviamos nada al servidor
-      // (El servidor también lo valida, pero ahorramos datos aquí)
       if (distance < 5) return;
     }
 
-    // Obtener estado actual del worker (guardado en AsyncStorage por las pantallas)
     const currentStatus = await AsyncStorage.getItem('rz_worker_status') || 'LIBRE';
-    const token = await AsyncStorage.getItem('userToken'); // Asumiendo que se guarda aquí
+    const token = await SecureStore.getItemAsync('token');
 
     if (!token) return;
 
-    // Enviar al servidor
-    const response = await fetch('https://tu-api.com/api/tracking/posicion', {
+    const response = await fetch(`${BASE_URL}/api/tracking/posicion`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,33 +83,44 @@ async function processLocationUpdate(coords) {
 
 export const TrackingService = {
   startTracking: async () => {
-    const { status: foreground } = await Location.requestForegroundPermissionsAsync();
-    if (foreground !== 'granted') return false;
+    try {
+      const { status: foreground } = await Location.requestForegroundPermissionsAsync();
+      if (foreground !== 'granted') return false;
 
-    const { status: background } = await Location.requestBackgroundPermissionsAsync();
-    if (background !== 'granted') return false;
+      const { status: background } = await Location.requestBackgroundPermissionsAsync();
+      if (background !== 'granted') return false;
 
-    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.Balanced,
-      distanceInterval: 5, // Metros
-      deferredUpdatesInterval: 1000 * 60, // 1 minuto
-      foregroundService: {
-        notificationTitle: "Ruta Zero Radar",
-        notificationBody: "Monitoreando tu ruta de trabajo...",
-        notificationColor: "#3b82f6"
-      }
-    });
-    return true;
-  },
+      const isRunning = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (isRunning) return true;
 
-  stopTracking: async () => {
-    const isStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
-    if (isStarted) {
-      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.Balanced,
+        distanceInterval: 5,
+        deferredUpdatesInterval: 1000 * 60,
+        foregroundService: {
+          notificationTitle: "InformaTech Radar",
+          notificationBody: "Monitoreando tu ruta de trabajo...",
+          notificationColor: "#3b82f6"
+        }
+      });
+      return true;
+    } catch (e) {
+      console.log('Error starting tracking:', e);
+      return false;
     }
   },
 
-  // Helper para cambiar el estado desde las pantallas
+  stopTracking: async () => {
+    try {
+      const isStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (isStarted) {
+        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+      }
+    } catch (e) {
+      console.log('Error stopping tracking:', e);
+    }
+  },
+
   setStatus: async (status) => {
     await AsyncStorage.setItem('rz_worker_status', status);
   }

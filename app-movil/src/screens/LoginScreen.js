@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Dimensions, ActivityIndicator, Image } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
@@ -21,15 +20,16 @@ export default function LoginScreen() {
     } catch (e) {
       Alert.alert('Error', e.response?.data?.error || 'No se pudo conectar al servidor. Verifica tu conexión.');
     } finally {
+      setShowPassword(false);
       setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={['#0f172a', '#1e293b', '#0f172a']} style={styles.container}>
+    <View style={[styles.container, { backgroundColor: '#F8FAFC' }]}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <View style={styles.content}>
-          {/* Circulos decorativos de fondo */}
+          {/* Circulos decorativos de fondo con brillo turquesa */}
           <View style={styles.circle1} />
           <View style={styles.circle2} />
           
@@ -42,13 +42,13 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.logoTitle}>InformaPeru</Text>
+              <Text style={styles.logoTitle}>Routing</Text>
               <Text style={styles.logoSub}>WORKER PORTAL</Text>
             </View>
 
             <View style={styles.form}>
               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={20} color="#00A9BC" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Usuario"
@@ -61,7 +61,7 @@ export default function LoginScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <Ionicons name="lock-closed-outline" size={20} color="#00A9BC" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Contraseña"
@@ -82,11 +82,7 @@ export default function LoginScreen() {
                 onPress={handleLogin}
                 disabled={loading}
               >
-                <LinearGradient 
-                  colors={['#3b82f6', '#2563eb']} 
-                  start={{x:0, y:0}} end={{x:1, y:1}} 
-                  style={styles.btnGradient}
-                >
+                <View style={styles.btnSolid}>
                   {loading ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
@@ -95,7 +91,7 @@ export default function LoginScreen() {
                       <Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 8 }} />
                     </>
                   )}
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             </View>
             
@@ -105,26 +101,21 @@ export default function LoginScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, padding: 25, justifyContent: 'center' },
-  circle1: { position: 'absolute', top: height * 0.1, left: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: '#3b82f6', opacity: 0.15 },
-  circle2: { position: 'absolute', bottom: height * 0.15, right: -50, width: 250, height: 250, borderRadius: 125, backgroundColor: '#a855f7', opacity: 0.15 },
+  circle1: { position: 'absolute', top: height * 0.1, left: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: '#00A9BC', opacity: 0.05 },
+  circle2: { position: 'absolute', bottom: height * 0.15, right: -50, width: 250, height: 250, borderRadius: 125, backgroundColor: '#00A9BC', opacity: 0.03 },
   glassCard: {
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 30,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
+    borderColor: '#E2E8F0',
   },
   logoContainer: { alignItems: 'center', marginBottom: 35 },
   iconWrapper: {
@@ -137,17 +128,17 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 90,
     height: 90,
-    tintColor: '#ffffff', // Invertir de negro a blanco
+    tintColor: '#1E293B',
   },
-  logoTitle: { color: '#f8fafc', fontSize: 32, fontWeight: '900', letterSpacing: 0.5 },
-  logoSub: { color: '#94a3b8', fontSize: 13, fontWeight: '700', letterSpacing: 3, marginTop: 4 },
+  logoTitle: { color: '#1E293B', fontSize: 32, fontWeight: '900', letterSpacing: 0.5 },
+  logoSub: { color: '#00A9BC', fontSize: 13, fontWeight: '700', letterSpacing: 3, marginTop: 4 },
   form: { marginTop: 10 },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: '#F8FAFC',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#E2E8F0',
     borderRadius: 16,
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -156,7 +147,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 12 },
   input: {
     flex: 1,
-    color: '#f8fafc',
+    color: '#1E293B',
     fontSize: 16,
     height: '100%',
   },
@@ -165,15 +156,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 16,
     overflow: 'hidden',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 8,
   },
-  btnGradient: {
+  btnSolid: {
     flexDirection: 'row',
     height: 56,
+    backgroundColor: '#00A9BC',
     justifyContent: 'center',
     alignItems: 'center',
   },

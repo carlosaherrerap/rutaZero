@@ -153,29 +153,35 @@ export default function Rutas() {
   // Clientes ya asignados para la fecha de la ruta activa (creación o vista)
   const assignedClientIds = React.useMemo(() => {
     const ids = new Set();
-    // Fecha de referencia: si hay ruta seleccionada en el modal de vista, usar su fecha; si no, usar la del formulario de creación
     const refDate = showViewModal && selectedRutaDetails
       ? new Date(selectedRutaDetails.fecha_asignacion).toISOString().slice(0, 10)
       : new Date(newRuta.fecha_asignacion).toISOString().slice(0, 10);
+    
     rutas.forEach(r => {
       // Excluir la propia ruta si estamos editándola o viéndola
       if (editMode && r.id === editingRouteId) return;
       if (showViewModal && selectedRutaDetails && r.id === selectedRutaDetails.id) return;
 
       const rDate = new Date(r.fecha_asignacion).toISOString().slice(0, 10);
-      if (rDate === refDate && r.client_ids) {
-        r.client_ids.forEach(id => ids.add(id));
+      if (rDate === refDate) {
+        // En el backend las rutas traen 'clientes' como array de objetos
+        if (r.clientes) {
+          r.clientes.forEach(c => ids.add(c.id));
+        }
       }
     });
     return ids;
-  }, [rutas, newRuta.fecha_asignacion, showViewModal, selectedRutaDetails]);
+  }, [rutas, newRuta.fecha_asignacion, showViewModal, selectedRutaDetails, editMode, editingRouteId]);
 
   // Filtramos por fecha de pago normalizando ambos valores a YYYY-MM-DD
   const clientesVisibles = clientes.filter(c => {
-    if (!filterPago) return true;  // Sin filtro → mostrar TODOS
+    // SIEMPRE mostrar los clientes que ya están seleccionados para esta ruta
+    if (newRuta.cliente_ids.includes(c.id)) return true;
+
+    if (!filterPago) return true;
     if (!c.fecha_pago) return false;
     
-    // Si ya está asignado a otra ruta HOY, no mostrar en el planificador (si estamos creando ruta)
+    // Si ya está asignado a OTRA ruta hoy, ocultar del planificador
     if (showModal && assignedClientIds.has(c.id)) return false;
 
     // Convertir a string y tomar solo YYYY-MM-DD

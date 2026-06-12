@@ -6,18 +6,47 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 
-// Configuración de Multer para fotos de registro
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = 'uploads/registros';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `reg-${Date.now()}-${file.originalname}`);
-  }
-});
-const upload = multer({ storage });
+const { S3Client } = require('@aws-sdk/client-s3');
+const multerS3 = require('multer-s3');
+
+// Configuración de Multer para fotos de registro (S3/R2 o Local)
+let upload;
+
+if (process.env.S3_BUCKET) {
+  const s3 = new S3Client({
+    region: 'auto',
+    endpoint: process.env.S3_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+    },
+  });
+
+  upload = multer({
+    storage: multerS3({
+      s3: s3,
+      bucket: process.env.S3_BUCKET,
+      contentType: multerS3.AUTO_CONTENT_TYPE,
+      key: (req, file, cb) => {
+        const ext = path.extname(file.originalname) || '.jpg';
+        cb(null, `registros/reg-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+      }
+    }),
+    limits: { fileSize: 15 * 1024 * 1024 }
+  });
+} else {
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const dir = 'uploads/registros';
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+      cb(null, `reg-${Date.now()}-${file.originalname}`);
+    }
+  });
+  upload = multer({ storage });
+}
 
 router.get('/ping', (req, res) => res.json({ message: 'pong' }));
 
@@ -33,7 +62,13 @@ router.post('/registro-cliente', upload.array('fotos', 5), async (req, res) => {
       latitud, longitud, telefono, email, nombre_comercial
     } = req.body;
 
-    const fotos_urls = req.files.map(f => `/uploads/registros/${f.filename}`);
+    const publicBase = process.env.S3_PUBLIC_URL;
+    const fotos_urls = req.files.map(f => {
+      if (publicBase) {
+        return `${publicBase.endsWith('/') ? publicBase : publicBase + '/'}${f.key || f.filename}`;
+      }
+      return f.location || `/uploads/registros/${f.filename}`;
+    });
 
     // 1. Crear ubicación
     const ubRes = await db.query(

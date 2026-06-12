@@ -11,7 +11,6 @@ const verifySchema = async () => {
     const path = require('path');
     const fs = require('fs');
     
-    // Intentar leer el archivo schema.sql desde la raíz (funciona en Render con la nueva config)
     const schemaPath = path.join(__dirname, '../../../database/schema.sql');
     
     if (fs.existsSync(schemaPath)) {
@@ -21,19 +20,37 @@ const verifySchema = async () => {
       console.log('✅ [InitDB] schema.sql ejecutado con éxito.');
     } else {
       console.warn('⚠️ [InitDB] No se encontró schema.sql en:', schemaPath);
-      // Fallback a las migraciones manuales si el archivo no está
-      const migrations = [
-        'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"',
-        'CREATE EXTENSION IF NOT EXISTS "postgis"',
-        "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS requiere_firma BOOLEAN DEFAULT FALSE"
-      ];
-      for (const sql of migrations) {
-        await db.query(sql);
-      }
     }
   } catch (err) {
     console.error('❌ [InitDB] Error al inicializar esquema:', err.message);
   }
+
+  // ── Migraciones de seguridad (siempre se ejecutan para garantizar integridad) ──
+  const safetyMigrations = [
+    // Tabla de radar GPS (puede fallar en schema.sql si el índice se creó antes)
+    `CREATE TABLE IF NOT EXISTS worker_radar_puntos (
+      id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      worker_id        UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      latitud          DOUBLE PRECISION NOT NULL,
+      longitud         DOUBLE PRECISION NOT NULL,
+      estado_worker    VARCHAR(50) DEFAULT 'LIBRE',
+      duracion_segundos INTEGER DEFAULT 0,
+      created_at       TIMESTAMPTZ DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_radar_worker_time ON worker_radar_puntos(worker_id, created_at DESC)`,
+  ];
+
+  for (const sql of safetyMigrations) {
+    try {
+      await db.query(sql);
+    } catch (e) {
+      // Ignorar si ya existe (duplicate_object, etc.)
+      if (!e.message.includes('already exists')) {
+        console.warn('⚠️ [InitDB] Safety migration warning:', e.message);
+      }
+    }
+  }
+  console.log('✅ [InitDB] Migraciones de seguridad aplicadas.');
 };
 
 const ensureAdminUser = async () => {

@@ -2,20 +2,33 @@ const { Router } = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 
 const router = Router();
+
+// Stricter rate limit for login endpoint
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per `window` (here, per 15 minutes)
+  message: { error: 'Demasiados intentos de login fallidos, por favor intente en 15 minutos.' }
+});
 
 /**
  * POST /api/auth/login
  * Body: { username, password }
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, [
+  body('username').notEmpty().withMessage('Username es requerido').trim().escape(),
+  body('password').notEmpty().withMessage('Password es requerido').trim()
+], async (req, res) => {
   try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username y password son requeridos' });
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errors.array()[0].msg });
     }
+
+    const { username, password } = req.body;
 
     // Buscar usuario
     const { rows } = await db.query(
@@ -40,12 +53,17 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
-    // Generar JWT con fallback de seguridad
-    const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
+    // Generar JWT de forma segura sin fallback en duro
+    const SECRET = process.env.JWT_SECRET;
+    if (!SECRET) {
+      console.error('FATAL ERROR: JWT_SECRET is not defined in environment variables.');
+      return res.status(500).json({ error: 'Error interno de configuración de seguridad del servidor' });
+    }
+
     const token = jwt.sign(
       { id: user.id, username: user.username, rol: user.rol },
       SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } // Changed default to 15m
     );
 
     res.json({
@@ -76,7 +94,10 @@ router.get('/me', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'No token' });
 
     const token = authHeader.split(' ')[1];
-    const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
+    const SECRET = process.env.JWT_SECRET;
+    if (!SECRET) {
+      return res.status(500).json({ error: 'Error de configuración del servidor' });
+    }
     const decoded = jwt_lib.verify(token, SECRET);
 
     const { rows } = await db.query(

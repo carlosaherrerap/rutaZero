@@ -5,7 +5,11 @@ const jwt = require('jsonwebtoken');
  */
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
-  const SECRET = process.env.JWT_SECRET || 'ruta_zero_secret_2024_secure';
+  const SECRET = process.env.JWT_SECRET;
+  if (!SECRET) {
+    console.error('FATAL ERROR: JWT_SECRET is missing');
+    return res.status(500).json({ error: 'Server misconfiguration' });
+  }
   let token = null;
 
   if (authHeader && authHeader.startsWith('Bearer ')) {

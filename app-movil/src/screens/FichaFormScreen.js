@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { saveCrashLog } from '../services/CrashLogService';
+import NetInfo from '@react-native-community/netinfo';
 
 // Fallback seguro para ImagePicker
 let ImagePicker = null;
@@ -83,6 +84,12 @@ export default function FichaFormScreen({ route, navigation }) {
     
     setLoading(true);
     try {
+      // ✅ VERIFICAR CONECTIVIDAD ANTES DE INTENTAR
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+        throw new Error('Network Error'); // Forzar modo offline inmediatamente
+      }
+
       const horaCierre = new Date().toISOString();
       const inicio = horaInicioVisita.current;
       const apertura = horaAperturaFicha.current || horaCierre;
@@ -107,7 +114,7 @@ export default function FichaFormScreen({ route, navigation }) {
 
       await api.post(`/api/workers/clientes/${cliente.id}/ficha`, data, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000, // 2 minutos de espera para subidas con fotos
+        timeout: 30000, // 30 segundos máximo
       });
       
       // LOG DE MONITOREO (Segundo plano para no bloquear al usuario)
@@ -135,24 +142,30 @@ export default function FichaFormScreen({ route, navigation }) {
         { text: 'Finalizar', onPress: () => navigation.popToTop() }
       ]);
     } catch (err) {
+      const isNetworkError = err.message === 'Network Error' || err.code === 'ECONNABORTED' || !err.response;
       const errorDetail = err.response?.data?.message || err.message;
-      console.log('Error saving ficha, attempting offline storage:', errorDetail);
+      console.log('Error saving ficha:', errorDetail, '| isNetworkError:', isNetworkError);
       
-      // GUARDAR LOG PARA SOPORTE (Inspector de errores)
-      await saveCrashLog(err, `SAVE_FICHA_ONLINE_FAIL_${cliente.id}`);
-      
-      // FALLBACK OFFLINE
+      if (!isNetworkError) {
+        // Error del servidor (400, 500...) — NO guardar offline, mostrar el error real
+        await saveCrashLog(err, `SAVE_FICHA_SERVER_ERROR_${cliente.id}`);
+        Alert.alert('Error del Servidor', `No se pudo guardar: ${errorDetail}`);
+        return;
+      }
+
+      // Error de red — guardar offline
+      await saveCrashLog(err, `SAVE_FICHA_OFFLINE_${cliente.id}`);
       const { saveFichaOffline } = require('../services/OfflineService');
       const saved = await saveFichaOffline(cliente.id, formData, fotos);
       
       if (saved) {
         Alert.alert(
-          'Modo Offline Activo', 
-          'No se pudo conectar con el servidor, pero la gestión se guardó LOCALMENTE en tu teléfono. Se sincronizará automáticamente cuando recuperes conexión.',
+          '📵 Sin Conexión',
+          'La gestión se guardó LOCALMENTE. Se enviará al servidor automáticamente cuando recuperes conexión WiFi.',
           [{ text: 'Entendido', onPress: () => navigation.popToTop() }]
         );
       } else {
-        Alert.alert('Error Grave', 'No se pudo guardar ni siquiera de forma local. Verifica el espacio en tu teléfono.');
+        Alert.alert('Error Grave', 'No se pudo guardar ni en línea ni localmente. Verifica el almacenamiento del teléfono.');
       }
     } finally {
       setLoading(false);
@@ -171,14 +184,16 @@ export default function FichaFormScreen({ route, navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* PASO 1: VALIDACIÓN DE IDENTIDAD */}
+        {/* PASO 1: VALIDACIÓN DE IDENTIDAD & DEUDA */}
         {step === 1 && (
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Corroborar Identidad</Text>
-            <Text style={styles.stepSub}>Valida los datos con el cliente antes de proceder.</Text>
+            <Text style={styles.stepTitle}>Corroborar Identidad & Deuda</Text>
+            <Text style={styles.stepSub}>Valida los datos financieros y personales con el cliente.</Text>
             <View style={styles.dataCard}>
               <DataRow label="NOMBRE COMPLETO" val={`${cliente.nombres} ${cliente.apellidos}`} />
               <DataRow label="DNI / DOCUMENTO" val={cliente.dni} />
+              <DataRow label="DEUDA TOTAL DE CARTERA" val={parseFloat(cliente.deuda_total || 0) > 0 ? `S/ ${parseFloat(cliente.deuda_total).toFixed(2)}` : 'S/ 0.00'} highlight />
+              <DataRow label="TELÉFONO DE CONTACTO" val={cliente.telefono || 'No registrado'} />
               <DataRow label="DIRECCIÓN REGISTRADA" val={cliente.direccion} />
               <DataRow label="DISTRITO" val={cliente.distrito} />
             </View>
@@ -208,16 +223,16 @@ export default function FichaFormScreen({ route, navigation }) {
             <View style={styles.formGrid}>
                {cliente.plantilla_campos ? (
                  <>
-                   <Text style={[styles.inputLabel, {color: 'var(--c-accent)', fontWeight: 'bold'}]}>Formulario: {cliente.plantilla_nombre}</Text>
+                   <Text style={[styles.inputLabel, {color: '#00A9BC', fontWeight: 'bold'}]}>Formulario: {cliente.plantilla_nombre}</Text>
                    {(typeof cliente.plantilla_campos === 'string' ? JSON.parse(cliente.plantilla_campos) : cliente.plantilla_campos).map((field, idx) => (
                      <InputRow 
                        key={idx}
                        label={field.label} 
                        value={formData.dynamic_fields?.[field.label] || ''} 
                        onChange={(v) => {
-                         const df = { ...(formData.dynamic_fields || {}) };
-                         df[field.label] = v;
-                         updateField('dynamic_fields', df);
+                          const df = { ...(formData.dynamic_fields || {}) };
+                          df[field.label] = v;
+                          updateField('dynamic_fields', df);
                        }} 
                        placeholder={field.placeholder || ''} 
                        keyboard={field.type === 'number' ? 'numeric' : 'default'}
@@ -232,7 +247,7 @@ export default function FichaFormScreen({ route, navigation }) {
                    {/* Fecha de Desembolso */}
                    <Text style={styles.inputLabel}>Fecha Desembolso</Text>
                    <View style={styles.dateDisplay}>
-                     <Ionicons name="calendar-outline" size={16} color="#64748b" />
+                     <Ionicons name="calendar-outline" size={16} color="#00A9BC" />
                      <Text style={styles.dateText}>{formData.fecha_desembolso}</Text>
                    </View>
 
@@ -244,8 +259,8 @@ export default function FichaFormScreen({ route, navigation }) {
                       <View style={{flex:0.6}}>
                          <Text style={styles.inputLabel}>Moneda</Text>
                          <View style={styles.pickerRow}>
-                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'PEN' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'PEN')}><Text style={styles.miniBtnText}>S/</Text></TouchableOpacity>
-                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'USD' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'USD')}><Text style={styles.miniBtnText}>$</Text></TouchableOpacity>
+                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'PEN' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'PEN')}><Text style={[styles.miniBtnText, formData.moneda === 'PEN' && styles.miniBtnTextActive]}>S/</Text></TouchableOpacity>
+                            <TouchableOpacity style={[styles.miniBtn, formData.moneda === 'USD' && styles.miniBtnActive]} onPress={() => updateField('moneda', 'USD')}><Text style={[styles.miniBtnText, formData.moneda === 'USD' && styles.miniBtnTextActive]}>$</Text></TouchableOpacity>
                          </View>
                       </View>
                    </View>
@@ -301,13 +316,13 @@ export default function FichaFormScreen({ route, navigation }) {
                 <View key={i} style={styles.photoWrap}>
                   <Image source={{ uri }} style={styles.photoThumb} />
                   <TouchableOpacity style={styles.delPhoto} onPress={() => setFotos(fotos.filter((_, idx)=> idx !== i))}>
-                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
                   </TouchableOpacity>
                 </View>
               ))}
               {fotos.length < 5 && (
                 <TouchableOpacity style={styles.addPhotoBtn} onPress={pickImage}>
-                   <Ionicons name="camera" size={32} color="#3b82f6" />
+                   <Ionicons name="camera" size={32} color="#00A9BC" />
                    <Text style={styles.addPhotoText}>Tomar Foto</Text>
                 </TouchableOpacity>
               )}
@@ -323,6 +338,7 @@ export default function FichaFormScreen({ route, navigation }) {
             <TextInput 
               style={styles.textArea} 
               placeholder="Observación detallada de la gestión..." 
+              placeholderTextColor="#64748b"
               multiline 
               value={formData.observacion} 
               onChangeText={(v) => updateField('observacion', v)} 
@@ -354,79 +370,142 @@ const StepIcon = ({ active, current, num, label }) => (
   </View>
 );
 
-const DataRow = ({ label, val }) => (
+const DataRow = ({ label, val, highlight }) => (
   <View style={styles.dataRow}>
     <Text style={styles.dataLabel}>{label}</Text>
-    <Text style={styles.dataVal}>{val}</Text>
+    <Text style={[styles.dataVal, highlight && styles.highlightVal]}>{val}</Text>
   </View>
 );
 
 const InputRow = ({ label, value, onChange, placeholder, keyboard="default" }) => (
   <View style={styles.inputBox}>
     <Text style={styles.inputLabel}>{label}</Text>
-    <TextInput style={styles.textInput} value={value} onChangeText={onChange} placeholder={placeholder} keyboardType={keyboard} />
+    <TextInput 
+      style={styles.textInput} 
+      value={value} 
+      onChangeText={onChange} 
+      placeholder={placeholder} 
+      placeholderTextColor="#64748b"
+      keyboardType={keyboard} 
+    />
   </View>
 );
 
 const TipiBtn = ({ label, icon, active, onPress, color }) => (
-  <TouchableOpacity style={[styles.tipiBtn, active && { borderColor: color, backgroundColor: color + '10' }]} onPress={onPress}>
+  <TouchableOpacity style={[styles.tipiBtn, active && { borderColor: color, backgroundColor: color + '18' }]} onPress={onPress}>
     <Ionicons name={icon} size={24} color={active ? color : '#94a3b8'} />
-    <Text style={[styles.tipiLabel, active && { color: color }]}>{label}</Text>
+    <Text style={[styles.tipiLabel, { color: active ? color : '#94a3b8' }]}>{label}</Text>
   </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  stepIndicator: { flexDirection: 'row', backgroundColor: '#fff', padding: 15, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  stepIndicator: { 
+    flexDirection: 'row', 
+    backgroundColor: '#FFFFFF', 
+    padding: 15, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#E2E8F0' 
+  },
   stepIconContainer: { alignItems: 'center' },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
-  stepCircleActive: { backgroundColor: '#3b82f6' },
-  stepCircleCurrent: { borderWidth: 2, borderColor: '#bfdbfe' },
-  stepNum: { fontSize: 11, fontWeight: 'bold', color: '#94a3b8' },
+  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  stepCircleActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
+  stepCircleCurrent: { borderWidth: 2, borderColor: '#00A9BC' },
+  stepNum: { fontSize: 11, fontWeight: 'bold', color: '#64748B' },
   stepNumActive: { color: '#fff' },
-  stepLabel: { fontSize: 10, color: '#94a3b8', marginTop: 4, fontWeight: 'bold' },
-  stepLabelActive: { color: '#3b82f6' },
-  stepLine: { width: 40, height: 2, backgroundColor: '#f1f5f9', marginHorizontal: 10, marginTop: -12 },
+  stepLabel: { fontSize: 10, color: '#64748B', marginTop: 4, fontWeight: 'bold' },
+  stepLabelActive: { color: '#00A9BC' },
+  stepLine: { width: 40, height: 2, backgroundColor: '#E2E8F0', marginHorizontal: 10, marginTop: -12 },
   scroll: { padding: 25 },
   stepContent: { flex: 1 },
-  stepTitle: { fontSize: 22, fontWeight: '800', color: '#1e293b', marginBottom: 8 },
-  stepSub: { color: '#64748b', fontSize: 13, marginBottom: 25 },
-  dataCard: { backgroundColor: '#fff', padding: 20, borderRadius: 20, marginBottom: 25, elevation: 3 },
+  stepTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B', marginBottom: 8 },
+  stepSub: { color: '#64748B', fontSize: 13, marginBottom: 25 },
+  dataCard: { 
+    backgroundColor: '#FFFFFF', 
+    padding: 20, 
+    borderRadius: 20, 
+    marginBottom: 25, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0',
+  },
   dataRow: { marginBottom: 15 },
-  dataLabel: { fontSize: 10, color: '#94a3b8', fontWeight: '800' },
-  dataVal: { fontSize: 15, color: '#1e293b', fontWeight: '600', marginTop: 2 },
-  nextBtn: { flex: 1, backgroundColor: '#3b82f6', height: 55, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  dataLabel: { fontSize: 10, color: '#64748B', fontWeight: '800', letterSpacing: 0.5 },
+  dataVal: { fontSize: 15, color: '#1E293B', fontWeight: '600', marginTop: 2 },
+  highlightVal: { fontSize: 18, color: '#00A9BC', fontWeight: '950' },
+  nextBtn: { flex: 1, backgroundColor: '#00A9BC', height: 55, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   nextBtnText: { color: '#fff', fontWeight: '800', marginRight: 10 },
   btnRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   backBtn: { height: 55, flex: 0.4, justifyContent: 'center', alignItems: 'center' },
-  backBtnText: { color: '#94a3b8', fontWeight: '800' },
+  backBtnText: { color: '#64748B', fontWeight: '800' },
   formGrid: { marginBottom: 20 },
   inputBox: { marginBottom: 15 },
-  inputLabel: { fontSize: 11, fontWeight: '800', color: '#475569', marginBottom: 6, textTransform: 'uppercase' },
-  textInput: { backgroundColor: '#fff', height: 50, borderRadius: 12, paddingHorizontal: 15, borderWidth: 1, borderColor: '#e2e8f0', fontSize: 14 },
+  inputLabel: { fontSize: 11, fontWeight: '800', color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  textInput: { 
+    backgroundColor: '#F8FAFC', 
+    height: 50, 
+    borderRadius: 12, 
+    paddingHorizontal: 15, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    fontSize: 14,
+    color: '#1E293B'
+  },
   row: { flexDirection: 'row' },
   pickerRow: { flexDirection: 'row', gap: 5 },
   pickerRowMB: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  miniBtn: { flex: 1, height: 45, backgroundColor: '#f1f5f9', borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  miniBtnActive: { backgroundColor: '#334155' },
-  miniBtnText: { color: '#64748b', fontWeight: 'bold' },
-  condBtn: { flex: 1, height: 45, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  condBtnActive: { backgroundColor: '#1e293b', borderColor: '#1e293b' },
-  condBtnText: { fontSize: 11, color: '#64748b', fontWeight: '800' },
+  miniBtn: { flex: 1, height: 45, backgroundColor: '#F8FAFC', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  miniBtnActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
+  miniBtnText: { color: '#64748B', fontWeight: 'bold' },
+  miniBtnTextActive: { color: '#fff' },
+  condBtn: { flex: 1, height: 45, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
+  condBtnActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
+  condBtnText: { fontSize: 11, color: '#64748B', fontWeight: '800' },
   condBtnTextActive: { color: '#fff' },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 25, gap: 10 },
   photoWrap: { position: 'relative' },
   photoThumb: { width: width * 0.2, height: width * 0.2, borderRadius: 12 },
   delPhoto: { position: 'absolute', top: -5, right: -5 },
-  addPhotoBtn: { width: width * 0.2, height: width * 0.2, borderRadius: 12, borderStyle: 'dashed', borderWidth: 2, borderColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' },
-  addPhotoText: { fontSize: 8, color: '#3b82f6', marginTop: 4, textAlign: 'center' },
+  addPhotoBtn: { 
+    width: width * 0.2, 
+    height: width * 0.2, 
+    borderRadius: 12, 
+    borderStyle: 'dashed', 
+    borderWidth: 2, 
+    borderColor: '#00A9BC', 
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  addPhotoText: { fontSize: 8, color: '#00A9BC', marginTop: 4, textAlign: 'center', fontWeight: '800' },
   tipiGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  tipiBtn: { flex: 1, height: 80, backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginHorizontal: 4 },
-  tipiLabel: { fontSize: 9, fontWeight: '800', marginTop: 5, textAlign: 'center' },
-  textArea: { backgroundColor: '#fff', padding: 15, borderRadius: 16, textAlignVertical: 'top', height: 100, marginBottom: 25, borderWidth: 1, borderColor: '#e2e8f0' },
-  saveBtn: { flex: 1, backgroundColor: '#1e293b', height: 55, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  tipiBtn: { 
+    flex: 1, 
+    height: 80, 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 16, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginHorizontal: 4 
+  },
+  tipiLabel: { fontSize: 9, fontWeight: '850', marginTop: 5, textAlign: 'center' },
+  textArea: { 
+    backgroundColor: '#F8FAFC', 
+    padding: 15, 
+    borderRadius: 16, 
+    textAlignVertical: 'top', 
+    height: 100, 
+    marginBottom: 25, 
+    borderWidth: 1, 
+    borderColor: '#E2E8F0',
+    color: '#1E293B'
+  },
+  saveBtn: { flex: 1, backgroundColor: '#00A9BC', height: 55, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   btnDisabled: { opacity: 0.7 },
-  dateDisplay: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#f1f5f9', borderRadius: 12, padding: 14, marginBottom: 15 },
-  dateText: { fontSize: 14, color: '#334155', fontWeight: '600' }
+  dateDisplay: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0' },
+  dateText: { fontSize: 14, color: '#1E293B', fontWeight: '600' }
 });

@@ -40,6 +40,24 @@
       "eas": {
         "projectId": "d41d27ea-38d6-4d66-8f86-c21cf8092c10"
       }
-    }
+    },
+    "updates": {
+      "enabled": false
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": false,
+            "allowBackup": false
+          },
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ]
   }
 }

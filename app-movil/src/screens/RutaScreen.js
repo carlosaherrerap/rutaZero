@@ -98,13 +98,13 @@ const RutaScreen = ({ navigation }) => {
       >
         <View style={styles.cardHeader}>
            <View style={styles.iconContainer}>
-              <Ionicons name="map" size={24} color="#3b82f6" />
+              <Ionicons name="map" size={24} color="#00A9BC" />
            </View>
            <View style={{ flex: 1 }}>
               <Text style={styles.rutaName}>{item.nombre}</Text>
               <Text style={styles.rutaDate}>Asignación: {item.fecha ? new Date(item.fecha).toLocaleDateString() : 'Pendiente'}</Text>
            </View>
-           <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
+           <Ionicons name="chevron-forward" size={20} color="#00A9BC" />
         </View>
 
         <View style={styles.cardFooter}>
@@ -119,8 +119,8 @@ const RutaScreen = ({ navigation }) => {
            </View>
            <View style={styles.statDivider} />
            <View style={styles.progressBox}>
-              <View style={[styles.progressCircle, isCompleted && { borderColor: '#10b981' }]}>
-                 <Text style={[styles.progressText, isCompleted && { color: '#10b981' }]}>{progress}%</Text>
+              <View style={[styles.progressCircle, { borderColor: isCompleted ? '#10b981' : '#00A9BC' }]}>
+                 <Text style={[styles.progressText, { color: isCompleted ? '#10b981' : '#00A9BC' }]}>{progress}%</Text>
               </View>
            </View>
         </View>
@@ -133,18 +133,18 @@ const RutaScreen = ({ navigation }) => {
       <View style={styles.header}>
          <Text style={styles.headerTitle}>Mis Rutas</Text>
          <TouchableOpacity onPress={() => { setLoading(true); fetchData(); }}>
-            <Ionicons name="refresh" size={24} color="#3b82f6" />
+            <Ionicons name="refresh" size={24} color="#00A9BC" />
          </TouchableOpacity>
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+        <ActivityIndicator size="large" color="#00A9BC" style={{ marginTop: 50 }} />
       ) : !jornadaEstado || finalizado || enRefrigerio ? (
         <View style={styles.lockBanner}>
           <Ionicons 
             name={enRefrigerio ? "restaurant" : "lock-closed"} 
             size={50} 
-            color={enRefrigerio ? "#f59e0b" : "#cbd5e1"} 
+            color={enRefrigerio ? "#f59e0b" : "#94a3b8"} 
           />
           <Text style={styles.lockTitle}>{enRefrigerio ? "En hora de almuerzo" : "Jornada no iniciada"}</Text>
           <Text style={styles.lockSub}>
@@ -165,69 +165,64 @@ const RutaScreen = ({ navigation }) => {
         <FlatList
           data={groupedRutas}
           renderItem={renderRutaCard}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={(item, index) => `ruta-${item.id}-${index}`}
           contentContainerStyle={styles.list}
           refreshing={refreshing}
           onRefresh={() => { setRefreshing(true); fetchData(); }}
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-               <Ionicons name="map-outline" size={80} color="#cbd5e1" />
+               <Ionicons name="map-outline" size={80} color="#94a3b8" />
                <Text style={styles.emptyText}>No tienes rutas asignadas para hoy.</Text>
             </View>
           }
         />
       )}
-
-      {/* BARRA INFERIOR */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Home')}>
-          <Ionicons name="people" size={24} color="#94a3b8" />
-          <Text style={styles.tabLabel}>CLIENTES</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="map" size={24} color="#3b82f6" />
-          <Text style={[styles.tabLabel, { color: '#3b82f6' }]}>MIS RUTAS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Asistencia')}>
-          <Ionicons name="calendar" size={24} color="#94a3b8" />
-          <Text style={styles.tabLabel}>ASISTENCIA</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 20, 
+    backgroundColor: '#FFFFFF', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#E2E8F0',
+  },
+  headerTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B', letterSpacing: 0.5 },
   list: { padding: 20, paddingBottom: 100 },
-  rutaCard: { backgroundColor: '#fff', borderRadius: 24, marginBottom: 20, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, padding: 20 },
+  rutaCard: { 
+    backgroundColor: '#FFFFFF', 
+    borderRadius: 24, 
+    marginBottom: 20, 
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    padding: 20 
+  },
   rutaCardCompleted: { opacity: 0.7 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  iconContainer: { width: 50, height: 50, borderRadius: 15, backgroundColor: '#eff6ff', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  rutaName: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
-  rutaDate: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 16, padding: 15 },
+  iconContainer: { width: 50, height: 50, borderRadius: 15, backgroundColor: 'rgba(0, 169, 188, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  rutaName: { fontSize: 18, fontWeight: '800', color: '#1E293B' },
+  rutaDate: { fontSize: 12, color: '#64748B', marginTop: 2 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 15, borderWidth: 1, borderColor: '#E2E8F0' },
   statBox: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
-  statLabel: { fontSize: 10, color: '#64748b', textTransform: 'uppercase', marginTop: 2 },
-  statDivider: { width: 1, height: 20, backgroundColor: '#e2e8f0' },
+  statValue: { fontSize: 16, fontWeight: '850', color: '#1E293B' },
+  statLabel: { fontSize: 10, color: '#64748B', textTransform: 'uppercase', marginTop: 2, fontWeight: 'bold' },
+  statDivider: { width: 1, height: 20, backgroundColor: '#E2E8F0' },
   progressBox: { flex: 1, alignItems: 'center' },
-  progressCircle: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, borderColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' },
-  progressText: { fontSize: 10, fontWeight: 'bold', color: '#3b82f6' },
+  progressCircle: { width: 40, height: 40, borderRadius: 20, borderWidth: 3, justifyContent: 'center', alignItems: 'center' },
+  progressText: { fontSize: 10, fontWeight: 'bold' },
   emptyBox: { marginTop: 100, alignItems: 'center' },
-  emptyText: { color: '#94a3b8', marginTop: 15, fontSize: 16, fontWeight: '600' },
+  emptyText: { color: '#64748B', marginTop: 15, fontSize: 16, fontWeight: '600' },
   // Lock banner styles
   lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, gap: 12 },
-  lockTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
-  lockSub: { fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 20 },
-  lockBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16, marginTop: 16, elevation: 3 },
+  lockTitle: { fontSize: 20, fontWeight: '950', color: '#1E293B' },
+  lockSub: { fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20 },
+  lockBtn: { backgroundColor: '#00A9BC', paddingHorizontal: 28, paddingVertical: 14, borderRadius: 16, marginTop: 16 },
   lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  // BARRA INFERIOR
-  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
-  tabItem: { alignItems: 'center' },
-  tabLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', marginTop: 4 },
 });
 
 export default RutaScreen;

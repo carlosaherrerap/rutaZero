@@ -345,3 +345,17 @@ CREATE INDEX IF NOT EXISTS idx_rutas_sede    ON rutas(sede_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_sede ON usuarios(sede_id);
 CREATE INDEX IF NOT EXISTS idx_monitoreo_worker ON monitoreo_acciones(worker_id);
 CREATE INDEX IF NOT EXISTS idx_tracking_worker ON ubicaciones_worker_tracking(worker_id);
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- 5. TABLA RADAR GPS WORKERS
+-- ────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS worker_radar_puntos (
+    id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    worker_id        UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    latitud          DOUBLE PRECISION NOT NULL,
+    longitud         DOUBLE PRECISION NOT NULL,
+    estado_worker    VARCHAR(50) DEFAULT 'LIBRE',
+    duracion_segundos INTEGER DEFAULT 0,
+    created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_radar_worker_time ON worker_radar_puntos(worker_id, created_at DESC);

@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 
     if (estado) {
       if (estado === 'NO_ENCONTRADO') {
-        whereClause += ` AND c.estado IN ('NO_ENCONTRADO', 'NO ENCONTRADO', 'NO_ECONTRADO')`;
+        whereClause += ` AND c.estado = 'NO_ENCONTRADO'`;
       } else {
         params.push(estado);
         whereClause += ` AND c.estado = $${params.length}`;

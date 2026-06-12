@@ -328,16 +328,17 @@ router.get('/me/jornadas', async (req, res) => {
 // Obtener mis rutas activas (agrupadas o listadas)
 router.get('/me/ruta', async (req, res) => {
   try {
-    // Usamos LEFT JOIN para que la ruta aparezca aunque no tenga clientes asignados aún
+    // SIN filtro de fecha — muestra TODAS las rutas activas del worker (no COMPLETADO)
+    // Evita cualquier problema de zona horaria UTC vs Lima (UTC-5)
     const { rows } = await db.query(
-      `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion,
+      `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion, r.estado as ruta_estado,
               rc.orden, c.id as cliente_id, c.nombres, c.apellidos, c.deuda_total, ub.direccion as cliente_direccion, 
               c.estado as cliente_estado, c.bloqueado_por, ub.latitud, ub.longitud, ub.distrito
        FROM rutas r
        LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
        LEFT JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-       WHERE r.worker_id = $1 AND r.fecha_asignacion = CURRENT_DATE
+       WHERE r.worker_id = $1 AND r.estado != 'COMPLETADO'
        ORDER BY r.fecha_asignacion DESC, r.id, rc.orden`,
       [req.user.id]
     );
@@ -351,14 +352,13 @@ router.get('/me/ruta', async (req, res) => {
 // Marcar inicio de visita (Bloquear cliente)
 router.post('/clientes/:id/visitar', async (req, res) => {
   try {
-    // Verificar si el worker ya tiene OTRO cliente bloqueado (excluyendo el actual)
-    const check = await db.query(
-      "SELECT id FROM clientes WHERE bloqueado_por = $1 AND estado = 'EN_VISITA' AND id != $2",
+    // Auto-liberar cualquier visita previa atascada del mismo worker
+    // (ocurre cuando la app falla sin llamar /liberar explícitamente)
+    await db.query(
+      `UPDATE clientes SET estado = 'LIBRE', bloqueado_por = NULL, updated_at = NOW()
+       WHERE bloqueado_por = $1 AND estado = 'EN_VISITA' AND id != $2`,
       [req.user.id, req.params.id]
     );
-    if (check.rows.length > 0) {
-      return res.status(403).json({ error: 'Ya tienes una visita en curso con otro cliente. Finalízala primero.' });
-    }
 
     const { rows } = await db.query(
       `UPDATE clientes SET estado = 'EN_VISITA', bloqueado_por = $1, updated_at = NOW()
@@ -422,7 +422,15 @@ router.post('/clientes/:id/ficha', upload.array('evidencias', 5), async (req, re
 
     // Fotos subidas via multer (req.files)
     // En S3, el campo es 'location'. En Local, construimos la URL relativa.
-    const evidenciaUrls = req.files ? req.files.map(f => f.location || `/uploads/evidencias/${f.filename}`) : [];
+    // Construir URLs de evidencias usando URL pública si existe
+    const publicBase = process.env.S3_PUBLIC_URL;
+    const evidenciaUrls = req.files ? req.files.map(f => {
+      if (publicBase) {
+        // f.key es el path dentro del bucket (ej: evidencias/foto.jpg)
+        return `${publicBase.endsWith('/') ? publicBase : publicBase + '/'}${f.key || f.filename}`;
+      }
+      return f.location || `/uploads/evidencias/${f.filename}`;
+    }) : [];
 
     // Helpers de sanitización
     const safeNum   = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
@@ -570,6 +578,47 @@ router.get('/clientes/:id/ficha', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al obtener ficha' });
+  }
+});
+
+/**
+ * PERMISOS
+ */
+
+// Obtener mis permisos
+router.get('/me/permisos', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT * FROM permisos WHERE worker_id = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error al obtener permisos:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Solicitar un permiso
+router.post('/me/permisos', async (req, res) => {
+  try {
+    const { tipo, fecha_inicio, fecha_fin, descripcion } = req.body;
+    
+    if (!fecha_inicio || !descripcion) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
+    const { rows } = await db.query(
+      `INSERT INTO permisos (worker_id, tipo, fecha_inicio, fecha_fin, descripcion, estado)
+       VALUES ($1, $2, $3, $4, $5, 'PENDIENTE')
+       RETURNING *`,
+      [req.user.id, tipo || 'Medico', fecha_inicio, fecha_fin || fecha_inicio, descripcion]
+    );
+
+    res.status(201).json({ data: rows[0] });
+  } catch (err) {
+    console.error('Error al solicitar permiso:', err);
+    res.status(500).json({ error: 'Error al procesar la solicitud' });
   }
 });
 
