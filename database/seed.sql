@@ -27,7 +27,7 @@ INSERT INTO plantillas_formularios (id, nombre, descripcion, campos) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ────────────────────────────────────────────────────────────────────────────
--- 2. USUARIOS (10 LIMA + 10 AREQUIPA)
+-- 2. USUARIOS (10 LIMA + 10 AREQUIPA) 2026
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- UBICACIONES PARA USUARIOS (LIMA: ~ -12.04, -77.03 | AREQUIPA: ~ -16.40, -71.53)

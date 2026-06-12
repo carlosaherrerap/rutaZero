@@ -1,10 +1,3 @@
--- ============================================================================
--- 🛵  Informatech — Schema de Base de Datos (PostgreSQL)
--- ============================================================================
--- Versión : 3.2 (Strictly Normalized)
--- Fecha   : 2026-05-08
--- ============================================================================
-
 -- Clean start (Optional but recommended for consistency)
 DROP VIEW IF EXISTS v_asistencia_metricas CASCADE;
 DROP VIEW IF EXISTS v_clientes_ultima_gestion CASCADE;
