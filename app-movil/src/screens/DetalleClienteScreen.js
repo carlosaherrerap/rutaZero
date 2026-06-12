@@ -178,11 +178,15 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       await updateLocalClientStatus(cliente.id, 'EN_VISITA');
       
       setCliente(prev => ({ ...prev, estado: 'EN_VISITA', bloqueado_por: user.id }));
-      Alert.alert('Éxito', 'Visita iniciada. El cliente ahora está EN CAMINO.');
+      Alert.alert('Éxito', 'Visita iniciada. Ahora estás en camino al cliente');
     } catch (err) {
       console.log('❌ [Visit] Error al iniciar visita:', err.message);
       const msg = err.response?.data?.error || 'No se pudo iniciar la visita';
-      Alert.alert('Aviso', msg);
+      if (err.response?.status === 409) {
+        Alert.alert('No Permitido', msg);
+      } else {
+        Alert.alert('Aviso', msg);
+      }
     } finally {
       setLoading(false);
     }

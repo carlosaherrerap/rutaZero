@@ -352,13 +352,18 @@ router.get('/me/ruta', async (req, res) => {
 // Marcar inicio de visita (Bloquear cliente)
 router.post('/clientes/:id/visitar', async (req, res) => {
   try {
-    // Auto-liberar cualquier visita previa atascada del mismo worker
-    // (ocurre cuando la app falla sin llamar /liberar explícitamente)
-    await db.query(
-      `UPDATE clientes SET estado = 'LIBRE', bloqueado_por = NULL, updated_at = NOW()
-       WHERE bloqueado_por = $1 AND estado = 'EN_VISITA' AND id != $2`,
-      [req.user.id, req.params.id]
+    // 1. Validar si el worker ya tiene una visita en curso
+    const activeVisitCheck = await db.query(
+      `SELECT id FROM clientes WHERE bloqueado_por = $1 AND estado = 'EN_VISITA'`,
+      [req.user.id]
     );
+
+    if (activeVisitCheck.rows.length > 0) {
+      // Si ya está visitando a alguien, y no es el mismo cliente, bloqueamos.
+      if (activeVisitCheck.rows[0].id !== req.params.id) {
+        return res.status(409).json({ error: 'Ya tienes una visita en curso. Finaliza o cancela la visita actual antes de iniciar otra.' });
+      }
+    }
 
     const { rows } = await db.query(
       `UPDATE clientes SET estado = 'EN_VISITA', bloqueado_por = $1, updated_at = NOW()
@@ -368,7 +373,7 @@ router.post('/clientes/:id/visitar', async (req, res) => {
     );
 
     if (rows.length === 0) {
-       return res.status(409).json({ error: 'El cliente ya está siendo visitado por otro worker' });
+       return res.status(409).json({ error: 'El cliente ya está siendo visitado por otro worker o no está disponible' });
     }
 
     const io = req.app.get('io');
@@ -595,6 +600,20 @@ router.get('/me/permisos', async (req, res) => {
     res.json({ data: rows });
   } catch (err) {
     console.error('Error al obtener permisos:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Obtener mis amonestaciones
+router.get('/me/amonestaciones', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT * FROM amonestaciones WHERE worker_id = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json({ data: rows });
+  } catch (err) {
+    console.error('Error al obtener amonestaciones:', err);
     res.status(500).json({ error: 'Error interno' });
   }
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useCallback, useContext, useRef } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   Modal, Alert, ActivityIndicator, Dimensions 
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,18 +19,23 @@ const AmonestacionesScreen = () => {
   const [signatureModal, setSignatureModal] = useState(false);
   const webviewRef = useRef(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await api.get('/api/trabajadores/mis-amonestaciones');
+      setLoading(true);
+      const res = await api.get('/api/workers/me/amonestaciones');
       setData(res.data.data);
     } catch (e) {
-      console.log('Error:', e);
+      console.log('Error fetching amonestaciones:', e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
-  useEffect(() => { fetchData(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const handleSign = async (signatureBase64) => {
     try {

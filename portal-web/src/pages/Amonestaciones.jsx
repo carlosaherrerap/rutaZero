@@ -8,6 +8,7 @@ const Amonestaciones = () => {
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [viewingAmonestacion, setViewingAmonestacion] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState('Todos los estados');
 
@@ -144,7 +145,7 @@ const Amonestaciones = () => {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-sm btn-ghost">Ver Ficha</button>
+                    <button className="btn btn-sm btn-ghost" onClick={() => setViewingAmonestacion(item)}>Ver Ficha</button>
                   </td>
                 </tr>
               ))}
@@ -229,6 +230,32 @@ const Amonestaciones = () => {
             <div className="modal-footer">
               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
               <button className="btn btn-primary" onClick={handleCreate}>Emitir Amonestación</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {viewingAmonestacion && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2 className="modal-title">Detalle de Amonestación</h2>
+              <button className="btn btn-sm btn-ghost" onClick={() => setViewingAmonestacion(null)}>✕</button>
+            </div>
+            <div className="modal-body" style={{ fontFamily: 'monospace' }}>
+              <div style={{ padding: '15px', background: 'var(--c-surface-2)', borderRadius: '8px', marginBottom: '15px' }}>
+                <p><strong>Operador:</strong> {viewingAmonestacion.operador}</p>
+                <p><strong>Tipo de Falta:</strong> {viewingAmonestacion.tipo}</p>
+                <p><strong>Fecha:</strong> {new Date(viewingAmonestacion.fecha).toLocaleDateString()}</p>
+                <p><strong>Monto Sanción:</strong> S/ {viewingAmonestacion.monto}</p>
+                <p><strong>Estado:</strong> {viewingAmonestacion.estado}</p>
+              </div>
+              <div>
+                <strong>Observaciones:</strong>
+                <p style={{ marginTop: '5px', color: 'var(--c-muted)', whiteSpace: 'pre-wrap' }}>{viewingAmonestacion.descripcion}</p>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => setViewingAmonestacion(null)}>Cerrar</button>
             </div>
           </div>
         </div>

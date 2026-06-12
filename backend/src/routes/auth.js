@@ -7,10 +7,10 @@ const rateLimit = require('express-rate-limit');
 
 const router = Router();
 
-// Stricter rate limit for login endpoint
+// Stricter rate limit for login endpoint (Adjusted for shared office IPs)
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login requests per `window` (here, per 15 minutes)
+  max: 20, // Limit each IP to 20 login requests per `window` to prevent blocking the whole office WiFi
   message: { error: 'Demasiados intentos de login fallidos, por favor intente en 15 minutos.' }
 });
 

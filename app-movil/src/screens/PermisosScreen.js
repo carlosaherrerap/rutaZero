@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, FlatList, TouchableOpacity, 
   Modal, TextInput, Alert, ActivityIndicator 
@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFocusEffect } from '@react-navigation/native';
 
 const PermisosScreen = () => {
   const { api } = useContext(AuthContext);
@@ -39,8 +40,9 @@ const PermisosScreen = () => {
     }
   };
 
-  const fetchPermisos = async () => {
+  const fetchPermisos = useCallback(async () => {
     try {
+      setLoading(true);
       const res = await api.get('/api/workers/me/permisos');
       setPermisos(res.data.data);
     } catch (e) {
@@ -48,9 +50,13 @@ const PermisosScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
-  useEffect(() => { fetchPermisos(); }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchPermisos();
+    }, [fetchPermisos])
+  );
 
   const handleRequest = async () => {
     if (!form.fecha_inicio || !form.descripcion) {

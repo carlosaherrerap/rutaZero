@@ -52,16 +52,19 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 })); // OWASP: Secure HTTP Headers & Anti-XSS
 
+// Habilitar 'trust proxy' para que express-rate-limit lea la IP real detrás del balanceador de carga de Render
+app.set('trust proxy', 1);
+
 // Rate Limiting (Protección contra DDoS L7 y Fuerza Bruta)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 peticiones por IP por ventana
+  max: 300, // Límite incrementado a 300 para permitir subida de múltiples fotos y uso normal de la app
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas peticiones desde esta IP, por favor intente más tarde.' }
 });
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000', 'https://rutazero-portal-94wv.onrender.com'];
 app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sin origin (ej. mobile app curl, etc) o que estén en la lista
