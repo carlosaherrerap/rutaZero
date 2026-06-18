@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext.jsx';
 import { Users, Wallet, Activity, Map as MapIcon, CheckCircle, AlertCircle, Calendar, CreditCard, ChevronRight } from 'lucide-react';
 import arequipaImg from '../assets/arequipa.png';
 import limaImg from '../assets/lima.png';
+import { getAvatarUrl } from '../utils/avatar.js';
 
 // Componente para animar los números (Counter)
 function AnimatedNumber({ value }) {
@@ -49,8 +50,10 @@ export default function Dashboard() {
   const [exportStart, setExportStart] = useState('');
   const [exportEnd, setExportEnd] = useState('');
 
-  // Sede Image Logic
-  const heroImage = sedeActual?.nombre?.toLowerCase().includes('arequipa') ? arequipaImg : limaImg;
+  // Sede Image Logic - Imágenes de alta calidad (Tech/SaaS)
+  const heroImage = sedeActual?.nombre?.toLowerCase().includes('arequipa') 
+    ? 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2564&auto=format&fit=crop' // Modern circuit board / tech
+    : 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2564&auto=format&fit=crop'; // Matrix / Code aesthetic
 
   useEffect(() => { fetchData(); }, [api]);
 
@@ -131,21 +134,23 @@ export default function Dashboard() {
           key={`hero-container-${sedeActual?.id}`}
           style={{ 
             position: 'absolute', 
-            right: '-10px', 
-            top: '50%', 
-            transform: 'translateY(-50%)',
+            inset: 0, 
             zIndex: 1,
             animation: 'heroSlideIn 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards'
           }}
         >
+          <div style={{ position: 'absolute', inset: 0, background: 'var(--c-surface)', zIndex: 1, opacity: 0.3 }} />
           <img 
             src={heroImage} 
             alt="Hero Sede" 
             style={{ 
-              maxHeight: '280px', 
-              width: 'auto', 
-              opacity: 0.8,
-              mixBlendMode: 'lighten'
+              width: '100%', 
+              height: '100%', 
+              objectFit: 'cover',
+              opacity: 0.4,
+              mixBlendMode: 'screen',
+              maskImage: 'linear-gradient(to right, var(--c-surface) 0%, transparent 80%)',
+              WebkitMaskImage: 'linear-gradient(to right, black 20%, transparent 100%)'
             }} 
           />
         </div>
@@ -171,65 +176,39 @@ export default function Dashboard() {
       </section>
 
       {/* STATS SCROLLABLE */}
-      <div style={{ overflowX: 'auto', paddingBottom: '16px', marginBottom: '24px', cursor: 'grab' }}>
-        <div style={{ display: 'flex', gap: '20px', minWidth: 'max-content', padding: '4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', padding: '4px' }}>
           {[
-            { label: 'TOTAL CLIENTES', value: stats.totalClientes, sub: 'TOTAL CARTERA', color: 'var(--c-primary)', icon: <Users size={48} />, bg: 'var(--c-primary-soft)' },
-            { label: 'PAGOS DE HOY', value: stats.clientesPagoHoy, sub: 'VENCEN HOY', color: 'var(--c-accent)', icon: <Wallet size={48} />, bg: 'var(--c-accent-soft)' },
-            { label: 'WORKERS ACTIVOS', value: stats.workersActivos, sub: 'EN JORNADA', color: 'var(--c-info)', icon: <Activity size={48} />, bg: 'var(--c-info-soft)' },
-            { label: 'RUTAS HOY', value: stats.rutasHoy, sub: 'ASIGNADAS', color: 'var(--c-primary)', icon: <MapIcon size={48} />, bg: 'var(--c-primary-soft)' },
-            { label: 'GESTIONES', value: stats.gestionesHoy, sub: 'REALIZADAS', color: 'var(--c-success)', icon: <CheckCircle size={48} />, bg: 'var(--c-success-soft)' },
-            {
-              label: 'NO ENCONTRADOS',
-              value: stats.clientesPorEstado?.filter(e => e.estado === 'NO_ENCONTRADO' || e.estado === 'NO ENCONTRADO' || e.estado === 'NO_ECONTRADO').reduce((acc, curr) => acc + parseInt(curr.total), 0) || 0,
-              sub: 'AUSENTES', color: 'var(--c-danger)', icon: <AlertCircle size={48} />, bg: 'var(--c-danger-soft)'
-            },
-            {
-              label: 'REPROGRAMADOS',
-              value: stats.clientesPorEstado?.find(e => e.estado === 'REPROGRAMADO')?.total || 0,
-              sub: 'PENDIENTES', color: 'var(--c-warn)', icon: <Calendar size={48} />, bg: 'var(--c-warn-soft)'
-            },
-            {
-              label: 'PAGARON',
-              value: stats.clientesPorEstado?.find(e => e.estado === 'VISITADO_PAGO')?.total || 0,
-              sub: 'GESTIONADOS', color: '#10b981', icon: <CreditCard size={48} />, bg: 'rgba(16,185,129,0.1)'
-            },
+            { label: 'TOTAL CLIENTES', value: stats.totalClientes, sub: 'TOTAL CARTERA', color: '#22B8CF', icon: <Users size={140} strokeWidth={1} /> },
+            { label: 'PAGOS DE HOY', value: stats.clientesPagoHoy, sub: 'VENCEN HOY', color: '#FFFFFF', icon: <Wallet size={140} strokeWidth={1} /> },
+            { label: 'WORKERS ACTIVOS', value: stats.workersActivos, sub: 'EN JORNADA', color: '#4263EB', icon: <Activity size={140} strokeWidth={1} /> },
+            { label: 'RUTAS HOY', value: stats.rutasHoy, sub: 'ASIGNADAS', color: '#22B8CF', icon: <MapIcon size={140} strokeWidth={1} /> },
           ].map((s, i) => (
             <div 
               key={i} 
-              className="card stat-card-wide" 
+              className="card" 
               style={{ 
-                minWidth: '280px', flex: 1, padding: '24px', display: 'flex', alignItems: 'center', gap: '20px',
-                position: 'relative', overflow: 'hidden'
+                padding: '28px 24px', display: 'flex', flexDirection: 'column',
+                position: 'relative', overflow: 'hidden', minHeight: '160px',
+                border: '1px solid var(--c-border)'
               }}
             >
-              <div 
-                key={`icon-${sedeActual?.id}-${i}`}
-                style={{ 
-                  padding: '12px', borderRadius: '16px', background: s.bg, color: s.color, 
-                  animation: 'dropDown 0.8s ease-out forwards' 
-                }}
-              >
-                {s.icon}
-              </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ position: 'relative', zIndex: 2 }}>
                 <div 
                   key={`label-${sedeActual?.id}-${i}`}
                   style={{ 
-                    fontSize: '11px', fontWeight: '900', color: 'var(--c-muted)', letterSpacing: '1px', 
-                    animation: 'dropDown 0.7s ease-out forwards' 
+                    fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', letterSpacing: '1px', textTransform: 'uppercase',
+                    marginBottom: '8px'
                   }}
                 >
                   {s.label}
                 </div>
-                <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--c-text)', margin: '4px 0' }}>
+                <div style={{ fontSize: '42px', fontWeight: '900', color: '#FFF', margin: '0 0 4px 0', lineHeight: '1' }}>
                    <AnimatedNumber value={s.value} />
                 </div>
                 <div 
                   key={`sub-${sedeActual?.id}-${i}`}
                   style={{ 
-                    fontSize: '10px', fontWeight: 'bold', color: s.color, 
-                    animation: 'slideUp 0.8s ease-out forwards' 
+                    fontSize: '10px', fontWeight: '800', color: s.color, textTransform: 'uppercase', letterSpacing: '0.5px'
                   }}
                 >
                   {s.sub}
@@ -238,8 +217,8 @@ export default function Dashboard() {
               <div 
                 key={`bgicon-${sedeActual?.id}-${i}`}
                 style={{ 
-                  position: 'absolute', right: '-10px', bottom: '-10px', opacity: 0.05, transform: 'rotate(-15deg)', 
-                  animation: 'slideUp 1.2s ease-out forwards' 
+                  position: 'absolute', right: '-20px', bottom: '-30px', color: '#FFFFFF', opacity: 0.05,
+                  zIndex: 1
                 }}
               >
                 {s.icon}
@@ -247,8 +226,6 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </div>
-
       <div className="form-row form-row-2 mt-4">
         <div className="card">
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -259,14 +236,12 @@ export default function Dashboard() {
             {actividad.length === 0 ? (
               <p className="text-muted text-center py-4">Sin actividad reciente</p>
             ) : actividad.map((a, idx) => (
-              <div key={a.id || idx} className="activity-item">
-                <div className="sidebar-avatar" style={{ width: 36, height: 36, fontSize: 13 }}>
-                  {a.worker_nombre?.[0] || 'A'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600 }}>{a.worker_nombre} <span style={{ fontWeight: 400 }}>gestionó a</span> <strong>{a.cliente_nombre}</strong></div>
-                  <div className="text-xs" style={{ color: 'var(--c-muted)' }}>
-                    {a.tipificacion} • {new Date(a.created_at).toLocaleString()}
+              <div key={a.id || idx} className="activity-item" style={{ background: 'transparent', padding: '12px 0', borderBottom: '1px solid var(--c-border)', borderRadius: 0 }}>
+                <div className="avatar-small" style={{ width: '48px', height: '48px', borderRadius: '50%' }}><img src={getAvatarUrl(a.worker_nombre, a.worker_id)} alt={a.worker_nombre} style={{ borderRadius: '50%' }} /></div>
+                <div style={{ flex: 1, marginLeft: '4px' }}>
+                  <div style={{ fontSize: '15px', color: 'var(--c-text)' }}><strong>{a.worker_nombre}</strong> gestionó a <strong>{a.cliente_nombre}</strong></div>
+                  <div style={{ fontSize: '12px', color: 'var(--c-muted)', marginTop: '2px', fontWeight: '500' }}>
+                    {a.tipificacion} • {new Date(a.created_at).toLocaleString('es-PE')}
                   </div>
                 </div>
               </div>
@@ -288,22 +263,32 @@ export default function Dashboard() {
           <div className="card-header">
             <h3 className="card-title">Estado de Cartera</h3>
           </div>
-          <div className="chart-container">
-            {stats.clientesPorEstado?.map(e => (
-              <div key={e.estado} className="chart-bar-row">
-                <div className="chart-bar-label">{e.estado}</div>
-                <div className="chart-bar-track">
-                  <div
-                    className="chart-bar-fill"
-                    style={{
-                      width: `${(e.total / stats.totalClientes) * 100}%`,
-                      background: e.estado === 'LIBRE' ? 'var(--c-success)' : e.estado === 'VISITADO_PAGO' ? 'var(--c-info)' : (e.estado === 'NO_ENCONTRADO' || e.estado === 'NO_ECONTRADO') ? 'var(--c-danger)' : 'var(--c-warn)'
-                    }}
-                  ></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 20px' }}>
+            {stats.clientesPorEstado?.map(e => {
+              const estColor = e.estado === 'LIBRE' ? 'var(--c-success)' : 
+                               e.estado === 'VISITADO_PAGO' ? 'var(--c-info)' : 
+                               (e.estado === 'NO_ENCONTRADO' || e.estado === 'NO_ECONTRADO') ? 'var(--c-danger)' : 
+                               'var(--c-warn)';
+              const EstIcon = e.estado === 'LIBRE' ? CheckCircle : 
+                              e.estado === 'VISITADO_PAGO' ? Wallet : 
+                              (e.estado === 'NO_ENCONTRADO' || e.estado === 'NO_ECONTRADO') ? AlertCircle : 
+                              Calendar;
+              return (
+                <div key={e.estado} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--c-surface-2)', borderRadius: '12px', border: '1px solid var(--c-border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: estColor }}>
+                      <EstIcon size={20} strokeWidth={2.5} />
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--c-text)' }}>
+                      {e.estado.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: '900', color: estColor }}>
+                    {e.total}
+                  </div>
                 </div>
-                <div className="chart-bar-val">{e.total}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

@@ -129,9 +129,9 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   if (!cliente) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-        <ActivityIndicator size="large" color="#00A9BC" />
-        <Text style={{ marginTop: 10, color: '#64748B' }}>Cargando información...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0B' }}>
+        <ActivityIndicator size="large" color="#4263EB" />
+        <Text style={{ marginTop: 10, color: '#A1A1AA' }}>Cargando información...</Text>
       </View>
     );
   }
@@ -143,10 +143,10 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
   const getStatusInfo = (estado) => {
     switch (estado) {
-      case 'EN_VISITA': return { color: '#a855f7', label: 'EN CAMINO' };
-      case 'VISITADO_PAGO': return { color: '#10b981', label: 'GESTIONADO' };
-      case 'REPROGRAMADO': return { color: '#f59e0b', label: 'REPROGRAMADO' };
-      default: return { color: '#00A9BC', label: 'LIBRE' };
+      case 'EN_VISITA': return { color: '#845EF7', label: 'EN CAMINO' };
+      case 'VISITADO_PAGO': return { color: '#0CA678', label: 'GESTIONADO' };
+      case 'REPROGRAMADO': return { color: '#FFC038', label: 'REPROGRAMADO' };
+      default: return { color: '#4263EB', label: 'LIBRE' };
     }
   };
 
@@ -268,29 +268,29 @@ const DetalleClienteScreen = ({ route, navigation }) => {
                     longitude: parseFloat(cliente.longitud)
                   }}
                   title={cliente.nombres || ''}
-                  pinColor="#00A9BC"
+                  pinColor="#002FA7"
                 />
                 {routeCoords && routeCoords.length > 0 && (
                   <Polyline
                     coordinates={routeCoords}
-                    strokeColor="#00A9BC"
+                    strokeColor="#002FA7"
                     strokeWidth={5}
                   />
                 )}
               </MapView>
               
               <TouchableOpacity style={styles.fullscreenBtn} onPress={toggleFullscreen}>
-                <Ionicons name={isMapFullscreen ? "contract" : "expand"} size={22} color="#1E293B" />
+                <Ionicons name={isMapFullscreen ? "contract" : "expand"} size={22} color="#FFF" />
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.externalMapBtn} onPress={openExternalMaps}>
-                <Ionicons name="navigate" size={18} color="#00A9BC" />
+                <Ionicons name="navigate" size={18} color="#FFF" />
                 <Text style={styles.externalMapBtnText}>Abrir en Maps / Waze</Text>
               </TouchableOpacity>
             </>
           ) : (
             <View style={styles.mapPlaceholder}>
-              <Ionicons name="location-outline" size={50} color="#94a3b8" />
+              <Ionicons name="location-outline" size={50} color="#3F3F46" />
               <Text style={styles.mapPlaceholderText}>Sin coordenadas registradas</Text>
             </View>
           )}
@@ -317,9 +317,9 @@ const DetalleClienteScreen = ({ route, navigation }) => {
       {!isMapFullscreen && (
         <View style={styles.footer}>
           {ESTADOS_GESTIONADOS.includes(cliente.estado) ? (
-            <View style={[styles.mainBtn, { backgroundColor: 'rgba(255, 255, 255, 0.03)', width: '100%', elevation: 0, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]}>
-               <Ionicons name="checkmark-done-circle" size={20} color="#94a3b8" />
-               <Text style={[styles.mainBtnText, { color: '#94a3b8' }]}>CLIENTE YA GESTIONADO</Text>
+            <View style={[styles.mainBtn, { backgroundColor: '#141416', width: '100%', elevation: 0, borderWidth: 1, borderColor: '#28282E' }]}>
+               <Ionicons name="checkmark-done-circle" size={20} color="#0CA678" />
+               <Text style={[styles.mainBtnText, { color: '#0CA678' }]}>CLIENTE YA GESTIONADO</Text>
             </View>
           ) : isOwner ? (
             <View style={{ flexDirection: 'row', flex: 1, gap: 12 }}>
@@ -333,7 +333,7 @@ const DetalleClienteScreen = ({ route, navigation }) => {
                </TouchableOpacity>
                
                <TouchableOpacity 
-                 style={[styles.mainBtn, { backgroundColor: '#10b981', flex: 1.5 }]} 
+                 style={[styles.mainBtn, { backgroundColor: '#0CA678', flex: 1.5 }]} 
                  onPress={handleGoToFicha} 
                  disabled={loading}
                >
@@ -343,12 +343,12 @@ const DetalleClienteScreen = ({ route, navigation }) => {
             </View>
           ) : (
             <TouchableOpacity 
-              style={[styles.mainBtn, { backgroundColor: isLockedByOther ? 'rgba(255,255,255,0.03)' : '#00A9BC', width: '100%' }]} 
+              style={[styles.mainBtn, { backgroundColor: isLockedByOther ? '#141416' : '#4263EB', width: '100%', borderWidth: isLockedByOther ? 1 : 0, borderColor: '#28282E' }]} 
               onPress={handleStartVisit}
               disabled={loading || isLockedByOther}
             >
-              <Ionicons name={isLockedByOther ? "lock-closed" : "play"} size={20} color={isLockedByOther ? "#64748b" : "#fff"} />
-              <Text style={[styles.mainBtnText, { color: isLockedByOther ? "#64748b" : "#fff" }]}>
+              <Ionicons name={isLockedByOther ? "lock-closed" : "play"} size={20} color={isLockedByOther ? "#A1A1AA" : "#fff"} />
+              <Text style={[styles.mainBtnText, { color: isLockedByOther ? "#A1A1AA" : "#fff" }]}>
                 {isLockedByOther ? 'CLIENTE OCUPADO' : 'VISITAR'}
               </Text>
             </TouchableOpacity>
@@ -361,7 +361,7 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 
 const InfoRow = ({ icon, label, value }) => (
   <View style={styles.infoRow}>
-    <View style={styles.iconBox}><Ionicons name={icon} size={20} color="#00A9BC" /></View>
+    <View style={styles.iconBox}><Ionicons name={icon} size={20} color="#4263EB" /></View>
     <View style={styles.infoContent}>
       <Text style={styles.infoLabel}>{label}</Text>
       <Text style={styles.infoValue}>{value}</Text>
@@ -370,75 +370,78 @@ const InfoRow = ({ icon, label, value }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#0A0A0B' },
   scroll: { paddingBottom: 100 },
-  mapContainer: { width: width, height: 280, backgroundColor: '#F8FAFC', overflow: 'hidden' },
+  mapContainer: { width: width, height: 320, backgroundColor: '#141416', overflow: 'hidden' },
   mapFullscreen: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, height: windowHeight, zIndex: 1000, marginTop: 0 },
   map: { flex: 1 },
   fullscreenBtn: {
-    position: 'absolute', top: 12, right: 12,
-    backgroundColor: '#FFFFFF', padding: 10,
-    borderRadius: 12, zIndex: 110, borderWidth: 1, borderColor: '#E2E8F0'
+    position: 'absolute', top: 16, right: 16,
+    backgroundColor: '#141416', padding: 12,
+    borderRadius: 16, zIndex: 110, borderWidth: 1, borderColor: '#28282E',
+    shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width:0, height:4 }
   },
-  mapLoading: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-  mapLoadingText: { color: '#64748B', marginTop: 10, fontSize: 13 },
-  mapPlaceholder: { width: width, height: 280, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  mapPlaceholderText: { color: '#64748B', fontSize: 15, fontWeight: '600', marginTop: 10 },
+  mapLoading: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#141416', justifyContent: 'center', alignItems: 'center' },
+  mapLoadingText: { color: '#A1A1AA', marginTop: 10, fontSize: 13 },
+  mapPlaceholder: { width: width, height: 320, alignItems: 'center', justifyContent: 'center', padding: 20 },
+  mapPlaceholderText: { color: '#A1A1AA', fontSize: 15, fontWeight: '600', marginTop: 10 },
   externalMapBtn: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 45,
     left: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
+    backgroundColor: '#4263EB',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    shadowColor: '#4263EB', shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width:0, height:4 }
   },
-  externalMapBtnText: { color: '#00A9BC', fontSize: 12, fontWeight: '800', marginLeft: 8 },
+  externalMapBtnText: { color: '#FFF', fontSize: 14, fontWeight: '800', marginLeft: 8 },
   infoSection: { 
-    backgroundColor: '#FFFFFF', 
-    marginTop: -25, 
-    borderTopLeftRadius: 35, 
-    borderTopRightRadius: 35, 
+    backgroundColor: '#141416', 
+    marginTop: -30, 
+    borderTopLeftRadius: 32, 
+    borderTopRightRadius: 32, 
     padding: 30, 
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#28282E',
   },
-  clientName: { fontSize: 24, fontWeight: '900', color: '#1E293B' },
-  clientSub: { fontSize: 14, color: '#64748B', marginTop: 5 },
-  divider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 20 },
+  clientName: { fontSize: 26, fontWeight: '900', color: '#FFFFFF', letterSpacing: -1 },
+  clientSub: { fontSize: 15, color: '#A1A1AA', marginTop: 5, fontWeight: '500' },
+  divider: { height: 1, backgroundColor: '#28282E', marginVertical: 25 },
   infoRow: { flexDirection: 'row', marginBottom: 20, alignItems: 'center' },
-  iconBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: 'rgba(0, 169, 188, 0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  iconBox: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(66, 99, 235, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
   infoContent: { flex: 1 },
-  infoLabel: { fontSize: 10, color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5 },
-  infoValue: { fontSize: 15, color: '#1E293B', marginTop: 2, fontWeight: '500' },
-  statusBox: { marginTop: 10, padding: 15, backgroundColor: '#F8FAFC', borderRadius: 15, borderWidth: 1, borderColor: '#E2E8F0' },
-  statusLabel: { fontSize: 9, color: '#64748B', fontWeight: 'bold', letterSpacing: 0.5 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
-  statusText: { fontSize: 13, fontWeight: '700' },
+  infoLabel: { fontSize: 11, color: '#71717A', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
+  infoValue: { fontSize: 16, color: '#FFFFFF', marginTop: 4, fontWeight: '600' },
+  statusBox: { marginTop: 10, padding: 20, backgroundColor: '#0A0A0B', borderRadius: 20, borderWidth: 1, borderColor: '#28282E' },
+  statusLabel: { fontSize: 10, color: '#71717A', fontWeight: 'bold', letterSpacing: 1 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
+  statusText: { fontSize: 15, fontWeight: '800' },
   footer: { 
     position: 'absolute', 
     bottom: 0, 
     left: 0, 
     right: 0, 
-    padding: 20, 
-    backgroundColor: '#FFFFFF', 
+    padding: 24, 
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    backgroundColor: '#141416', 
     borderTopWidth: 1, 
-    borderTopColor: '#E2E8F0', 
+    borderTopColor: '#28282E', 
     flexDirection: 'row', 
-    gap: 10 
+    gap: 12 
   },
-  mainBtn: { height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
+  mainBtn: { height: 56, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', shadowColor: '#4263EB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width:0, height:4 } },
   mainBtnText: { color: '#fff', fontSize: 15, fontWeight: 'bold', marginLeft: 8 },
-  releaseBtn: { flex: 1, height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ef4444', backgroundColor: 'transparent' },
-  releaseBtnText: { color: '#ef4444', fontSize: 14, fontWeight: 'bold', marginLeft: 5 },
-  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255, 255, 255, 0.9)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
-  offlineText: { color: '#1E293B', fontWeight: 'bold', fontSize: 16, marginTop: 10 },
-  offlineSub: { color: '#64748B', fontSize: 12, marginTop: 4 }
+  releaseBtn: { flex: 1, height: 56, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E03131', backgroundColor: 'transparent' },
+  releaseBtnText: { color: '#E03131', fontSize: 14, fontWeight: 'bold', marginLeft: 5 },
+  offlineOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 10, 11, 0.9)', justifyContent: 'center', alignItems: 'center', zIndex: 20 },
+  offlineText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16, marginTop: 10 },
+  offlineSub: { color: '#A1A1AA', fontSize: 12, marginTop: 4 }
 });
 
 // Envuelve la pantalla con ErrorBoundary para capturar cualquier crash

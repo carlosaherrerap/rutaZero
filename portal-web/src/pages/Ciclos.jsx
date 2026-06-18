@@ -2,7 +2,8 @@ import React, { useEffect, useState, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { 
   RefreshCw, AlertTriangle, Download, Loader2, Upload, 
-  X, CheckCircle, WifiOff, Clock, CloudOff, Lock 
+  X, CheckCircle, WifiOff, Clock, CloudOff, Lock, ChevronDown,
+  FileSpreadsheet, FileDown, FileUp, MapPin, User, Calendar, Tag
 } from 'lucide-react';
 
 const ESTADO_COLORS = {
@@ -22,7 +23,7 @@ function EstadoBadge({ estado }) {
 }
 
 export default function Ciclos() {
-  const { api, token } = useContext(AuthContext);
+  const { api, token, sedeActual } = useContext(AuthContext);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liberando, setLiberando] = useState(null);
@@ -33,6 +34,7 @@ export default function Ciclos() {
   const [importing, setImporting] = useState(false);
   const [activeTab, setActiveTab] = useState('gestionados');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedClientDetail, setSelectedClientDetail] = useState(null);
   const itemsPerPage = 20;
   const fileRef = useRef();
 
@@ -50,9 +52,14 @@ export default function Ciclos() {
     finally { setLoading(false); }
   };
 
-  // Separar en dos grupos
-  const gestionados = clientes.filter(c => ['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'].includes(c.estado));
-  const noGestionados = clientes.filter(c => c.estado === 'LIBRE');
+  // Separar en dos grupos filtrando por sedeActual
+  const clientesFiltrados = clientes.filter(c => {
+    if (!sedeActual || !c.sede_id) return true;
+    return c.sede_id === sedeActual.id || c.sede === sedeActual.nombre;
+  });
+
+  const gestionados = clientesFiltrados.filter(c => ['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'].includes(c.estado));
+  const noGestionados = clientesFiltrados.filter(c => c.estado === 'LIBRE');
 
   const openLiberarModal = (c) => {
     setSelectedCliente(c);
@@ -177,22 +184,21 @@ export default function Ciclos() {
 
         {activeTab === 'gestionados' ? (
           <>
-            <button className="btn btn-primary btn-sm" onClick={handleDownloadGestionados} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-               <Download size={14} /> Descargar Ciclos (CSV)
+            <button onClick={handleDownloadGestionados} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: '8px', background: '#28a745', color: 'white', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '13px' }}>
+               <FileDown size={14} /> Descargar Ciclos (CSV)
             </button>
-            <button className="btn btn-ghost btn-sm" onClick={handleDescargarPlantilla}>
-              <Download size={14} /> Plantilla Excel
+            <button onClick={handleDescargarPlantilla} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: '8px', background: 'transparent', color: '#28a745', border: '1px solid #28a745', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+              <FileSpreadsheet size={14} /> Plantilla Excel
             </button>
-            <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {importing ? <><Loader2 size={14} className="animate-spin" /> Cargando...</> : <><Upload size={14} /> Importar Excel</>}
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: '8px', background: '#28a745', color: 'white', fontWeight: 'bold', border: 'none', fontSize: '13px' }}>
+              {importing ? <><Loader2 size={14} className="animate-spin" /> Cargando...</> : <><FileUp size={14} /> Importar Excel</>}
               <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleImportarExcel} disabled={importing} />
             </label>
           </>
         ) : (
           <button
-            className="btn btn-primary btn-sm"
             onClick={handleDownloadNoGestionados}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--c-danger)', borderColor: 'var(--c-danger)' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: '8px', background: 'var(--c-danger)', color: 'white', fontWeight: 'bold', border: 'none', cursor: 'pointer', fontSize: '13px' }}
           >
             <Download size={14} /> Descargar No Gestionados (CSV)
           </button>
@@ -223,82 +229,112 @@ export default function Ciclos() {
             : 'No hay clientes sin gestionar con fecha vencida'}
         </div>
       ) : (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th><th>DNI</th><th>Estado</th>
-                {activeTab === 'gestionados' && <>
-                  <th>Último Worker</th><th>Fecha Gestión</th><th>Tipificación</th>
-                </>}
-                <th>
-                  Fecha Pago{' '}
-                  {activeTab === 'no_gestionados' && (
-                    <span style={{ color: 'var(--c-danger)', fontSize: 10, fontWeight: 900 }}>(VENCIDA)</span>
-                  )}
-                </th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeList.map(c => (
-                <tr key={c.id}>
-                  <td>
-                    <div className="font-bold">{c.nombres} {c.apellidos}</div>
-                    <div className="text-sm text-muted">{c.direccion} — {c.distrito}</div>
-                  </td>
-                  <td>{c.dni}</td>
-                  <td><EstadoBadge estado={c.estado} /></td>
-                  {activeTab === 'gestionados' && (
-                    <>
-                      <td>{c.ultimo_worker || '—'}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          {c.fecha_gestion ? new Date(c.fecha_gestion).toLocaleDateString('es-PE') : '—'}
-                          {c.es_offline && <span title="Gestionado en modo offline" style={{ fontSize: '14px' }}><WifiOff size={14} /></span>}
-                          {c.tipificacion === 'NO_ENCONTRADO' && c.fecha_gestion && (
-                            <span
-                              title={`Hora exacta: ${new Date(c.fecha_gestion).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
-                              style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center' }}
-                            >
-                              <Clock size={14} />
-                            </span>
-                          )}
+        <div className="table-wrap" style={{ padding: 0, background: 'transparent', marginTop: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '48px', alignItems: 'start' }}>
+            
+            {/* Lista Izquierda */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', paddingRight: '12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', paddingLeft: '8px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                CLIENTES ({activeListAll.length})
+              </div>
+              {activeList.map(c => {
+                const isSelected = selectedClientDetail?.id === c.id;
+                return (
+                  <div 
+                    key={c.id} 
+                    onClick={() => setSelectedClientDetail(c)}
+                    style={{
+                      padding: '16px', background: isSelected ? 'var(--c-surface-2)' : 'var(--c-surface)', 
+                      border: '1px solid', borderColor: isSelected ? 'var(--c-primary)' : 'var(--c-border)', 
+                      borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                      borderLeft: isSelected ? '4px solid var(--c-primary)' : '1px solid var(--c-border)'
+                    }}
+                  >
+                    <div style={{ fontWeight: '800', fontSize: '14px', color: 'var(--c-text)' }}>{c.nombres} {c.apellidos}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--c-muted)', marginTop: '4px' }}>DNI: {c.dni}</div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Detalles Derecha */}
+            <div>
+              {selectedClientDetail ? (
+                <div className="card" style={{ padding: '32px', borderTop: '4px solid var(--c-primary)', animation: 'fadeIn 0.3s ease' }}>
+                  <div style={{ marginBottom: '24px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 4px 0', color: 'var(--c-text)' }}>{selectedClientDetail.nombres} {selectedClientDetail.apellidos}</h2>
+                    <div style={{ fontSize: '14px', color: 'var(--c-muted)' }}>DNI: {selectedClientDetail.dni}</div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <MapPin size={14} /> Dirección
+                      </div>
+                      <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--c-text)' }}>{selectedClientDetail.direccion} - {selectedClientDetail.distrito}</div>
+                    </div>
+                    
+                    {activeTab === 'gestionados' && (
+                      <>
+                        <div>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <User size={14} /> Último Worker
+                          </div>
+                          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--c-text)' }}>{selectedClientDetail.ultimo_worker || '—'}</div>
                         </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{
-                            fontWeight: 800, fontSize: 11,
-                            color: c.tipificacion === 'PAGO' ? 'var(--c-primary)' 
-                              : c.tipificacion === 'REPROGRAMARA' ? 'var(--c-warn)' 
-                              : c.tipificacion === 'NO_ENCONTRADO' ? 'var(--c-danger)'
-                              : 'var(--c-muted)'
-                          }}>
-                            {c.tipificacion || '—'}
-                          </span>
-                          {c.es_offline && (
-                            <span title="Offline" style={{ cursor: 'help' }}><CloudOff size={14} /></span>
-                          )}
+                        <div>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Calendar size={14} /> Fecha Gestión
+                          </div>
+                          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--c-text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {selectedClientDetail.fecha_gestion ? new Date(selectedClientDetail.fecha_gestion).toLocaleDateString('es-PE') : '—'}
+                            {selectedClientDetail.es_offline && <WifiOff size={14} color="var(--c-danger)" title="Modo Offline"/>}
+                          </div>
                         </div>
-                      </td>
-                    </>
-                  )}
-                  <td style={{
-                    color: activeTab === 'no_gestionados' ? 'var(--c-danger)' : 'inherit',
-                    fontWeight: activeTab === 'no_gestionados' ? 800 : 400
-                  }}>
-                    {c.fecha_pago ? new Date(c.fecha_pago).toLocaleDateString('es-PE') : '—'}
-                  </td>
-                  <td>
-                    <button className="btn btn-primary btn-sm" onClick={() => openLiberarModal(c)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Lock size={14} /> Reprogramar
+                        <div>
+                          <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Tag size={14} /> Tipificación
+                          </div>
+                          <div style={{ fontSize: '15px', fontWeight: '800', color: selectedClientDetail.tipificacion === 'PAGO' ? 'var(--c-primary)' : selectedClientDetail.tipificacion === 'REPROGRAMARA' ? 'var(--c-warn)' : 'var(--c-danger)' }}>{selectedClientDetail.tipificacion || '—'}</div>
+                        </div>
+                      </>
+                    )}
+                    
+                    <div>
+                      <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Calendar size={14} /> Fecha Pago {activeTab === 'no_gestionados' && <span style={{color: 'var(--c-danger)'}}>(VENCIDA)</span>}
+                      </div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: activeTab === 'no_gestionados' ? 'var(--c-danger)' : 'var(--c-text)' }}>{selectedClientDetail.fecha_pago ? new Date(selectedClientDetail.fecha_pago).toLocaleDateString('es-PE') : '—'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'var(--c-surface-2)', padding: '20px', borderRadius: '12px', border: '1px solid var(--c-border)', marginBottom: '24px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={14} /> Observación de Gestión
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'var(--c-text)', fontStyle: 'italic', lineHeight: '1.6' }}>"{selectedClientDetail.observacion || 'Sin observaciones registradas'}"</div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--c-border)', paddingTop: '24px' }}>
+                    <button 
+                      onClick={() => openLiberarModal(selectedClientDetail)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 28px', borderRadius: '8px', background: 'var(--c-accent)', color: '#fff', fontWeight: '800', fontSize: '14px', border: 'none', cursor: 'pointer', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#7a1fd6'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'var(--c-accent)'}
+                    >
+                      <Lock size={16} /> LIBERAR
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="card text-center" style={{ padding: '80px 40px', color: 'var(--c-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <User size={64} style={{ opacity: 0.1, marginBottom: '24px' }} />
+                  <p style={{ fontSize: '16px', fontWeight: '500' }}>Selecciona un cliente de la lista de la izquierda<br/>para ver su información detallada</p>
+                </div>
+              )}
+            </div>
+
+          </div>
 
           {/* PAGINACIÓN */}
           {totalPages > 1 && (

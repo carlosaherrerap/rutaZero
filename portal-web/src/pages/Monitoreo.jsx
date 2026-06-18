@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Clock, Timer, Navigation, Save, Coffee, PlayCircle, ChevronRight, Info } from 'lucide-react';
+import { getAvatarUrl } from '../utils/avatar.js';
 
 export default function Monitoreo() {
   const { api, sedeActual } = useContext(AuthContext);
@@ -49,12 +50,14 @@ export default function Monitoreo() {
 
   return (
     <div className="dashboard-page">
-      <section className="card mb-6" style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontFamily: 'Serimi, sans-serif', fontSize: '32px', margin: 0 }}>Análisis de Productividad - {sedeActual?.nombre}</h1>
-          <p className="muted">Monitoreo de tiempos de transición y ejecución en campo para esta sede.</p>
+      <section className="card mb-6" style={{ position: 'relative', overflow: 'hidden', padding: '32px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: 'none', background: 'var(--c-surface)' }}>
+        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '40%', background: 'linear-gradient(to right, var(--c-surface), transparent)', zIndex: 2 }} />
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80" style={{ position: 'absolute', right: '-50px', top: '50%', transform: 'translateY(-50%)', height: '150%', opacity: 0.15, mixBlendMode: 'screen', zIndex: 1, maskImage: 'linear-gradient(to right, transparent, black 60%)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 60%)' }} alt="Background" />
+        <div style={{ position: 'relative', zIndex: 3 }}>
+          <h1 style={{ fontFamily: 'var(--font-main), Serimi, sans-serif', fontSize: '32px', margin: 0, color: 'var(--c-text)', letterSpacing: '-0.5px' }}>Análisis de Productividad - {sedeActual?.nombre}</h1>
+          <p className="muted" style={{ marginTop: '4px' }}>Monitoreo de tiempos de transición y ejecución en campo para esta sede.</p>
         </div>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', position: 'relative', zIndex: 3 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--c-muted)', letterSpacing: '0.5px' }}>FILTRAR POR WORKER:</span>
             <select 
@@ -101,7 +104,9 @@ export default function Monitoreo() {
                 borderBottom: '1px solid var(--c-border)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div className="sidebar-avatar">{w.worker_nombre[0]}</div>
+                  <div className="avatar-small">
+                    <img src={getAvatarUrl(w.nombres, w.worker_id)} alt="avatar" />
+                  </div>
                   <h3 style={{ margin: 0, fontWeight: 900 }}>{w.worker_nombre}</h3>
                 </div>
                 <div style={{ display: 'flex', gap: '32px' }}>

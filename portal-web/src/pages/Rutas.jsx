@@ -59,6 +59,7 @@ export default function Rutas() {
   const [creating, setCreating] = useState(false);
   const [filterPago, setFilterPago] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
   const [searchAvail, setSearchAvail] = useState('');
+  const [selectedRouteIdToView, setSelectedRouteIdToView] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -207,52 +208,89 @@ export default function Rutas() {
         <button className="btn btn-primary" onClick={() => { setEditMode(false); setShowModal(true); }}>+ CREAR RUTA</button>
       </div>
 
-      <div className="card" style={{ overflowX: 'auto' }}>
-        <table className="table" style={{ minWidth: '1100px' }}>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Worker</th>
-              <th>Fecha</th>
-              <th>Total Clientes</th>
-              <th>Libres</th>
-              <th>Reprogramados</th>
-              <th>En Visita</th>
-              <th>No Encontrados</th>
-              <th>Gestionados</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rutas.map(r => (
-              <tr key={r.id}>
-                <td><b style={{ color: 'var(--c-primary)' }}>{r.nombre}</b></td>
-                <td>{r.worker_nombre} {r.worker_apellido}</td>
-                <td>{new Date(r.fecha_asignacion).toLocaleDateString('es-PE')}</td>
-                <td className="text-center font-bold">{r.total_clientes}</td>
-                <td className="text-center" style={{ color: 'var(--c-info)' }}>{r.cant_libres || 0}</td>
-                <td className="text-center" style={{ color: 'var(--c-warn)' }}>{r.cant_repro || 0}</td>
-                <td className="text-center" style={{ color: 'var(--c-accent)' }}>{r.cant_visita || 0}</td>
-                <td className="text-center" style={{ color: 'var(--c-danger)' }}>{r.cant_no_enc || 0}</td>
-                <td className="text-center" style={{ color: 'var(--c-success)' }}>{r.cant_gest || 0}</td>
-                <td>
-                  <span className={`badge badge-${r.completada ? 'success' : 'info'}`}>
-                    {r.completada ? 'COMPLETADA' : 'EN PROCESO'}
-                  </span>
-                </td>
-                <td>
-                  <div className="flex gap-2">
-                    <button className="btn btn-primary btn-sm" onClick={() => handleEditRuta(r.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Eye size={16}/> EDITAR
-                    </button>
-                    <button className="btn-icon color-danger" onClick={() => handleDeleteRuta(r.id)} title="Borrar ruta"><Trash2 size={18}/></button>
+      {/* NUEVA VISTA PRINCIPAL DE RUTAS */}
+      <div className="card" style={{ marginBottom: '24px', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <h3 style={{ fontSize: '13px', fontWeight: '900', margin: '0 0 16px 0', textTransform: 'uppercase', color: 'var(--c-muted)' }}>RUTAS ACTIVAS ({rutas.length})</h3>
+            <select 
+              className="form-input" 
+              style={{ width: '350px', fontSize: '14px', fontWeight: '600' }}
+              value={selectedRouteIdToView} 
+              onChange={e => setSelectedRouteIdToView(e.target.value)}
+            >
+              <option value="">-- Selecciona una ruta para ver detalles --</option>
+              {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre} (Worker: {r.worker_nombre})</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '24px', background: 'var(--c-surface-2)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--c-border)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-success)' }}></div> GESTIONADOS</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-warn)' }}></div> REPROGRAMADOS</span>
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--c-muted)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-accent)' }}></div> EN VISITA</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-info)' }}></div> LIBRES</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--c-danger)' }}></div> NO ENCONTRADO</span>
+            </div>
+          </div>
+        </div>
+
+        {selectedRouteIdToView && (() => {
+          const rSelected = rutas.find(r => r.id === selectedRouteIdToView);
+          if (!rSelected) return null;
+          return (
+            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed var(--c-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>RESUMEN DE RUTA</div>
+                  <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--c-text)' }}>TOTAL: {rSelected.total_clientes} CLIENTES</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800', color: 'var(--c-success)' }} title="Gestionados">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--c-success)' }}></div>
+                    {rSelected.cant_gest || 0}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800', color: 'var(--c-warn)' }} title="Reprogramados">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--c-warn)' }}></div>
+                    {rSelected.cant_repro || 0}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800', color: 'var(--c-accent)' }} title="En Visita">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--c-accent)' }}></div>
+                    {rSelected.cant_visita || 0}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800', color: 'var(--c-info)' }} title="Libres">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--c-info)' }}></div>
+                    {rSelected.cant_libres || 0}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', fontWeight: '800', color: 'var(--c-danger)' }} title="No Encontrado">
+                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--c-danger)' }}></div>
+                    {rSelected.cant_no_enc || 0}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span className={`badge badge-${rSelected.completada ? 'success' : 'info'}`} style={{ padding: '6px 12px', fontSize: '11px', fontWeight: '800' }}>
+                  {rSelected.completada ? 'COMPLETADA' : 'EN PROCESO'}
+                </span>
+                <button className="btn btn-primary btn-sm" onClick={() => handleEditRuta(rSelected.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '8px 16px' }}>
+                  <Eye size={16}/> EDITAR
+                </button>
+                <button className="btn btn-sm" onClick={() => {
+                  if (window.confirm('¿Estás seguro de eliminar esta ruta?')) {
+                    handleDeleteRuta(rSelected.id);
+                    setSelectedRouteIdToView('');
+                  }
+                }} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', padding: '8px 16px', background: 'var(--c-danger)', color: '#fff', border: 'none' }}>
+                  <Trash2 size={16}/> ELIMINAR
+                </button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* PLANIFICADOR DE RUTA (REDISEÑO DE ESTRUCTURA) */}

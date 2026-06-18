@@ -4,6 +4,7 @@ import { MessageSquare, Send, X, Bot, User, HelpCircle } from 'lucide-react';
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: '¡Hola! Soy tu asistente de Routing. ¿Sobre qué cliente o trabajador necesitas información?' }
   ]);
@@ -110,7 +111,53 @@ const ChatBot = () => {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999, fontFamily: 'Poppins, sans-serif', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+    <>
+      <style>
+        {`
+          .gota {
+              width: 60px;
+              height: 60px;
+              background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+              border-radius: 50% 50% 50% 10% / 50% 50% 50% 50%;
+              box-shadow: 
+                  inset -3px -3px 6px rgba(255,255,255,0.5),
+                  inset 3px 3px 10px rgba(0,0,0,0.1),
+                  0 10px 15px rgba(0,0,0,0.1);
+              transform: rotate(45deg);
+              position: relative;
+              cursor: pointer;
+              border: none;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: transform 0.2s;
+          }
+          .gota:hover {
+              transform: rotate(45deg) scale(1.05);
+          }
+          .gota:hover .gota-icon-path {
+              fill: url(#ai-gradient);
+          }
+          .gota::before {
+              content: '';
+              position: absolute;
+              top: 9px;
+              left: 9px;
+              width: 18px;
+              height: 9px;
+              background: rgba(255,255,255,0.8);
+              border-radius: 50%;
+              transform: rotate(-20deg);
+          }
+          .gota-content {
+              transform: rotate(-45deg);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+          }
+        `}
+      </style>
+      <div style={{ position: 'fixed', bottom: '30px', right: '30px', zIndex: 9999, fontFamily: 'Poppins, sans-serif', display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
       
       <button 
         onClick={handleStartTour}
@@ -125,8 +172,28 @@ const ChatBot = () => {
         <HelpCircle size={22} />
       </button>
 
-      <button onClick={() => setIsOpen(!isOpen)} style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: 'var(--c-primary)', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 24px rgba(0, 169, 188, 0.4)' }}>
-        {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
+      <button 
+        className="gota"
+        onClick={() => setIsOpen(!isOpen)} 
+      >
+        <div className="gota-content">
+          {isOpen ? <X size={26} color="#333" /> : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path className="gota-icon-path" d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="#333" style={{ transition: 'fill 0.3s' }}/>
+                  <path className="gota-icon-path" d="M19 4L19.8 6.2L22 7L19.8 7.8L19 10L18.2 7.8L16 7L18.2 6.2L19 4Z" fill="#333" style={{ transition: 'fill 0.3s' }}/>
+               </svg>
+               <svg width="0" height="0">
+                 <defs>
+                   <linearGradient id="ai-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                     <stop offset="0%" stopColor="#00d2ff" />
+                     <stop offset="100%" stopColor="#8a2be2" />
+                   </linearGradient>
+                 </defs>
+               </svg>
+            </div>
+          )}
+        </div>
       </button>
 
       {isOpen && (
@@ -153,6 +220,7 @@ const ChatBot = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

@@ -5,6 +5,7 @@ import {
   CheckCircle2, PlayCircle, StopCircle, Coffee, 
   ClipboardList, Map as MapIcon, Timer 
 } from 'lucide-react';
+import { getAvatarUrl } from '../utils/avatar.js';
 
 export default function Asistencia() {
   const { api, token } = useContext(AuthContext);
@@ -93,8 +94,8 @@ export default function Asistencia() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: '900', color: 'var(--c-muted)', textTransform: 'uppercase' }}>Calendario</h3>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn-icon btn-sm" onClick={() => handleMonthNav(-1)}><ChevronLeft size={16}/></button>
-              <button className="btn-icon btn-sm" onClick={() => handleMonthNav(1)}><ChevronRight size={16}/></button>
+              <button className="btn-icon btn-sm" style={{ background: 'var(--c-surface-2)', color: 'var(--c-text)' }} onClick={() => handleMonthNav(-1)}><ChevronLeft size={16}/></button>
+              <button className="btn-icon btn-sm" style={{ background: 'var(--c-surface-2)', color: 'var(--c-text)' }} onClick={() => handleMonthNav(1)}><ChevronRight size={16}/></button>
             </div>
           </div>
           <div style={{ textAlign: 'center', marginBottom: '20px', fontSize: '16px', fontWeight: '800', color: 'var(--c-primary)', textTransform: 'capitalize' }}>
@@ -165,7 +166,9 @@ export default function Asistencia() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--c-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--c-primary)', fontSize: '16px' }}>{j.nombres[0]}</div>
+                  <div className="avatar-small" style={{ width: '40px', height: '40px' }}>
+                    <img src={getAvatarUrl(j.nombres, j.worker_id)} alt="avatar" />
+                  </div>
                   <div>
                     <div style={{ fontSize: '14px', fontWeight: '700' }}>{j.nombres} {j.apellidos}</div>
                     <div style={{ fontSize: '11px', color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -186,8 +189,8 @@ export default function Asistencia() {
             <div className="card" style={{ padding: '24px' }}>
               {/* Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--c-border)' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'var(--c-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', color: 'var(--c-on-primary)', fontSize: '22px' }}>
-                  {selectedWorkerDetails.nombres[0]}
+                <div className="avatar-small" style={{ width: '56px', height: '56px', borderRadius: '16px' }}>
+                  <img src={getAvatarUrl(selectedWorkerDetails.nombres, selectedWorkerDetails.worker_id)} alt="avatar" />
                 </div>
                 <div>
                   <h2 style={{ fontSize: '20px', fontWeight: '900', margin: 0 }}>{selectedWorkerDetails.nombres} {selectedWorkerDetails.apellidos}</h2>

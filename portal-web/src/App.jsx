@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard.jsx';
 import MapPage from './pages/Map.jsx';
 import Clientes from './pages/Clientes.jsx';
 import Workers from './pages/Workers.jsx';
+import WorkerDetail from './pages/WorkerDetail.jsx';
 import Rutas from './pages/Rutas.jsx';
 import Asistencia from './pages/Asistencia.jsx';
 import Ciclos from './pages/Ciclos.jsx';
@@ -49,6 +50,8 @@ const Icon = ({ name, size = 16 }) => {
 function Sidebar() {
   const { sedeActual, cambiarSede } = useContext(AuthContext);
   const [isHighlighting, setIsHighlighting] = React.useState(false);
+  const [showSedeMenu, setShowSedeMenu] = React.useState(false);
+  const sedeDropdownRef = React.useRef(null);
 
   const sedesList = [
     { id: '11111111-1111-1111-1111-000000000001', nombre: 'Lima' },
@@ -64,6 +67,16 @@ function Sidebar() {
     return () => window.removeEventListener('highlight-sede-selector', handleHighlight);
   }, []);
 
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (sedeDropdownRef.current && !sedeDropdownRef.current.contains(event.target)) {
+        setShowSedeMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sedeDropdownRef]);
+
   const handleSedeChange = (e) => {
     const selected = sedesList.find(s => s.nombre === e.target.value);
     if (selected) cambiarSede(selected);
@@ -74,26 +87,44 @@ function Sidebar() {
       <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid var(--c-border)', marginBottom: '10px' }}>
         <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px', filter: 'var(--logo-filter)' }} />
 
-        <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease' }}>
+        <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease', position: 'relative' }} ref={sedeDropdownRef}>
           <div style={{ fontSize: '9px', color: isHighlighting ? 'var(--c-primary)' : 'var(--c-muted)', fontWeight: '900', marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>SEDE ACTUAL</div>
-          <div style={{ position: 'relative' }}>
-            <select
-              className="form-input"
-              style={{ 
-                background: 'var(--c-surface-2)', fontSize: '11px', fontWeight: '800', height: '36px', paddingLeft: '12px', 
-                border: isHighlighting ? '2px solid var(--c-primary)' : '1px solid var(--c-border)', 
-                borderRadius: '10px',
-                boxShadow: isHighlighting ? '0 0 15px rgba(0, 169, 188, 0.4)' : 'none'
-              }}
-              value={sedeActual.nombre}
-              onChange={handleSedeChange}
-            >
-              {sedesList.map(s => <option key={s.id}>{s.nombre}</option>)}
-            </select>
-            <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 9l6 6 6-6" /></svg>
+          <button
+            onClick={() => setShowSedeMenu(!showSedeMenu)}
+            style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              width: '100%', background: 'var(--c-surface-2)', fontSize: '11px', fontWeight: '800', height: '36px', padding: '0 12px',
+              border: isHighlighting ? '2px solid var(--c-primary)' : '1px solid var(--c-border)',
+              borderRadius: '10px', color: 'var(--c-text)', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            <span>{sedeActual.nombre}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showSedeMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.5 }}><path d="M6 9l6 6 6-6" /></svg>
+          </button>
+          
+          {showSedeMenu && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0,
+              backgroundColor: 'var(--c-surface)', borderRadius: '12px', border: '1px solid var(--c-border)',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 9999, overflow: 'hidden', animation: 'dropdownIn 0.2s ease-out'
+            }}>
+              {sedesList.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => { cambiarSede(s); setShowSedeMenu(false); }}
+                  style={{
+                    display: 'block', width: '100%', padding: '10px 12px', textAlign: 'left', background: 'none', border: 'none',
+                    cursor: 'pointer', fontSize: '11px', fontWeight: '800', color: s.nombre === sedeActual.nombre ? 'var(--c-primary)' : 'var(--c-text)',
+                    backgroundColor: s.nombre === sedeActual.nombre ? 'var(--c-surface-2)' : 'transparent', transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-surface-2)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = s.nombre === sedeActual.nombre ? 'var(--c-surface-2)' : 'transparent'}
+                >
+                  {s.nombre}
+                </button>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -280,8 +311,7 @@ function AppLayout({ children, title }) {
   return (
     <div className="app-shell">
       <Sidebar />
-      <div className="main-area">
-        <div className="grid-bg" aria-hidden="true" />
+      <div className="main-area fade-in">
         <Topbar title={title} />
         <main className="page-content">{children}</main>
         <UserGuide />
@@ -308,6 +338,7 @@ export default function App() {
         <Route path="/map" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
         <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
         <Route path="/workers" element={<ProtectedRoute><Workers /></ProtectedRoute>} />
+        <Route path="/workers/:id" element={<ProtectedRoute title="Detalle Worker"><WorkerDetail /></ProtectedRoute>} />
         <Route path="/rutas" element={<ProtectedRoute><Rutas /></ProtectedRoute>} />
         <Route path="/asistencia" element={<ProtectedRoute><Asistencia /></ProtectedRoute>} />
         <Route path="/localizar" element={<ProtectedRoute><Localizar /></ProtectedRoute>} />

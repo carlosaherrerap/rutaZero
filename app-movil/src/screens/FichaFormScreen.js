@@ -223,7 +223,7 @@ export default function FichaFormScreen({ route, navigation }) {
             <View style={styles.formGrid}>
                {cliente.plantilla_campos ? (
                  <>
-                   <Text style={[styles.inputLabel, {color: '#00A9BC', fontWeight: 'bold'}]}>Formulario: {cliente.plantilla_nombre}</Text>
+                   <Text style={[styles.inputLabel, {color: '#4263EB', fontWeight: 'bold'}]}>Formulario: {cliente.plantilla_nombre}</Text>
                    {(typeof cliente.plantilla_campos === 'string' ? JSON.parse(cliente.plantilla_campos) : cliente.plantilla_campos).map((field, idx) => (
                      <InputRow 
                        key={idx}
@@ -247,7 +247,7 @@ export default function FichaFormScreen({ route, navigation }) {
                    {/* Fecha de Desembolso */}
                    <Text style={styles.inputLabel}>Fecha Desembolso</Text>
                    <View style={styles.dateDisplay}>
-                     <Ionicons name="calendar-outline" size={16} color="#00A9BC" />
+                     <Ionicons name="calendar-outline" size={16} color="#4263EB" />
                      <Text style={styles.dateText}>{formData.fecha_desembolso}</Text>
                    </View>
 
@@ -322,7 +322,7 @@ export default function FichaFormScreen({ route, navigation }) {
               ))}
               {fotos.length < 5 && (
                 <TouchableOpacity style={styles.addPhotoBtn} onPress={pickImage}>
-                   <Ionicons name="camera" size={32} color="#00A9BC" />
+                   <Ionicons name="camera" size={32} color="#4263EB" />
                    <Text style={styles.addPhotoText}>Tomar Foto</Text>
                 </TouchableOpacity>
               )}
@@ -399,113 +399,113 @@ const TipiBtn = ({ label, icon, active, onPress, color }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#0A0A0B' },
   stepIndicator: { 
     flexDirection: 'row', 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: '#0A0A0B', 
     padding: 15, 
     alignItems: 'center', 
     justifyContent: 'center', 
     borderBottomWidth: 1, 
-    borderBottomColor: '#E2E8F0' 
+    borderBottomColor: '#28282E' 
   },
   stepIconContainer: { alignItems: 'center' },
-  stepCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-  stepCircleActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
-  stepCircleCurrent: { borderWidth: 2, borderColor: '#00A9BC' },
-  stepNum: { fontSize: 11, fontWeight: 'bold', color: '#64748B' },
+  stepCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#141416', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#28282E' },
+  stepCircleActive: { backgroundColor: '#4263EB', borderColor: '#4263EB', shadowColor: '#4263EB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width:0, height:4 } },
+  stepCircleCurrent: { borderWidth: 2, borderColor: '#4263EB' },
+  stepNum: { fontSize: 13, fontWeight: 'bold', color: '#A1A1AA' },
   stepNumActive: { color: '#fff' },
-  stepLabel: { fontSize: 10, color: '#64748B', marginTop: 4, fontWeight: 'bold' },
-  stepLabelActive: { color: '#00A9BC' },
-  stepLine: { width: 40, height: 2, backgroundColor: '#E2E8F0', marginHorizontal: 10, marginTop: -12 },
+  stepLabel: { fontSize: 11, color: '#71717A', marginTop: 6, fontWeight: 'bold' },
+  stepLabelActive: { color: '#4263EB' },
+  stepLine: { width: 40, height: 2, backgroundColor: '#28282E', marginHorizontal: 10, marginTop: -16 },
   scroll: { padding: 25 },
   stepContent: { flex: 1 },
-  stepTitle: { fontSize: 22, fontWeight: '900', color: '#1E293B', marginBottom: 8 },
-  stepSub: { color: '#64748B', fontSize: 13, marginBottom: 25 },
+  stepTitle: { fontSize: 24, fontWeight: '900', color: '#FFFFFF', marginBottom: 8, letterSpacing: -0.5 },
+  stepSub: { color: '#A1A1AA', fontSize: 14, marginBottom: 25 },
   dataCard: { 
-    backgroundColor: '#FFFFFF', 
-    padding: 20, 
+    backgroundColor: '#141416', 
+    padding: 24, 
     borderRadius: 20, 
     marginBottom: 25, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0',
+    borderColor: '#28282E',
   },
   dataRow: { marginBottom: 15 },
-  dataLabel: { fontSize: 10, color: '#64748B', fontWeight: '800', letterSpacing: 0.5 },
-  dataVal: { fontSize: 15, color: '#1E293B', fontWeight: '600', marginTop: 2 },
-  highlightVal: { fontSize: 18, color: '#00A9BC', fontWeight: '950' },
-  nextBtn: { flex: 1, backgroundColor: '#00A9BC', height: 55, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  nextBtnText: { color: '#fff', fontWeight: '800', marginRight: 10 },
+  dataLabel: { fontSize: 11, color: '#71717A', fontWeight: '800', letterSpacing: 1 },
+  dataVal: { fontSize: 16, color: '#FFFFFF', fontWeight: '600', marginTop: 4 },
+  highlightVal: { fontSize: 20, color: '#4263EB', fontWeight: '900' },
+  nextBtn: { flex: 1, backgroundColor: '#4263EB', height: 56, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', shadowColor: '#4263EB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width:0, height:4 } },
+  nextBtnText: { color: '#fff', fontWeight: '800', marginRight: 10, fontSize: 15 },
   btnRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  backBtn: { height: 55, flex: 0.4, justifyContent: 'center', alignItems: 'center' },
-  backBtnText: { color: '#64748B', fontWeight: '800' },
+  backBtn: { height: 56, flex: 0.4, justifyContent: 'center', alignItems: 'center', backgroundColor: '#141416', borderRadius: 16, borderWidth: 1, borderColor: '#28282E', marginRight: 10 },
+  backBtnText: { color: '#A1A1AA', fontWeight: '800', fontSize: 14 },
   formGrid: { marginBottom: 20 },
   inputBox: { marginBottom: 15 },
-  inputLabel: { fontSize: 11, fontWeight: '800', color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  inputLabel: { fontSize: 12, fontWeight: '800', color: '#71717A', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
   textInput: { 
-    backgroundColor: '#F8FAFC', 
-    height: 50, 
+    backgroundColor: '#141416', 
+    height: 52, 
     borderRadius: 12, 
-    paddingHorizontal: 15, 
+    paddingHorizontal: 16, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0', 
-    fontSize: 14,
-    color: '#1E293B'
+    borderColor: '#28282E', 
+    fontSize: 15,
+    color: '#FFFFFF'
   },
   row: { flexDirection: 'row' },
-  pickerRow: { flexDirection: 'row', gap: 5 },
+  pickerRow: { flexDirection: 'row', gap: 8 },
   pickerRowMB: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  miniBtn: { flex: 1, height: 45, backgroundColor: '#F8FAFC', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-  miniBtnActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
-  miniBtnText: { color: '#64748B', fontWeight: 'bold' },
+  miniBtn: { flex: 1, height: 48, backgroundColor: '#141416', borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#28282E' },
+  miniBtnActive: { backgroundColor: '#4263EB', borderColor: '#4263EB' },
+  miniBtnText: { color: '#A1A1AA', fontWeight: 'bold' },
   miniBtnTextActive: { color: '#fff' },
-  condBtn: { flex: 1, height: 45, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  condBtnActive: { backgroundColor: '#00A9BC', borderColor: '#00A9BC' },
-  condBtnText: { fontSize: 11, color: '#64748B', fontWeight: '800' },
+  condBtn: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#28282E', justifyContent: 'center', alignItems: 'center', backgroundColor: '#141416' },
+  condBtnActive: { backgroundColor: '#4263EB', borderColor: '#4263EB' },
+  condBtnText: { fontSize: 12, color: '#A1A1AA', fontWeight: '800' },
   condBtnTextActive: { color: '#fff' },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 25, gap: 10 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 25, gap: 12 },
   photoWrap: { position: 'relative' },
-  photoThumb: { width: width * 0.2, height: width * 0.2, borderRadius: 12 },
-  delPhoto: { position: 'absolute', top: -5, right: -5 },
+  photoThumb: { width: width * 0.22, height: width * 0.22, borderRadius: 12, borderWidth: 1, borderColor: '#28282E' },
+  delPhoto: { position: 'absolute', top: -8, right: -8, backgroundColor: '#0A0A0B', borderRadius: 12 },
   addPhotoBtn: { 
-    width: width * 0.2, 
-    height: width * 0.2, 
+    width: width * 0.22, 
+    height: width * 0.22, 
     borderRadius: 12, 
     borderStyle: 'dashed', 
-    borderWidth: 2, 
-    borderColor: '#00A9BC', 
-    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5, 
+    borderColor: '#4263EB', 
+    backgroundColor: 'rgba(66, 99, 235, 0.05)',
     justifyContent: 'center', 
     alignItems: 'center' 
   },
-  addPhotoText: { fontSize: 8, color: '#00A9BC', marginTop: 4, textAlign: 'center', fontWeight: '800' },
-  tipiGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  addPhotoText: { fontSize: 9, color: '#4263EB', marginTop: 4, textAlign: 'center', fontWeight: '800' },
+  tipiGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 8 },
   tipiBtn: { 
     flex: 1, 
-    height: 80, 
-    backgroundColor: '#FFFFFF', 
+    height: 85, 
+    backgroundColor: '#141416', 
     borderRadius: 16, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0', 
+    borderColor: '#28282E', 
     justifyContent: 'center', 
-    alignItems: 'center', 
-    marginHorizontal: 4 
+    alignItems: 'center'
   },
-  tipiLabel: { fontSize: 9, fontWeight: '850', marginTop: 5, textAlign: 'center' },
+  tipiLabel: { fontSize: 10, fontWeight: '800', marginTop: 8, textAlign: 'center' },
   textArea: { 
-    backgroundColor: '#F8FAFC', 
-    padding: 15, 
+    backgroundColor: '#141416', 
+    padding: 16, 
     borderRadius: 16, 
     textAlignVertical: 'top', 
-    height: 100, 
+    height: 120, 
     marginBottom: 25, 
     borderWidth: 1, 
-    borderColor: '#E2E8F0',
-    color: '#1E293B'
+    borderColor: '#28282E',
+    color: '#FFFFFF',
+    fontSize: 15
   },
-  saveBtn: { flex: 1, backgroundColor: '#00A9BC', height: 55, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  saveBtn: { flex: 1, backgroundColor: '#4263EB', height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center', shadowColor: '#4263EB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width:0, height:4 } },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  btnDisabled: { opacity: 0.7 },
-  dateDisplay: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 14, marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0' },
-  dateText: { fontSize: 14, color: '#1E293B', fontWeight: '600' }
+  btnDisabled: { opacity: 0.5 },
+  dateDisplay: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#141416', borderRadius: 12, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#28282E' },
+  dateText: { fontSize: 15, color: '#FFFFFF', fontWeight: '600' }
 });
