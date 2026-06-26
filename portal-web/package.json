@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@atlaskit/calendar": "^18.0.0",
     "axios": "^1.15.0",
     "driver.js": "^1.4.0",
     "gsap": "^3.15.0",
@@ -19,6 +20,7 @@
     "react-dom": "^19.2.4",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.14.1",
+    "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {

@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -17,6 +17,7 @@ import AsistenciaScreen from './src/screens/AsistenciaScreen';
 import PermisosScreen from './src/screens/PermisosScreen';
 import AmonestacionesScreen from './src/screens/AmonestacionesScreen';
 import DebugStorageScreen from './src/screens/DebugStorageScreen';
+import EvaluarCreditoScreen from './src/screens/EvaluarCreditoScreen';
 import { TrackingService } from './src/services/TrackingService';
 import { SecurityService } from './src/services/SecurityService';
 
@@ -31,6 +32,7 @@ function ClientesStack() {
       <Stack.Screen name="HomeMain" component={HomeScreen} />
       <Stack.Screen name="DetalleCliente" component={DetalleClienteScreen} />
       <Stack.Screen name="FichaForm" component={FichaFormScreen} />
+      <Stack.Screen name="EvaluarCredito" component={EvaluarCreditoScreen} />
     </Stack.Navigator>
   );
 }
@@ -42,6 +44,7 @@ function RutasStack() {
       <Stack.Screen name="RutaDetalle" component={RutaDetalleScreen} />
       <Stack.Screen name="DetalleCliente" component={DetalleClienteScreen} />
       <Stack.Screen name="FichaForm" component={FichaFormScreen} />
+      <Stack.Screen name="EvaluarCredito" component={EvaluarCreditoScreen} />
     </Stack.Navigator>
   );
 }
@@ -50,31 +53,50 @@ function MainTabs() {
   const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#00A9BC',
-        tabBarInactiveTintColor: '#64748B',
-        tabBarStyle: { 
-          height: 60 + insets.bottom, 
-          paddingBottom: 10 + insets.bottom, 
-          paddingTop: 10,
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E2E8F0',
-          elevation: 0,
-          shadowOpacity: 0
-        },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '800' },
-        tabBarIcon: ({ color, size }) => {
-          let iconName;
-          if (route.name === 'ClientesTab') iconName = 'people';
-          else if (route.name === 'RutasTab') iconName = 'map';
-          else if (route.name === 'AsistenciaTab') iconName = 'calendar';
-          else if (route.name === 'PermisosTab') iconName = 'document-text';
-          else if (route.name === 'AmonestacionesTab') iconName = 'warning';
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-      })}
+      screenOptions={({ route }) => {
+        // Cada sección tiene su color propio ESTÁTICO SIEMPRE visible
+        let sectionColor = '#4A90D9';
+        let iconName = 'account-group';
+        
+        if (route.name === 'ClientesTab') { 
+          sectionColor = '#4A90D9'; iconName = 'account-group'; 
+        } else if (route.name === 'RutasTab') { 
+          sectionColor = '#E0A526'; iconName = 'map-marker-path'; 
+        } else if (route.name === 'AsistenciaTab') { 
+          sectionColor = '#2EAA7B'; iconName = 'calendar-check'; 
+        } else if (route.name === 'PermisosTab') { 
+          sectionColor = '#9B7FD4'; iconName = 'file-document-outline'; 
+        } else if (route.name === 'AmonestacionesTab') { 
+          sectionColor = '#E06B7A'; iconName = 'alert-circle-outline'; 
+        }
+        
+        return {
+          headerShown: false,
+          tabBarActiveTintColor: sectionColor,
+          tabBarInactiveTintColor: sectionColor,  // Siempre su color, nunca gris
+          tabBarStyle: { 
+            height: 72 + insets.bottom, 
+            paddingBottom: 12 + insets.bottom, 
+            paddingTop: 8,
+            backgroundColor: '#F8FAFC',
+            borderTopWidth: 1,
+            borderTopColor: '#E2E8F0',
+            elevation: 0,
+            shadowOpacity: 0
+          },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
+          tabBarIcon: () => {
+            return (
+              <View style={{
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <MaterialCommunityIcons name={iconName} size={28} color={sectionColor} />
+              </View>
+            );
+          },
+        };
+      }}
     >
       <Tab.Screen name="ClientesTab" component={ClientesStack} options={{ title: 'CLIENTES' }} />
       <Tab.Screen name="RutasTab" component={RutasStack} options={{ title: 'MIS RUTAS' }} />
@@ -102,8 +124,8 @@ function NavigationStack() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#1E293B' }}>Iniciando Routing...</Text>
+      <View style={{ flex: 1, backgroundColor: '#F5F5F0', justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#1A1A1A' }}>Iniciando Routing...</Text>
       </View>
     );
   }

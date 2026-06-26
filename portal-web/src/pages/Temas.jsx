@@ -7,23 +7,23 @@ const Temas = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
-    sidebar_bg: '#15191C',
+    sidebar_bg: '#027BFD',
     sidebar_text: '#FFFFFF',
-    main_bg: '#0B0E11',
-    main_text: '#FFFFFF',
-    primary_color: '#00A9BC',
-    font_family: 'Arial',
+    main_bg: '#dddddd',
+    main_text: '#212529',
+    primary_color: '#027BFD',
+    font_family: 'Inter',
     logo_filter: 'none'
   });
 
   const presets = {
     predeterminado: {
-      sidebar_bg: '#15191C',
+      sidebar_bg: '#027BFD',
       sidebar_text: '#FFFFFF',
-      main_bg: '#0B0E11',
-      main_text: '#FFFFFF',
-      primary_color: '#00A9BC',
-      font_family: 'Arial',
+      main_bg: '#dddddd',
+      main_text: '#212529',
+      primary_color: '#027BFD',
+      font_family: 'Inter',
       logo_filter: 'none'
     },
     oscuro: {
@@ -85,7 +85,12 @@ const Temas = () => {
 
   const applyStyles = (s) => {
     const root = document.documentElement;
-    root.style.setProperty('--c-surface', s.sidebar_bg);
+    const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000' || s.main_bg.toLowerCase() === '#050505';
+    
+    root.style.setProperty('--c-sidebar-bg', '#027BFD'); // Enforce user requested color
+    root.style.setProperty('--c-surface', isDark ? '#1f2128' : '#FFFFFF');
+    root.style.setProperty('--c-surface-2', isDark ? '#2a2d38' : '#F3F4F6');
+    root.style.setProperty('--c-border', isDark ? '#3a3e4e' : '#E5E7EB');
     root.style.setProperty('--c-bg', s.main_bg);
     root.style.setProperty('--c-text', s.main_text);
     root.style.setProperty('--c-sidebar-text', s.sidebar_text);

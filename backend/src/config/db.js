@@ -1,10 +1,12 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const isLocalhost = process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1'));
+
 const poolConfig = process.env.DATABASE_URL 
   ? { 
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false } // Required for most managed DBs like Render/Neon
+      ssl: isLocalhost ? false : { rejectUnauthorized: false }
     }
   : {
       host: process.env.DB_HOST || 'localhost',

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Clock, Timer, Navigation, Save, Coffee, PlayCircle, ChevronRight, Info } from 'lucide-react';
 import { getAvatarUrl } from '../utils/avatar.js';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 export default function Monitoreo() {
   const { api, sedeActual } = useContext(AuthContext);
@@ -75,12 +76,11 @@ export default function Monitoreo() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '10px', fontWeight: '900', color: 'var(--c-muted)', letterSpacing: '0.5px' }}>FECHA DE ANÁLISIS:</span>
-            <input 
-              type="date" 
+            <CustomDatePicker 
               className="form-input" 
               value={fecha} 
               onChange={e => setFecha(e.target.value)}
-              style={{ width: '180px', height: '38px', fontSize: '12px' }}
+              style={{ width: '180px', height: '38px' }}
             />
           </div>
         </div>

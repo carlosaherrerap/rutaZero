@@ -48,7 +48,7 @@ export default function LoginScreen() {
 
             <View style={styles.form}>
               <View style={styles.inputContainer}>
-                <Ionicons name="person-outline" size={20} color="#00A9BC" style={styles.inputIcon} />
+                <Ionicons name="person-outline" size={20} color="#047CFD" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Usuario"
@@ -61,7 +61,7 @@ export default function LoginScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={20} color="#00A9BC" style={styles.inputIcon} />
+                <Ionicons name="lock-closed-outline" size={20} color="#047CFD" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Contraseña"
@@ -108,8 +108,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, padding: 25, justifyContent: 'center' },
-  circle1: { position: 'absolute', top: height * 0.1, left: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: '#00A9BC', opacity: 0.05 },
-  circle2: { position: 'absolute', bottom: height * 0.15, right: -50, width: 250, height: 250, borderRadius: 125, backgroundColor: '#00A9BC', opacity: 0.03 },
+  circle1: { position: 'absolute', top: height * 0.1, left: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: '#047CFD', opacity: 0.05 },
+  circle2: { position: 'absolute', bottom: height * 0.15, right: -50, width: 250, height: 250, borderRadius: 125, backgroundColor: '#047CFD', opacity: 0.03 },
   glassCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -128,10 +128,10 @@ const styles = StyleSheet.create({
   logoImage: {
     width: 90,
     height: 90,
-    tintColor: '#1E293B',
+    tintColor: '#047CFD',
   },
   logoTitle: { color: '#1E293B', fontSize: 32, fontWeight: '900', letterSpacing: 0.5 },
-  logoSub: { color: '#00A9BC', fontSize: 13, fontWeight: '700', letterSpacing: 3, marginTop: 4 },
+  logoSub: { color: '#047CFD', fontSize: 13, fontWeight: '700', letterSpacing: 3, marginTop: 4 },
   form: { marginTop: 10 },
   inputContainer: {
     flexDirection: 'row',
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   btnSolid: {
     flexDirection: 'row',
     height: 56,
-    backgroundColor: '#00A9BC',
+    backgroundColor: '#047CFD',
     justifyContent: 'center',
     alignItems: 'center',
   },

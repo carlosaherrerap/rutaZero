@@ -1,7 +1,7 @@
-import React, { createContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import CryptoJS from 'crypto-js';
 
 import { BASE_URL } from '../config';
@@ -13,64 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Creamos la instancia de API
-  useEffect(() => {
-    let isMounted = true;
-    const loadStoredData = async () => {
-      try {
-        console.log('📦 [Auth] Recuperando sesión guardada...');
-        const savedToken = await storage.getItem('token');
-        const savedUser = await storage.getItem('user');
-
-        if (isMounted && savedToken && savedUser) {
-          console.log('✅ [Auth] Sesión recuperada de caché.');
-          setToken(savedToken);
-          setUser(JSON.parse(savedUser));
-        } else {
-          console.log('⚠️ [Auth] No hay sesión previa guardada.');
-        }
-      } catch (e) {
-        console.log('❌ [Auth] Error cargando datos de seguridad:', e);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    loadStoredData();
-    return () => { isMounted = false; };
-  }, []);
-
-  const api = useMemo(() => {
-    const instance = axios.create({ baseURL: BASE_URL });
-
-    // INTERCEPTOR: Inyecta el token en cada petición automáticamente
-    instance.interceptors.request.use(
-      async (config) => {
-        if (token) config.headers.Authorization = `Bearer ${token}`;
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // INTERCEPTOR: Manejo de errores de conexión global
-    instance.interceptors.response.use(
-      (response) => response,
-      async (error) => {
-        if (!error.response) {
-          // Error de red (servidor caído o sin internet)
-          console.log('[Network] Error de conexión detectado.');
-          // Aquí podríamos disparar un evento global o alerta
-        }
-        if (error.response?.status === 401) {
-          console.log('[Security] 401 Detected');
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    return instance;
-  }, [token]);
-
-  const storage = {
+  const storage = useMemo(() => ({
     getItem: async (key) => {
       try {
         if (Platform.OS === 'web') return typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
@@ -95,7 +38,97 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (e) { }
     }
-  };
+  }), []);
+
+  const logout = useCallback(async () => {
+    setToken(null);
+    setUser(null);
+    await storage.deleteItem('token');
+    await storage.deleteItem('user');
+    
+    // 100% STRICT SECURITY: Crypto-shredding. Destruye la llave maestra AES.
+    await storage.deleteItem('AES_OFFLINE_KEY');
+    console.log('🛡️ [Auth] Crypto-shredding ejecutado. Datos offline destruidos criptográficamente.');
+  }, [storage]);
+
+  // Creamos la instancia de API
+  const api = useMemo(() => {
+    const instance = axios.create({ baseURL: BASE_URL });
+
+    // INTERCEPTOR: Inyecta el token en cada petición automáticamente
+    instance.interceptors.request.use(
+      async (config) => {
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // INTERCEPTOR: Manejo de errores de conexión global
+    instance.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (!error.response) {
+          // Error de red (servidor caído o sin internet)
+          console.log('[Network] Error de conexión detectado.');
+        }
+        if (error.response?.status === 401) {
+          console.log('[Security] 401 Detected');
+        }
+        if (error.response?.status === 403 && error.response?.data?.error === 'USER_INACTIVE') {
+          console.log('[Security] User is INACTIVE. Kicking out.');
+          await logout();
+          Alert.alert('Acceso Denegado', 'Tu cuenta ha sido desactivada por el administrador.');
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return instance;
+  }, [token, logout]);
+
+  // Recuperar sesión al montar
+  useEffect(() => {
+    let isMounted = true;
+    const loadStoredData = async () => {
+      try {
+        console.log('📦 [Auth] Recuperando sesión guardada...');
+        const savedToken = await storage.getItem('token');
+        const savedUser = await storage.getItem('user');
+
+        if (isMounted && savedToken && savedUser) {
+          console.log('✅ [Auth] Sesión recuperada de caché.');
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        } else {
+          console.log('⚠️ [Auth] No hay sesión previa guardada.');
+        }
+      } catch (e) {
+        console.log('❌ [Auth] Error cargando datos de seguridad:', e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadStoredData();
+    return () => { isMounted = false; };
+  }, [storage]);
+
+  // Polling para verificar si el usuario sigue activo (cada 15 segundos)
+  useEffect(() => {
+    if (!token || !user) return;
+
+    const checkStatus = async () => {
+      try {
+        await api.get('/api/auth/me');
+      } catch (err) {
+        // El interceptor se encargará de hacer logout si devuelve 403 USER_INACTIVE
+        console.log('Error en polling de estado:', err.message);
+      }
+    };
+
+    const interval = setInterval(checkStatus, 15000);
+    return () => clearInterval(interval);
+  }, [token, user, api]);
 
   const login = async (username, password) => {
     const res = await api.post('/api/auth/login', { username, password });
@@ -118,18 +151,6 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn('[Auth] No se pudo limpiar caché offline:', e.message);
     }
-  };
-
-  const logout = async () => {
-    setToken(null);
-    setUser(null);
-    await storage.deleteItem('token');
-    await storage.deleteItem('user');
-    
-    // 100% STRICT SECURITY: Crypto-shredding. Destruye la llave maestra AES.
-    // Todos los datos en AsyncStorage/SQLite se vuelven ruido estocástico irrecuperable.
-    await storage.deleteItem('AES_OFFLINE_KEY');
-    console.log('🛡️ [Auth] Crypto-shredding ejecutado. Datos offline destruidos criptográficamente.');
   };
 
   return (

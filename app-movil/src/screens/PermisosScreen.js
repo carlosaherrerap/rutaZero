@@ -199,7 +199,7 @@ const PermisosScreen = () => {
                 <Text style={{ color: '#64748b' }}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleRequest} style={styles.submitBtn}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Solicitar</Text>
+                <Text style={{ color: '#1A1A1A', fontWeight: 'bold' }}>Solicitar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -215,17 +215,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
   addBtn: { backgroundColor: '#3b82f6', width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   list: { padding: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 15, elevation: 2 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 15, elevation: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   cardType: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
   badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  badgeText: { color: '#1A1A1A', fontSize: 10, fontWeight: 'bold' },
   cardDates: { fontSize: 14, color: '#64748b', marginBottom: 6 },
   cardDesc: { fontSize: 13, color: '#94a3b8' },
   empty: { alignItems: 'center', marginTop: 100 },
   emptyText: { marginTop: 10, color: '#94a3b8' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 25 },
+  modalContent: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 25 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, color: '#1e293b' },
   label: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 6, textTransform: 'uppercase' },
   input: { backgroundColor: '#f1f5f9', borderRadius: 12, padding: 15, marginBottom: 15, fontSize: 15, color: '#1e293b' },

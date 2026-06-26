@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brochure Comercial - Ruta Zero</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#E22E39', // Informa Red
+                        secondary: '#1A365D', // Deep Blue
+                        accent: '#F59E0B', // Amber
+                        surface: '#F8FAFC' // Light Gray
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap');
+        
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        /* Responsive Web Page Sections */
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Inner container to constrain width on large screens */
+        .page-content {
+            max-width: 1280px; /* max-w-7xl equivalent */
+            width: 100%;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+        }
+
+        .shape-blob {
+            position: absolute;
+            background: linear-gradient(135deg, #E22E39 0%, #9b1c24 100%);
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 46, 57, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* Make cards responsive */
+        @media (max-width: 1024px) {
+            .responsive-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .responsive-flex { flex-direction: column !important; }
+            .responsive-w-half { width: 100% !important; padding: 0 !important; margin-bottom: 2rem; }
+            .responsive-hidden { display: none !important; }
+        }
+        @media (max-width: 640px) {
+            .responsive-grid { grid-template-columns: 1fr !important; }
+            .text-7xl { font-size: 3rem !important; line-height: 1.1 !important; }
+            .text-4xl { font-size: 2.25rem !important; }
+            .p-12 { padding: 1.5rem !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Navigation (Optional but good for web) -->
+    <nav class="fixed top-0 w-full bg-white/90 backdrop-blur-md border-b border-gray-100 z-50 px-6 py-4 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-6">
+            <img src="./assets/logo-informaPeru.png" alt="Informa Peru" class="h-8 object-contain">
+            <div class="w-px h-6 bg-gray-300"></div>
+            <img src="./assets/logo-pixi.png" alt="Pixi" class="h-6 object-contain">
+        </div>
+        <a href="#contacto" class="bg-primary hover:bg-red-700 text-white text-sm font-bold py-2 px-5 rounded-full transition">Contactar</a>
+    </nav>
+
+    <!-- ================= PAGE 1: COVER ================= -->
+    <section class="page bg-slate-50 pt-20">
+        <div class="shape-blob w-[800px] h-[800px] -top-[400px] -right-[200px]"></div>
+        <div class="shape-blob w-[600px] h-[600px] -bottom-[200px] -left-[100px] bg-secondary opacity-5"></div>
+
+        <div class="page-content p-8 lg:p-12 responsive-flex items-center">
+            <div class="w-1/2 pr-10 responsive-w-half z-10">
+                <div class="inline-block bg-red-100 text-primary px-5 py-2 rounded-full text-xs lg:text-sm font-bold tracking-widest mb-6 border border-red-200 shadow-sm">
+                    SOLUCIÓN CORPORATIVA FSM
+                </div>
+                <h1 class="text-5xl lg:text-7xl font-black text-secondary leading-tight mb-6">
+                    RUTA <span class="text-primary">ZERO</span>
+                </h1>
+                <p class="text-xl lg:text-2xl text-gray-600 font-light mb-10 leading-relaxed border-l-4 border-primary pl-6">
+                    Transformando la gestión y el trabajo en campo con tecnología de punta. Control, monitoreo y eficiencia en tiempo real.
+                </p>
+                <div class="flex flex-wrap gap-6 mt-8">
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-secondary shadow-lg shadow-secondary/30 text-white flex items-center justify-center transform hover:-translate-y-1 transition">
+                            <i class="ph ph-device-mobile text-3xl"></i>
+                        </div>
+                        <span class="font-bold text-xs lg:text-sm text-secondary">App Móvil</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-primary shadow-lg shadow-primary/30 text-white flex items-center justify-center transform hover:-translate-y-1 transition">
+                            <i class="ph ph-laptop text-3xl"></i>
+                        </div>
+                        <span class="font-bold text-xs lg:text-sm text-secondary">Portal Web</span>
+                    </div>
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl bg-accent shadow-lg shadow-accent/30 text-white flex items-center justify-center transform hover:-translate-y-1 transition">
+                            <i class="ph ph-wifi-slash text-3xl"></i>
+                        </div>
+                        <span class="font-bold text-xs lg:text-sm text-secondary">Modo Offline</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-1/2 relative flex justify-end responsive-w-half responsive-hidden">
+                <div class="relative w-[350px] h-[350px] lg:w-[450px] lg:h-[450px] bg-white rounded-full border-[12px] border-slate-100 shadow-2xl flex items-center justify-center mx-auto">
+                    <div class="absolute inset-0 rounded-full border border-gray-200"></div>
+                    <div class="absolute w-[120%] h-[120%] -rotate-12 scale-90">
+                        <!-- Dashboard Card -->
+                        <div class="absolute top-8 left-0 w-64 lg:w-80 h-40 lg:h-48 bg-white rounded-2xl shadow-2xl p-4 lg:p-5 border border-gray-100 z-10">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                            </div>
+                            <div class="flex gap-4 mb-4">
+                                <div class="w-1/2 h-16 lg:h-20 bg-blue-50 rounded-xl border border-blue-100"></div>
+                                <div class="w-1/2 h-16 lg:h-20 bg-red-50 rounded-xl border border-red-100"></div>
+                            </div>
+                            <div class="w-full h-3 bg-gray-100 rounded-full mb-2"></div>
+                            <div class="w-4/5 h-3 bg-gray-100 rounded-full"></div>
+                        </div>
+                        <!-- Mobile App Card -->
+                        <div class="absolute top-20 right-0 w-48 lg:w-56 h-64 lg:h-80 bg-secondary rounded-[35px] shadow-2xl border-8 border-slate-800 p-4 flex flex-col z-20">
+                            <div class="w-20 h-4 lg:h-5 bg-slate-800 rounded-b-2xl mx-auto absolute top-0 left-1/2 -translate-x-1/2"></div>
+                            <div class="w-full h-20 lg:h-24 bg-white/10 rounded-2xl mt-4 mb-4 p-4">
+                                <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-primary mb-3"></div>
+                                <div class="w-full h-2 lg:h-3 bg-white/20 rounded-full mb-2"></div>
+                                <div class="w-2/3 h-2 lg:h-3 bg-white/20 rounded-full"></div>
+                            </div>
+                            <div class="w-full h-10 lg:h-14 bg-white/5 border border-white/10 rounded-xl mb-3"></div>
+                            <div class="w-full h-10 lg:h-14 bg-white/5 border border-white/10 rounded-xl mb-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="h-4 w-full bg-gradient-to-r from-secondary via-primary to-accent mt-auto"></div>
+    </section>
+
+    <!-- ================= PAGE 2: QUIENES SOMOS ================= -->
+    <section class="page bg-white relative">
+        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-bl-full hidden lg:block"></div>
+        
+        <div class="page-content p-8 lg:p-12 responsive-flex items-center">
+            <div class="w-1/2 flex flex-col justify-center pr-8 responsive-w-half">
+                <div class="mb-10">
+                    <h2 class="text-3xl lg:text-4xl font-black text-secondary mb-4 flex items-center gap-4">
+                        <span class="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center"><i class="ph-fill ph-users-three"></i></span>
+                        ¿Quiénes Somos?
+                    </h2>
+                    <p class="text-gray-600 text-base lg:text-lg leading-relaxed border-l-4 border-gray-200 pl-6">
+                        Somos una empresa con profundo conocimiento del segmento financiero, microfinanciero y comercial. De la mano de nuestro equipo de profesionales, estamos comprometidos en ofrecer soluciones integrales e innovadoras que permitan a nuestros clientes exceder sus metas estratégicas.
+                    </p>
+                </div>
+                
+                <div>
+                    <h2 class="text-3xl lg:text-4xl font-black text-secondary mb-4 flex items-center gap-4">
+                        <span class="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center"><i class="ph-fill ph-target"></i></span>
+                        ¿Qué hacemos?
+                    </h2>
+                    <p class="text-gray-600 text-base lg:text-lg leading-relaxed border-l-4 border-gray-200 pl-6">
+                        Fortalecemos los diferentes tipos de procesos con el uso de tecnología especializada, brindando visibilidad total para la toma de decisiones.
+                    </p>
+                </div>
+            </div>
+
+            <div class="w-1/2 flex flex-col gap-6 justify-center responsive-w-half">
+                <div class="glass-card rounded-2xl p-6 relative overflow-hidden group">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-primary/10 rounded-bl-full -mr-6 -mt-6"></div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30">
+                            <i class="ph-fill ph-device-mobile text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl lg:text-2xl font-bold text-secondary">Ruta Zero App</h3>
+                            <p class="text-xs lg:text-sm font-semibold text-primary">Trabajo en Campo</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed mt-2 relative z-10">
+                        Aplicación de tareas en campo que permite planificar rutas óptimas de trabajo, ver la ubicación de los equipos en tiempo real, llenar formularios personalizados con fotos, firmas y lector de códigos, todo diseñado para la atención ágil.
+                    </p>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 relative overflow-hidden group lg:ml-8">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-secondary/10 rounded-bl-full -mr-6 -mt-6"></div>
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="w-12 h-12 bg-secondary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/30">
+                            <i class="ph-fill ph-chart-line-up text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl lg:text-2xl font-bold text-secondary">Business Intelligence</h3>
+                            <p class="text-xs lg:text-sm font-semibold text-secondary">Análisis y Prospección</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-sm leading-relaxed mt-2 relative z-10">
+                        Las buenas prácticas permiten el acceso y el análisis de la información para mejorar decisiones y rendimiento. Focaliza esfuerzos comerciales a través de una segmentación focalizada y monitoreo en vivo.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 3: OPTIMIZA ================= -->
+    <section class="page bg-slate-50">
+        <div class="page-content p-8 lg:p-12 flex flex-col justify-center">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl lg:text-4xl font-black text-secondary">Optimiza el trabajo en campo</h2>
+                <div class="w-20 h-1.5 bg-primary mx-auto mt-4 rounded-full"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 responsive-grid">
+                <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 flex flex-col gap-3 hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-map-trifold text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg lg:text-xl font-bold text-secondary">Utilice el poder de los mapas</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Tenemos las herramientas y la experiencia para ayudarle a georeferenciar sobre los mapas toda la información de sus clientes, proveedores, empleados, competidores, puntos de venta, etc.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 flex flex-col gap-3 hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-red-50 text-primary rounded-2xl flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-rocket-launch text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg lg:text-xl font-bold text-secondary">Transformación Digital</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Incorpore Ruta Zero como parte de las herramientas que harán posible agilizar los procesos y maximizar la eficiencia de su organización abandonando el papel.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 flex flex-col gap-3 hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-check-circle text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg lg:text-xl font-bold text-secondary">Cierre transacciones más rápido</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Utilice toda la potencia de nuestra aplicación móvil para entregarle información útil, historiales de deuda y datos relevantes a su equipo de trabajo directamente en la calle.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-md border border-slate-100 flex flex-col gap-3 hover:-translate-y-1 transition duration-300">
+                    <div class="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-2">
+                        <i class="ph-fill ph-brackets-curly text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg lg:text-xl font-bold text-secondary">API para desarrolladores</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Conecte sus aplicaciones móviles, bases de datos u otras plataformas de software (ERP, CRM) con Ruta Zero para simplificar procesos y agregar valor a sus operaciones.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 4: FUNCIONALIDADES ================= -->
+    <section class="page bg-white">
+        <div class="page-content p-8 lg:p-12 flex flex-col justify-center">
+            <div class="flex items-center gap-4 mb-8 justify-center lg:justify-start">
+                <div class="w-12 h-12 bg-secondary text-white rounded-full flex items-center justify-center shadow-lg">
+                    <span class="text-xl font-black">4</span>
+                </div>
+                <h2 class="text-3xl font-black text-secondary text-center">Funcionalidades Principales</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 responsive-grid">
+                
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-car-profile text-2xl text-primary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Tracking</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Vehicular y de personas</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Ubicación en tiempo real</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-map-pin-line text-2xl text-primary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Historial de recorrido</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Trazabilidad de rutas</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Auditoría de tiempos</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-bell-ringing text-2xl text-accent"></i>
+                        <h3 class="text-lg font-bold text-secondary">Alertas</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-accent rounded-full"></div> Desconexión de internet</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-accent rounded-full"></div> Tardanzas y demoras</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-magnifying-glass text-2xl text-primary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Buscador Inteligente</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Direcciones y Personas</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Tareas y Puntos</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 border-l-4 border-l-primary shadow-sm hover:-translate-y-1 transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-textbox text-2xl text-primary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Formularios Dinámicos</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Capturador de datos</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Fotos, firmas y GPS</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-sliders-horizontal text-2xl text-primary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Configuraciones</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Roles de usuario</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-primary rounded-full"></div> Estados personalizados</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-plugs-connected text-2xl text-secondary"></i>
+                        <h3 class="text-lg font-bold text-secondary">Integración externa</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-secondary rounded-full"></div> Mediante API's Seguras</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-check-square-offset text-2xl text-green-600"></i>
+                        <h3 class="text-lg font-bold text-secondary">Control de Estados</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-green-600 rounded-full"></div> Visibilidad por colores</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-green-600 rounded-full"></div> Flujos obligatorios</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-primary transition duration-300">
+                    <div class="flex items-center gap-3 mb-3">
+                        <i class="ph-fill ph-upload-simple text-2xl text-blue-600"></i>
+                        <h3 class="text-lg font-bold text-secondary">Carga de servicios</h3>
+                    </div>
+                    <ul class="space-y-1 text-xs text-gray-600">
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-blue-600 rounded-full"></div> Masiva vía Web</li>
+                        <li class="flex items-center gap-2"><div class="w-1 h-1 bg-blue-600 rounded-full"></div> Vía API Integraciones</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 5: TRABAJO EN CAMPO ================= -->
+    <section class="page bg-slate-50 relative">
+        <div class="absolute top-0 right-0 w-[35%] h-full bg-secondary rounded-l-[100px] hidden md:block"></div>
+
+        <div class="page-content p-8 lg:p-12 responsive-flex items-center justify-center">
+            <div class="w-full md:w-[55%] flex flex-col gap-4 pr-0 md:pr-8 responsive-w-half">
+                <div class="flex items-center gap-4 mb-4 justify-center md:justify-start">
+                    <div class="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg">
+                        <span class="text-xl font-black">5</span>
+                    </div>
+                    <h2 class="text-3xl font-black text-secondary uppercase tracking-wider">Trabajo en Campo</h2>
+                </div>
+
+                <p class="text-gray-600 text-base mb-6 text-center md:text-left">
+                    Ruta Zero App es una aplicación especializada en la atención de tareas en campo. Permite planificar rutas de trabajo, ver la ubicación de sus compañeros en tiempo real, y llenar formularios personalizados con fotos, firmas y GPS.
+                </p>
+                
+                <div class="flex items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-map-trifold text-xl"></i></div>
+                    <div><h4 class="font-bold text-sm text-secondary">Modo Mapa</h4><p class="text-xs text-gray-500">Visualización de clientes geolocalizados</p></div>
+                </div>
+                <div class="flex items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-push-pin text-xl"></i></div>
+                    <div><h4 class="font-bold text-sm text-secondary">Puntos de Interés</h4><p class="text-xs text-gray-500">Cartera priorizada y competidores</p></div>
+                </div>
+                <div class="flex items-center gap-4 bg-white p-3 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-squares-four text-xl"></i></div>
+                    <div><h4 class="font-bold text-sm text-secondary">Control de Estados</h4><p class="text-xs text-gray-500">Libre, Visitado, Reprogramado</p></div>
+                </div>
+
+                <!-- Req mínimos -->
+                <div class="mt-4 bg-white p-5 rounded-xl shadow-lg border-l-4 border-accent">
+                    <h4 class="font-bold text-secondary mb-3 text-xs tracking-widest uppercase text-center md:text-left">Requerimientos Mínimos</h4>
+                    <div class="flex gap-4 text-xs text-gray-600 justify-center md:justify-start">
+                        <div class="flex flex-col items-center"><i class="ph-fill ph-android-logo text-xl text-green-500 mb-1"></i> Android 5+</div>
+                        <div class="flex flex-col items-center"><i class="ph-fill ph-memory text-xl text-gray-400 mb-1"></i> 2GB RAM</div>
+                        <div class="flex flex-col items-center"><i class="ph-fill ph-hard-drives text-xl text-gray-400 mb-1"></i> 8GB Disp.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right visual mockups -->
+            <div class="w-full md:w-[45%] flex justify-center items-center relative pl-0 md:pl-8 responsive-w-half mt-10 md:mt-0">
+                <!-- Mockup Phone -->
+                <div class="w-64 h-[420px] bg-white rounded-[30px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border-[6px] border-slate-900 relative z-20 flex flex-col overflow-hidden md:transform md:-rotate-3">
+                    <div class="bg-primary text-white p-3 text-center font-bold text-sm shadow-md relative z-10 flex justify-between items-center">
+                        <i class="ph ph-list"></i> Clientes <i class="ph ph-magnifying-glass"></i>
+                    </div>
+                    <div class="bg-gray-100 p-2 flex-1">
+                        <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-blue-500 mb-2">
+                            <h4 class="font-bold text-xs text-slate-800">Frank Anthony Mendoza</h4>
+                            <p class="text-[10px] text-gray-500">Jr. Las Américas 456</p>
+                            <span class="inline-block mt-1 bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-full font-bold">LIBRE</span>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg shadow-sm border-l-4 border-green-500 mb-2">
+                            <h4 class="font-bold text-xs text-slate-800">Jorge Luis Mendoza</h4>
+                            <p class="text-[10px] text-gray-500">Jr. Zarumilla 890</p>
+                            <span class="inline-block mt-1 bg-green-100 text-green-700 text-[9px] px-2 py-0.5 rounded-full font-bold">GESTIONADO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 6: FORMULARIOS ================= -->
+    <section class="page bg-white">
+        <div class="page-content p-8 lg:p-12 flex flex-col justify-center">
+            <div class="flex flex-col items-center mb-10">
+                <div class="w-16 h-16 bg-accent text-white rounded-full flex items-center justify-center shadow-lg mb-4">
+                    <span class="text-2xl font-black">6</span>
+                </div>
+                <h2 class="text-3xl font-black text-secondary uppercase tracking-wider text-center">Formulario Dinámico</h2>
+                <p class="text-gray-600 text-center mt-4 text-base max-w-3xl">
+                    Conjunto de componentes configurados a la medida de las necesidades de nuestros usuarios en terreno. Captura de información rica, validada y georeferenciada.
+                </p>
+            </div>
+
+            <div class="bg-slate-50 rounded-2xl border border-slate-200 p-6 lg:p-10">
+                <h3 class="text-center font-bold text-slate-400 text-xs uppercase tracking-widest mb-8">Componentes Disponibles</h3>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6 responsive-grid">
+                    <!-- Cards -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-list-dashes text-3xl text-blue-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Combo simple</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-list-checks text-3xl text-orange-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Combo múltiple</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-text-t text-3xl text-red-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Texto Libre</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-at text-3xl text-yellow-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Campo Email</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-calendar-blank text-3xl text-purple-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Campo Fecha</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-clock text-3xl text-rose-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Reloj / Hora</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition border-b-4 border-b-green-500">
+                        <i class="ph-fill ph-map-pin text-3xl text-green-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Ubicación GPS</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition border-b-4 border-b-indigo-500">
+                        <i class="ph-fill ph-image text-3xl text-indigo-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Toma de Imágenes</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-pencil-line text-3xl text-cyan-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Croquis</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition border-b-4 border-b-slate-800">
+                        <i class="ph-fill ph-barcode text-3xl text-slate-800 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Código de Barra</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition border-b-4 border-b-primary">
+                        <i class="ph-fill ph-signature text-3xl text-primary mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Captura de Firma</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm hover:shadow-md transition">
+                        <i class="ph-fill ph-database text-3xl text-teal-500 mb-2 block mx-auto"></i>
+                        <span class="font-bold text-xs text-slate-700">Buscador BBDD</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 7: SEGURIDAD ================= -->
+    <section class="page bg-slate-900">
+        <div class="page-content p-8 lg:p-12 flex flex-col justify-center">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl lg:text-5xl font-black text-white mb-4 uppercase tracking-wider">
+                    Seguridad Corporativa <span class="text-primary">3 Capas</span>
+                </h2>
+                <p class="text-slate-300 max-w-2xl mx-auto text-base">
+                    Tu cartera de clientes es tu activo más valioso. Arquitectura diseñada para mantener a salvo la información.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 responsive-grid">
+                
+                <!-- Web Security -->
+                <div class="bg-slate-800 rounded-3xl border border-slate-700 flex flex-col overflow-hidden hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(226,46,57,0.15)] transition duration-300">
+                    <div class="h-48 w-full">
+                        <img src="./assets/real_web_security.png" class="w-full h-full object-cover" alt="Web Security">
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <h3 class="text-2xl font-bold text-white mb-4 border-b border-slate-700 pb-3">Plataforma Web</h3>
+                        <ul class="space-y-4 flex-1">
+                            <li class="text-sm text-slate-300"><strong class="text-primary block text-base mb-1">Escudo Anti-Scraping</strong> Vigía virtual que ofusca la pantalla al detectar extensiones maliciosas.</li>
+                            <li class="text-sm text-slate-300"><strong class="text-primary block text-base mb-1">Control de Accesos</strong> Restricción por roles y cierre por inactividad.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- App Security -->
+                <div class="bg-slate-800 rounded-3xl border border-slate-700 flex flex-col overflow-hidden hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(245,158,11,0.15)] transition duration-300 md:-translate-y-4">
+                    <div class="h-48 w-full">
+                        <img src="./assets/real_app_security.png" class="w-full h-full object-cover" alt="App Security">
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <h3 class="text-2xl font-bold text-white mb-4 border-b border-slate-700 pb-3">Aplicación Móvil</h3>
+                        <ul class="space-y-4 flex-1">
+                            <li class="text-sm text-slate-300"><strong class="text-accent block text-base mb-1">Identidad Verificada</strong> Validación estricta del agente antes de descargar rutas.</li>
+                            <li class="text-sm text-slate-300"><strong class="text-accent block text-base mb-1">Bóveda Offline Segura</strong> Almacenamiento local protegido al perder conexión.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- API Security -->
+                <div class="bg-slate-800 rounded-3xl border border-slate-700 flex flex-col overflow-hidden hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(59,130,246,0.15)] transition duration-300">
+                    <div class="h-48 w-full">
+                        <img src="./assets/real_api_security.png" class="w-full h-full object-cover" alt="API Security">
+                    </div>
+                    <div class="p-6 flex-1 flex flex-col">
+                        <h3 class="text-2xl font-bold text-white mb-4 border-b border-slate-700 pb-3">Nube / API</h3>
+                        <ul class="space-y-4 flex-1">
+                            <li class="text-sm text-slate-300"><strong class="text-blue-400 block text-base mb-1">Rate Limiting</strong> Bloqueo automático de ataques fuerza bruta.</li>
+                            <li class="text-sm text-slate-300"><strong class="text-blue-400 block text-base mb-1">Comunicación Cifrada</strong> Túneles encriptados (SSL/TLS).</li>
+                            <li class="text-sm text-slate-300"><strong class="text-blue-400 block text-base mb-1">AllowList</strong> Bloqueo de visitantes desconocidos.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PAGE 8: CONTACTO FINAL ================= -->
+    <section id="contacto" class="page bg-white relative">
+        <div class="absolute inset-0 bg-slate-50" style="clip-path: polygon(0 0, 100% 0, 100% 60%, 0% 100%);"></div>
+        
+        <div class="page-content p-8 lg:p-12 flex flex-col items-center justify-center text-center">
+            
+            <img src="./assets/logo-informaPeru.png" alt="Informa Peru" class="h-20 lg:h-24 object-contain mb-8 drop-shadow-lg">
+            
+            <h2 class="text-4xl lg:text-5xl font-black text-secondary mb-4">¿Listo para transformar tu operación?</h2>
+            <p class="text-base lg:text-lg text-gray-500 mb-12 max-w-2xl">
+                Contáctanos hoy mismo para una demostración en vivo de Ruta Zero adaptada a tu modelo de negocio.
+            </p>
+
+            <div class="bg-white rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.08)] p-8 lg:p-12 border border-slate-100 flex flex-col md:flex-row items-center gap-8 lg:gap-12 text-center md:text-left relative overflow-hidden group hover:shadow-[0_30px_70px_rgba(226,46,57,0.15)] transition duration-500 w-full max-w-4xl">
+                <div class="absolute top-0 right-0 w-48 h-48 bg-primary rounded-bl-full opacity-5 group-hover:scale-150 transition-transform duration-700 hidden md:block"></div>
+                
+                <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-white relative z-10 flex-shrink-0">
+                    <i class="ph-fill ph-user-circle text-5xl lg:text-6xl text-white"></i>
+                </div>
+                
+                <div class="relative z-10 w-full">
+                    <p class="text-primary font-bold tracking-widest text-xs lg:text-sm mb-2 uppercase">Contacto Comercial</p>
+                    <h3 class="text-3xl lg:text-4xl font-black text-secondary mb-1">Abel Chávez</h3>
+                    <p class="text-slate-500 text-base lg:text-lg mb-6">Gerente Comercial</p>
+                    
+                    <div class="space-y-4">
+                        <p class="text-slate-700 flex items-center justify-center md:justify-start gap-3 text-sm lg:text-base font-medium">
+                            <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-primary flex-shrink-0"><i class="ph-fill ph-map-pin"></i></span>
+                            <span>Av. Mariscal Castilla 215 Oficina 501, Santiago de Surco</span>
+                        </p>
+                        <p class="text-slate-700 flex items-center justify-center md:justify-start gap-3 text-sm lg:text-base font-medium">
+                            <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-primary flex-shrink-0"><i class="ph-fill ph-phone"></i></span>
+                            <span>+51 940481201</span>
+                        </p>
+                        <p class="text-slate-700 flex items-center justify-center md:justify-start gap-3 text-sm lg:text-base font-medium">
+                            <span class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-primary flex-shrink-0"><i class="ph-fill ph-globe"></i></span>
+                            <a href="https://www.informaperu.com" target="_blank" class="hover:text-primary transition">www.informaperu.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-r from-secondary via-primary to-accent"></div>
+    </section>
+
+</body>
+</html>

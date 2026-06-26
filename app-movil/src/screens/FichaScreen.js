@@ -108,5 +108,5 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#161b22', borderWidth: 1, borderColor: '#30363d', color: '#e6edf3', borderRadius: 8, padding: 12, fontSize: 16 },
   textarea: { height: 100 },
   saveBtn: { backgroundColor: '#2563eb', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  saveText: { color: '#1A1A1A', fontSize: 16, fontWeight: '800' },
 });

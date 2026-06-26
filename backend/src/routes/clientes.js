@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     let whereClause = 'WHERE 1=1';
     const params = [];
 
-    const sedeId = req.headers['x-sede-id'];
+    const sedeId = req.headers['x-sede-id'] || req.user.sede_id;
     if (sedeId) {
       params.push(sedeId);
       whereClause += ` AND c.sede_id = $${params.length}`;
@@ -49,13 +49,24 @@ router.get('/', async (req, res) => {
       whereClause += ` AND c.fecha_pago = $${params.length}`;
     }
 
-    if (worker_id) {
-      params.push(worker_id);
-      // Filtramos clientes que pertenezcan a alguna ruta del worker
+    // vista=home → Worker ve TODOS los clientes de hoy (no solo los de su ruta)
+    const vistaHome = req.query.vista === 'home';
+
+    if (req.user.rol === 'WORKER' && !vistaHome) {
+      params.push(req.user.id);
+      // El worker SOLO puede ver clientes asignados a sus rutas de HOY
       whereClause += ` AND EXISTS (
         SELECT 1 FROM ruta_clientes rc 
         JOIN rutas r ON r.id = rc.ruta_id 
-        WHERE rc.cliente_id = c.id AND r.worker_id = $${params.length}
+        WHERE rc.cliente_id = c.id AND r.worker_id = $${params.length} AND DATE(r.fecha_asignacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') = DATE(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
+      )`;
+    } else if (worker_id) {
+      params.push(worker_id);
+      // Filtramos clientes que pertenezcan a alguna ruta de HOY del worker (para Monitoreo)
+      whereClause += ` AND EXISTS (
+        SELECT 1 FROM ruta_clientes rc 
+        JOIN rutas r ON r.id = rc.ruta_id 
+        WHERE rc.cliente_id = c.id AND r.worker_id = $${params.length} AND DATE(r.fecha_asignacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') = DATE(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
       )`;
     }
 
@@ -81,14 +92,32 @@ router.get('/', async (req, res) => {
     const dataQuery = `
       SELECT c.*, c.dias_retraso as dias_atraso, ub.latitud, ub.longitud, ub.direccion, ub.distrito,
              u.nombres || ' ' || u.apellidos AS bloqueado_por_nombre,
-             r.nombre AS ruta_nombre,
-             uw.nombres || ' ' || uw.apellidos AS worker_nombre
+             latest_ruta.ruta_nombre,
+             COALESCE(latest_ficha.worker_nombre, latest_ruta.worker_nombre) AS worker_nombre,
+             COALESCE(latest_ficha.worker_nombres, latest_ruta.worker_nombres) AS worker_nombres,
+             COALESCE(latest_ficha.worker_apellidos, latest_ruta.worker_apellidos) AS worker_apellidos
       FROM clientes c
       LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
       LEFT JOIN usuarios u ON u.id = c.bloqueado_por
-      LEFT JOIN ruta_clientes rc ON rc.cliente_id = c.id
-      LEFT JOIN rutas r ON r.id = rc.ruta_id
-      LEFT JOIN usuarios uw ON uw.id = r.worker_id
+      LEFT JOIN LATERAL (
+        SELECT r.nombre AS ruta_nombre, uw.nombres || ' ' || uw.apellidos AS worker_nombre,
+               uw.nombres AS worker_nombres, uw.apellidos AS worker_apellidos
+        FROM ruta_clientes rc
+        JOIN rutas r ON r.id = rc.ruta_id
+        LEFT JOIN usuarios uw ON uw.id = r.worker_id
+        WHERE rc.cliente_id = c.id
+        ORDER BY r.fecha_asignacion DESC
+        LIMIT 1
+      ) latest_ruta ON true
+      LEFT JOIN LATERAL (
+        SELECT uw.nombres || ' ' || uw.apellidos AS worker_nombre,
+               uw.nombres AS worker_nombres, uw.apellidos AS worker_apellidos
+        FROM fichas f
+        LEFT JOIN usuarios uw ON uw.id = f.worker_id
+        WHERE f.cliente_id = c.id
+        ORDER BY f.created_at DESC
+        LIMIT 1
+      ) latest_ficha ON true
       ${whereClause}
       ORDER BY c.apellidos, c.nombres
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -127,7 +156,7 @@ router.get('/mapa', async (req, res) => {
     const params = [];
     let paramIdx = 1;
 
-    const sedeId = req.headers['x-sede-id'];
+    const sedeId = req.headers['x-sede-id'] || req.user.sede_id;
     if (sedeId) {
       queryClientes += ` AND c.sede_id = $${paramIdx++}`;
       params.push(sedeId);

@@ -1,25 +1,26 @@
 import React, { useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, FlatList, 
-  Alert, ActivityIndicator, Dimensions, Modal, ScrollView, Platform
+  Alert, ActivityIndicator, Dimensions, Modal, ScrollView, Platform, TextInput
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { TrackingService } from '../services/TrackingService';
+import { MODELO_NEGOCIO } from '../config';
 
 const { width } = Dimensions.get('window');
 
 const STATUS_OPTIONS = [
-  { id: 'TODOS', label: 'TODOS LOS CLIENTES', color: '#64748b' },
-  { id: 'LIBRE', label: 'SOLO LIBRES', color: '#3b82f6' },
+  { id: 'TODOS', label: 'TODOS', color: '#64748b' },
   { id: 'EN_VISITA', label: 'EN CAMINO', color: '#a855f7' },
-  { id: 'VISITADO_PAGO', label: 'GESTIONADOS', color: '#10b981' },
-  { id: 'REPROGRAMADO', label: 'REPROGRAMADOS', color: '#f59e0b' },
-  { id: 'NO_ENCONTRADO', label: 'NO ENCONTRADOS', color: '#ef4444' },
+  { id: 'VISITADO_PAGO', label: 'GESTIONADO', color: '#10b981' },
+  { id: 'REPROGRAMADO', label: 'REPROG.', color: '#f59e0b' },
+  { id: 'NO_ENCONTRADO', label: 'NO ENCONTR.', color: '#ef4444' },
 ];
 
 // Cronómetro: cuenta hh:mm:ss desde un timestamp de inicio
@@ -65,6 +66,39 @@ function useCronometro(startTime) {
   return elapsed;
 }
 
+// Formatea el nombre del worker en formato: Nombre + Inicial Primer Apellido + Inicial Segundo Apellido
+function formatWorkerName(nombres, apellidos, fullName) {
+  if (nombres) {
+    const namePart = nombres.trim().split(/\s+/)[0];
+    if (!apellidos) return namePart;
+    const apellidoParts = apellidos.trim().split(/\s+/).filter(Boolean);
+    if (apellidoParts.length === 0) return namePart;
+    const firstInitial = apellidoParts[0].charAt(0).toUpperCase();
+    if (apellidoParts.length > 1) {
+      const secondInitial = apellidoParts[1].charAt(0).toUpperCase();
+      return `${namePart} ${firstInitial}.${secondInitial}`;
+    }
+    return `${namePart} ${firstInitial}.`;
+  } else if (fullName) {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '';
+    const namePart = parts[0];
+    if (parts.length === 1) return namePart;
+    if (parts.length === 3) {
+      return `${namePart} ${parts[1].charAt(0).toUpperCase()}.${parts[2].charAt(0).toUpperCase()}`;
+    }
+    if (parts.length === 2) {
+      return `${namePart} ${parts[1].charAt(0).toUpperCase()}.`;
+    }
+    if (parts.length >= 4) {
+      const firstSurnameInitial = parts[parts.length - 2].charAt(0).toUpperCase();
+      const secondSurnameInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+      return `${namePart} ${firstSurnameInitial}.${secondSurnameInitial}`;
+    }
+  }
+  return null;
+}
+
 export default function HomeScreen({ navigation }) {
   const { api, user, logout } = useContext(AuthContext);
   const [journey, setJourney] = useState(null); // jornada del día
@@ -77,8 +111,59 @@ export default function HomeScreen({ navigation }) {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('TODOS');
   const [actionLoading, setActionLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   // Estado local de clientes para reflejar cambios offline en tiempo real
   const [localClients, setLocalClients] = useState([]);
+  const [selectedClientIds, setSelectedClientIds] = useState([]);
+
+  const handleToggleClientSelection = async (clientId) => {
+    let newSelection;
+    if (selectedClientIds.includes(clientId)) {
+      newSelection = selectedClientIds.filter(id => id !== clientId);
+    } else {
+      newSelection = [...selectedClientIds, clientId];
+    }
+    
+    setSelectedClientIds(newSelection);
+
+    // Si está online, guardar en backend
+    if (isOnline && api) {
+      try {
+        await api.post('/api/rutas/auto-crear', { cliente_ids: newSelection });
+        console.log('✅ Ruta auto-creada en el servidor');
+      } catch (err) {
+        console.warn('⚠️ Error al guardar selección de ruta online:', err.message);
+      }
+    }
+
+    // Guardar en cache local (actualizando las rutas del día)
+    try {
+      const { getDayData, saveDayData } = require('../services/OfflineService');
+      const cached = await getDayData();
+      if (cached) {
+        // Mapear la selección a objetos ruta_clientes
+        const newRutasData = newSelection.map((id, index) => {
+          const clientObj = cached.clients?.find(c => String(c.id) === id) || {};
+          return {
+            cliente_id: id,
+            cliente_estado: clientObj.estado || 'LIBRE',
+            nombres: clientObj.nombres || '',
+            apellidos: clientObj.apellidos || '',
+            orden: index + 1,
+            deuda_total: clientObj.deuda_total || 0,
+            cliente_direccion: clientObj.direccion || '',
+            distrito: clientObj.distrito || '',
+            latitud: clientObj.latitud || 0,
+            longitud: clientObj.longitud || 0
+          };
+        });
+        cached.rutas = newRutasData;
+        await saveDayData(cached);
+      }
+    } catch (err) {
+      console.warn('⚠️ Error al actualizar cache de ruta local:', err.message);
+    }
+  };
 
   // Cronómetro de almuerzo (corre solo si estado es EN_REFRIGERIO)
   const almuerzoStart = journey?.estado_jornada === 'EN_REFRIGERIO' ? journey?.hora_inicio_almuerzo : null;
@@ -134,9 +219,16 @@ export default function HomeScreen({ navigation }) {
     };
   }, [api, isOnline, journey?.estado_jornada]);
 
-  // Pantalla completa Android (Removido para usar Insets de forma nativa)
+  // Ocultar barra de navegación del celular
   useEffect(() => {
-    // Ya no ocultamos la barra para que useSafeAreaInsets actúe correctamente
+    if (Platform.OS === 'android') {
+      try {
+        NavigationBar.setVisibilityAsync('hidden');
+        NavigationBar.setBehaviorAsync('overlay-swipe');
+      } catch (e) {
+        console.warn('Error setting NavigationBar visibility:', e);
+      }
+    }
   }, []);
 
   const [pendingOfflineIds, setPendingOfflineIds] = useState([]);
@@ -172,7 +264,11 @@ export default function HomeScreen({ navigation }) {
       if (!isOnline) {
         const localData = await getDayData();
         if (localData) {
-          if (pageNum === 1) setJourney(localData.journey);
+          if (pageNum === 1) {
+            setJourney(localData.journey);
+            const clientIds = (localData.rutas || []).map(r => String(r.cliente_id)).filter(Boolean);
+            setSelectedClientIds(clientIds);
+          }
           // Filtrar por si acaso el cache tiene de otros días (aunque guardamos solo hoy)
           const todayClients = (localData.clients || []).filter(c => 
             c.fecha_pago?.split('T')[0] === todayStr || pending.includes(String(c.id))
@@ -190,7 +286,7 @@ export default function HomeScreen({ navigation }) {
         const [resWorker, resRutas, resClients] = await Promise.all([
           api.get(`/api/workers/${user.id}`),
           api.get('/api/workers/me/ruta'),
-          api.get(`/api/clientes?page=${pageNum}&limit=100&fecha_pago=${todayStr}`)
+          api.get(`/api/clientes?page=${pageNum}&limit=100&fecha_pago=${todayStr}&vista=home`)
         ]);
 
         const freshJourney = resWorker.data.data;
@@ -202,6 +298,9 @@ export default function HomeScreen({ navigation }) {
         setAllClients(newData);
         setPage(pageNum);
 
+        const clientIds = (rutasData || []).map(r => String(r.cliente_id)).filter(Boolean);
+        setSelectedClientIds(clientIds);
+
         await saveDayData({
           journey: freshJourney, 
           clients: newData,
@@ -210,7 +309,7 @@ export default function HomeScreen({ navigation }) {
         await logConnectionStatus('ONLINE');
       } else {
         const limit = 100;
-        const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}&fecha_pago=${todayStr}`);
+        const resClients = await api.get(`/api/clientes?page=${pageNum}&limit=${limit}&fecha_pago=${todayStr}&vista=home`);
         const newData = resClients.data.data || [];
         setHasMore(newData.length === limit);
         setAllClients(prev => [...prev, ...newData]);
@@ -220,7 +319,11 @@ export default function HomeScreen({ navigation }) {
       console.log('❌ [Home] Error en fetchData:', e.message);
       const localData = await getDayData();
       if (localData) {
-        if (pageNum === 1) setJourney(localData.journey);
+        if (pageNum === 1) {
+          setJourney(localData.journey);
+          const clientIds = (localData.rutas || []).map(r => String(r.cliente_id)).filter(Boolean);
+          setSelectedClientIds(clientIds);
+        }
         setAllClients(localData.clients || []);
       }
     } finally {
@@ -252,9 +355,20 @@ export default function HomeScreen({ navigation }) {
   }, [isOnline]));
 
   useEffect(() => {
-    if (filterStatus === 'TODOS') setFilteredClients(localClients);
-    else setFilteredClients(localClients.filter(c => c.estado === filterStatus));
-  }, [filterStatus, localClients]);
+    let result = localClients;
+    if (filterStatus !== 'TODOS') {
+      result = result.filter(c => c.estado === filterStatus);
+    }
+    if (searchQuery.trim().length > 0) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c => 
+        (c.nombres && c.nombres.toLowerCase().includes(q)) || 
+        (c.apellidos && c.apellidos.toLowerCase().includes(q)) ||
+        (c.direccion && c.direccion.toLowerCase().includes(q))
+      );
+    }
+    setFilteredClients(result);
+  }, [filterStatus, localClients, searchQuery]);
 
   const loadMore = () => {
     if (hasMore && !loading && !refreshing) {
@@ -411,34 +525,57 @@ export default function HomeScreen({ navigation }) {
       case 'VISITADO_PAGO': return '#00C853';
       case 'REPROGRAMADO':  return '#FFB300';
       case 'NO_ENCONTRADO': return '#D50000';
-      default:              return '#002FA7'; // Azul Klein
+      default:              return '#047CFD'; // Azul Klein
     }
   };
 
-  const renderClient = ({ item }) => {
+  const renderClient = ({ item, index }) => {
     const isOfflinePending = pendingOfflineIds.includes(String(item.id));
     const estado = isOfflinePending ? (pendingStatuses[String(item.id)] || item.estado) : item.estado;
     const cardColor = getStatusColor(estado);
     
     // Bloquear: verificar si hay otro cliente ya en visita por este worker
-    const clienteEnVisita = localClients.find(
+    const clienteEnVisitaPorMi = localClients.find(
       c => c.estado === 'EN_VISITA' && String(c.bloqueado_por) === String(user.id)
     );
-    const esteEstaEnVisita = estado === 'EN_VISITA' && String(item.bloqueado_por) === String(user.id);
-    const bloqueado = clienteEnVisita && !esteEstaEnVisita;
+    const esteEstaEnVisitaPorMi = estado === 'EN_VISITA' && String(item.bloqueado_por) === String(user.id);
+    
+    // Bloqueado por OTRO worker (alguien más ya lo está visitando)
+    const bloqueadoPorOtro = estado === 'EN_VISITA' && item.bloqueado_por && String(item.bloqueado_por) !== String(user.id);
+    
+    // Bloqueado porque YO ya tengo otro cliente en visita
+    const bloqueadoPorMiOtro = clienteEnVisitaPorMi && !esteEstaEnVisitaPorMi;
+    
+    const bloqueado = bloqueadoPorOtro || bloqueadoPorMiOtro;
 
     return (
       <TouchableOpacity
         style={[styles.clientCard, { borderLeftColor: cardColor, opacity: bloqueado ? 0.55 : 1 }]}
         onPress={() => {
+          if (MODELO_NEGOCIO === 'CAJA_HUANCAYO') {
+            navigation.navigate('DetalleCliente', { cliente: item, modo: 'SOLICITUD' });
+            return;
+          }
           if (!puedeTrabajar) {
             Alert.alert('Atención', 'Debes iniciar tu jornada para gestionar clientes.');
             return;
           }
-          if (bloqueado) {
+          const isGestionado = ['VISITADO_PAGO', 'REPROGRAMADO', 'NO_ENCONTRADO'].includes(estado);
+          if (isGestionado) {
+            Alert.alert('Cliente ya gestionado', 'Este cliente ya cuenta con una visita registrada hoy.');
+            return;
+          }
+          if (bloqueadoPorOtro) {
+            Alert.alert(
+              'Cliente ocupado',
+              `Este cliente está siendo visitado por ${item.bloqueado_por_nombre || 'otro worker'}. No puedes gestionarlo en este momento.`
+            );
+            return;
+          }
+          if (bloqueadoPorMiOtro) {
             Alert.alert(
               'Cliente en curso',
-              `Ya tienes a "${clienteEnVisita.nombres} ${clienteEnVisita.apellidos}" en visita. Libera ese cliente antes de seleccionar otro.`
+              `Ya tienes a "${clienteEnVisitaPorMi.nombres} ${clienteEnVisitaPorMi.apellidos}" en visita. Libera ese cliente antes de seleccionar otro.`
             );
             return;
           }
@@ -446,25 +583,68 @@ export default function HomeScreen({ navigation }) {
         }}
       >
         <View style={styles.clientInfo}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
-            {isOfflinePending && (
-              <View style={styles.offlineTag}>
-                <Ionicons name="cloud-offline" size={10} color="#fff" />
-                <Text style={styles.offlineTagText}>OFFLINE</Text>
-              </View>
-            )}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+             <Text style={styles.clientName}>{item.nombres} {item.apellidos}</Text>
+             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+               {MODELO_NEGOCIO === 'CAJA_HUANCAYO' && (
+                 <TouchableOpacity
+                   style={{ padding: 4 }}
+                   onPress={() => handleToggleClientSelection(String(item.id))}
+                 >
+                   <Ionicons 
+                     name={selectedClientIds.includes(String(item.id)) ? "checkbox" : "square-outline"} 
+                     size={22} 
+                     color="#047CFD" 
+                   />
+                 </TouchableOpacity>
+               )}
+               {isOfflinePending && (
+                <View style={styles.offlineTag}>
+                  <Ionicons name="cloud-offline" size={10} color="#fff" />
+                  <Text style={styles.offlineTagText}>OFFLINE</Text>
+                </View>
+              )}
+             </View>
           </View>
-          <Text style={styles.clientAddress} numberOfLines={1}>{item.direccion}</Text>
-          <Text style={styles.clientDebt}>Deuda: S/ {parseFloat(item.deuda_total || 0).toFixed(2)}</Text>
-          <View style={styles.badgeRow}>
-            <View style={[styles.statusBadge, { backgroundColor: cardColor + '15' }]}>
-              <Text style={[styles.statusText, { color: cardColor }]}>{estado}</Text>
+          <Text style={styles.clientSubtitle}>Deuda: S/ {parseFloat(item.deuda_total || 0).toFixed(2)}</Text>
+          <Text style={styles.clientAddress} numberOfLines={2}>{item.direccion}{item.distrito ? `, ${item.distrito}` : ''}</Text>
+          
+          <View style={styles.cardFooter}>
+            <Text style={styles.clientIndex}>{index + 1}</Text>
+            <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+              {item.ruta_nombre ? (
+                <View style={styles.rutaBadge}>
+                  <Ionicons name="navigate-outline" size={11} color="#047CFD" />
+                  <Text style={styles.rutaBadgeText} numberOfLines={1}>{item.ruta_nombre}</Text>
+                </View>
+              ) : (
+                <View style={[styles.rutaBadge, { backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }]}>
+                  <Ionicons name="globe-outline" size={11} color="#16a34a" />
+                  <Text style={[styles.rutaBadgeText, { color: '#16a34a' }]}>Libre</Text>
+                </View>
+              )}
+              {/* Worker Badge */}
+              {(() => {
+                const formattedWorker = formatWorkerName(item.worker_nombres, item.worker_apellidos, item.worker_nombre);
+                if (formattedWorker) {
+                  return (
+                    <View style={styles.workerBadge}>
+                      <Ionicons name="person-circle-outline" size={12} color="#4b5563" />
+                      <Text style={styles.workerBadgeText} numberOfLines={1}>{formattedWorker}</Text>
+                    </View>
+                  );
+                }
+                return null;
+              })()}
+              {bloqueadoPorOtro && (
+                <View style={[styles.rutaBadge, { backgroundColor: '#fef2f2', borderColor: '#fecaca' }]}>
+                  <Ionicons name="person-outline" size={11} color="#dc2626" />
+                  <Text style={[styles.rutaBadgeText, { color: '#dc2626' }]} numberOfLines={1}>{item.bloqueado_por_nombre || 'Otro'}</Text>
+                </View>
+              )}
             </View>
-            <Text style={styles.distritoText}>{item.distrito}</Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#002FA7" />
       </TouchableOpacity>
     );
   };
@@ -481,7 +661,7 @@ export default function HomeScreen({ navigation }) {
         <Ionicons 
           name={enRefrigerio ? "restaurant" : "lock-closed"} 
           size={50} 
-          color={enRefrigerio ? "#FFB300" : "#002FA7"} 
+          color={enRefrigerio ? "#FFB300" : "#047CFD"} 
         />
       </View>
       <Text style={styles.lockTitle}>{enRefrigerio ? "En hora de almuerzo" : "Jornada no iniciada"}</Text>
@@ -515,64 +695,60 @@ export default function HomeScreen({ navigation }) {
     </View>
   );
 
-  const JornadaBadge = () => {
-    const colors = {
-      JORNADA_INICIADA: '#10b981',
-      EN_REFRIGERIO: '#f59e0b',
-      JORNADA_FINALIZADA: '#94a3b8',
-    };
-    const labels = {
-      JORNADA_INICIADA: 'Jornada activa',
-      EN_REFRIGERIO: `Receso: ${timerAlmuerzo}`,
-      JORNADA_FINALIZADA: 'Día finalizado',
-    };
-    const color = colors[jornadaEstado] || '#94a3b8';
-    return (
-      <View style={[styles.jornadaBadge, { borderColor: color }]}>
-        <View style={[styles.jornadaDot, { backgroundColor: color }]} />
-        <Text style={[styles.jornadaBadgeText, { color }]}>
-          {labels[jornadaEstado] || 'Sin jornada'}
-        </Text>
-      </View>
-    );
+  const getJornadaCircleColor = () => {
+    if (jornadaEstado === 'JORNADA_INICIADA') return '#10b981'; // Verde
+    if (jornadaEstado === 'EN_REFRIGERIO') return '#f59e0b'; // Amarillo
+    if (jornadaEstado === 'JORNADA_FINALIZADA') return '#a855f7'; // Púrpura
+    return '#ffffff'; // Blanco (aún no inicia)
   };
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar hidden={true} style="light" backgroundColor="#000000" translucent={true} />
         {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.headerTitle}>Routing</Text>
+              <Text style={styles.headerTitle}>InformaTech</Text>
               <TouchableOpacity onPress={() => navigation.navigate('DebugStorage')}>
-                <Ionicons name="map" size={20} color="#4263EB" />
+                <Ionicons name="map" size={20} color="#ffffff" />
               </TouchableOpacity>
             </View>
-            <View style={styles.avatar}>
-              <Text style={{color: '#FFF', fontWeight: 'bold'}}>{user?.nombres?.charAt(0)}</Text>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => setShowJourneyModal(true)}>
+                <Ionicons name="time" size={24} color={enRefrigerio ? '#F59F00' : '#ffffff'} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={handleClearCache}>
+                <Ionicons name="file-tray-outline" size={22} color="#ffffff" opacity={0.8} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={logout}>
+                <Ionicons name="log-out-outline" size={24} color="#ffb3b3" />
+              </TouchableOpacity>
             </View>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15 }}>
             <Text style={[styles.headerUser, !isOnline && { color: '#ef4444' }]}>
-              {user?.nombres} • {isOnline ? 'Online' : 'Offline'}
+              {user?.nombres} • {isOnline ? 'Online' : 'Offline'}{user?.sede_nombre ? ` • ${user.sede_nombre}` : ''}
             </Text>
-            <View style={styles.headerIcons}>
-              {jornadaEstado && <JornadaBadge />}
-              <TouchableOpacity style={styles.iconBtn} onPress={() => setShowJourneyModal(true)}>
-                <Ionicons name="time" size={24} color={enRefrigerio ? '#F59F00' : '#4263EB'} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={handleClearCache}>
-                <Ionicons name="file-tray-outline" size={22} color="#495057" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={logout}>
-                <Ionicons name="log-out-outline" size={24} color="#E03131" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.jornadaCircle, { backgroundColor: getJornadaCircleColor() }]}
+              onPress={() => setShowJourneyModal(true)}
+            />
+          </View>
+          <View style={styles.searchContainer}>
+            <Ionicons name="pin" size={20} color="#6B7280" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar"
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
           </View>
         </View>
 
-        {/* FILTRO */}
+        {/* FILTRO DROPDOWN RESTAURADO */}
         {puedeTrabajar && (
           <View style={styles.filterSection}>
             <Text style={styles.filterLabel}>VISTA DE CLIENTES:</Text>
@@ -581,14 +757,14 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.filterValue}>
                 {STATUS_OPTIONS.find(o => o.id === filterStatus)?.label}
               </Text>
-              <Ionicons name="chevron-down" size={16} color="#4263EB" />
+              <Ionicons name="chevron-down" size={16} color="#047CFD" />
             </TouchableOpacity>
           </View>
         )}
 
         {/* CONTENIDO PRINCIPAL */}
         {loading ? (
-          <ActivityIndicator size="large" color="#4263EB" style={{ marginTop: 80 }} />
+          <ActivityIndicator size="large" color="#047CFD" style={{ marginTop: 80 }} />
         ) : !jornadaEstado || finalizado || enRefrigerio ? (
           <NoJornadaBanner />
         ) : (
@@ -601,7 +777,8 @@ export default function HomeScreen({ navigation }) {
             onRefresh={() => { setRefreshing(true); fetchData(1, true); }}
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
-            ListFooterComponent={hasMore ? <ActivityIndicator size="small" color="#4263EB" /> : null}
+            showsVerticalScrollIndicator={false}
+            ListFooterComponent={hasMore ? <ActivityIndicator size="small" color="#047CFD" /> : null}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="search-outline" size={50} color="#3F3F46" />
@@ -609,6 +786,44 @@ export default function HomeScreen({ navigation }) {
               </View>
             }
           />
+        )}
+
+        {/* BOTON FLOTANTE (FAB) ELIMINADO SEGUN SOLICITUD */}
+
+        {/* BOTTOM STATUS BAR (Reemplaza al filtro dropdown) */}
+        {puedeTrabajar && !loading && !enRefrigerio && !finalizado && (
+          <View style={styles.bottomFilterBar}>
+            {STATUS_OPTIONS.map(opt => {
+               const count = opt.id === 'TODOS' ? localClients.length : localClients.filter(c => c.estado === opt.id).length;
+               const isActive = filterStatus === opt.id;
+               return (
+                 <TouchableOpacity 
+                   key={opt.id} 
+                   style={[styles.bottomFilterItem, { borderBottomColor: opt.color, borderBottomWidth: 5, opacity: 1 }]}
+                   onPress={() => setFilterStatus(opt.id)}
+                 >
+                   <Text style={[styles.bottomFilterCount, isActive && { color: '#1A1A1A' }]}>{count}</Text>
+                   <Text style={[styles.bottomFilterLabel, isActive && { color: '#1A1A1A', fontWeight: 'bold' }]}>{opt.label}</Text>
+                 </TouchableOpacity>
+               )
+            })}
+          </View>
+        )}
+
+        {MODELO_NEGOCIO === 'CAJA_HUANCAYO' && selectedClientIds.length > 0 && (
+          <TouchableOpacity 
+            style={styles.floatingBag}
+            onPress={() => navigation.navigate('RutasTab')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.floatingBagContent}>
+              <Ionicons name="briefcase" size={24} color="#FFF" />
+              <View style={styles.floatingBagBadge}>
+                <Text style={styles.floatingBagBadgeText}>{selectedClientIds.length}</Text>
+              </View>
+            </View>
+            <Text style={styles.floatingBagLabel}>Ver mi Ruta</Text>
+          </TouchableOpacity>
         )}
 
         {/* ── MODAL JORNADA ─────────────────────────────── */}
@@ -619,12 +834,12 @@ export default function HomeScreen({ navigation }) {
 
               {/* Estado actual */}
               <View style={[styles.estadoBox, {
-                backgroundColor: '#0A0A0B',
-                borderColor: jornadaEstado === 'JORNADA_INICIADA' ? '#0CA678' : '#28282E',
+                backgroundColor: '#F5F5F0',
+                borderColor: jornadaEstado === 'JORNADA_INICIADA' ? '#0CA678' : '#E5E5E0',
                 borderWidth: 1
               }]}>
                 <Text style={[styles.estadoLabel, {
-                  color: jornadaEstado === 'JORNADA_INICIADA' ? '#0CA678' : '#A1A1AA'
+                  color: jornadaEstado === 'JORNADA_INICIADA' ? '#0CA678' : '#6B7280'
                 }]}>
                   {jornadaEstado === 'JORNADA_INICIADA' ? 'Jornada activa' :
                    jornadaEstado === 'EN_REFRIGERIO' ? `En receso: ${timerAlmuerzo}` :
@@ -635,69 +850,96 @@ export default function HomeScreen({ navigation }) {
 
               {/* Botones según estado */}
               <View style={styles.modalBtns}>
-                <TouchableOpacity
-                  style={[styles.mBtn, {
-                    backgroundColor: !jornadaEstado ? '#4263EB' : '#141416',
-                    borderColor: '#28282E',
-                    borderWidth: 1,
-                  }]}
-                  onPress={handleIniciarDia}
-                  disabled={!!jornadaEstado || actionLoading}
-                >
-                  <Ionicons name="play-circle" size={20} color={!jornadaEstado ? '#fff' : '#A1A1AA'} />
-                  <Text style={[styles.mBtnText, { color: !jornadaEstado ? '#fff' : '#A1A1AA' }]}>
-                    INICIAR DÍA
-                  </Text>
-                </TouchableOpacity>
+                  
+                  {/* SI NO HAY JORNADA, SOLO MUESTRA INICIAR */}
+                  {!jornadaEstado && (
+                    <TouchableOpacity
+                      style={[styles.mBtn, {
+                        backgroundColor: '#047CFD',
+                        borderColor: '#047CFD',
+                        borderWidth: 1,
+                      }]}
+                      onPress={handleIniciarDia}
+                      disabled={actionLoading}
+                    >
+                      <Ionicons name="play-circle" size={22} color="#fff" />
+                      <Text style={[styles.mBtnText, { color: '#fff' }]}>
+                        INICIAR DÍA
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
-                {enRefrigerio ? (
-                  <TouchableOpacity
-                    style={[styles.mBtn, { backgroundColor: '#0CA678', borderWidth: 0 }]}
-                    onPress={handleFinAlmuerzo}
-                    disabled={actionLoading}
-                  >
-                    <Ionicons name="checkmark-done" size={20} color="#fff" />
-                    <Text style={styles.mBtnText}>FIN DE ALMUERZO</Text>
-                  </TouchableOpacity>
-                ) : (
+                  {/* SI ESTA EN REFRIGERIO, SOLO MUESTRA FIN DE ALMUERZO */}
+                  {enRefrigerio && (
+                    <TouchableOpacity
+                      style={[styles.mBtn, { backgroundColor: '#0CA678', borderWidth: 0 }]}
+                      onPress={handleFinAlmuerzo}
+                      disabled={actionLoading}
+                    >
+                      <Ionicons name="checkmark-done" size={22} color="#fff" />
+                      <Text style={styles.mBtnText}>FIN DE ALMUERZO</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* SI LA JORNADA ESTA INICIADA Y NO ESTA EN REFRIGERIO, MUESTRA ALMUERZO Y FIN DE DIA */}
+                  {jornadaEstado === 'JORNADA_INICIADA' && !enRefrigerio && (
+                    <>
+                      <TouchableOpacity
+                        style={[styles.mBtn, {
+                          backgroundColor: '#FFF8E1',
+                          borderColor: '#F59F00',
+                          borderWidth: 1,
+                        }]}
+                        onPress={handleIniciarAlmuerzo}
+                        disabled={actionLoading}
+                      >
+                        <Ionicons name="restaurant" size={20} color="#F59F00" />
+                        <Text style={[styles.mBtnText, { color: '#F59F00' }]}>
+                          INICIAR ALMUERZO
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.mBtn, {
+                          backgroundColor: '#FEE2E2',
+                          borderColor: '#EF4444',
+                          borderWidth: 1,
+                          marginTop: 4
+                        }]}
+                        onPress={handleFinalizarDia}
+                        disabled={actionLoading}
+                      >
+                        <Ionicons name="stop-circle" size={20} color="#EF4444" />
+                        <Text style={[styles.mBtnText, { color: '#EF4444' }]}>
+                          FINALIZAR DÍA
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+
+                  {/* SI LA JORNADA HA SIDO FINALIZADA */}
+                  {jornadaEstado === 'JORNADA_FINALIZADA' && (
+                    <View style={{ padding: 15, backgroundColor: '#F3F4F6', borderRadius: 12, alignItems: 'center' }}>
+                      <Ionicons name="moon" size={24} color="#6B7280" style={{ marginBottom: 5 }} />
+                      <Text style={{ color: '#6B7280', fontWeight: 'bold' }}>Tu jornada ha terminado por hoy.</Text>
+                    </View>
+                  )}
+
                   <TouchableOpacity
                     style={[styles.mBtn, {
                       backgroundColor: 'transparent',
-                      borderColor: '#F59F00',
-                      borderWidth: 1,
+                      marginTop: 10
                     }]}
-                    onPress={handleIniciarAlmuerzo}
-                    disabled={jornadaEstado !== 'JORNADA_INICIADA' || actionLoading}
+                    onPress={() => setShowJourneyModal(false)}
                   >
-                    <Ionicons name="restaurant" size={20} color="#F59F00" />
-                    <Text style={[styles.mBtnText, { color: '#F59F00' }]}>
-                      ALMUERZO
+                    <Text style={[styles.mBtnText, { color: '#6B7280', fontWeight: 'bold' }]}>
+                      CERRAR
                     </Text>
                   </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  style={[styles.mBtn, {
-                    backgroundColor: 'transparent',
-                    borderColor: '#E03131',
-                    borderWidth: 1,
-                  }]}
-                  onPress={handleFinalizarDia}
-                  disabled={jornadaEstado !== 'JORNADA_INICIADA' || actionLoading}
-                >
-                  <Ionicons name="stop-circle" size={20} color="#E03131" />
-                  <Text style={[styles.mBtnText, { color: '#E03131' }]}>
-                    FINALIZAR DÍA
-                  </Text>
-                </TouchableOpacity>
+                </View>
               </View>
-
-              <TouchableOpacity onPress={() => setShowJourneyModal(false)} style={styles.closeBtn}>
-                <Text style={styles.closeBtnText}>CERRAR</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        </Modal>
+          </Modal>
 
         {/* MODAL FILTRO */}
         <Modal visible={showFilterModal} transparent animationType="slide">
@@ -706,21 +948,21 @@ export default function HomeScreen({ navigation }) {
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Filtrar</Text>
                 <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                  <Ionicons name="close" size={28} color="#A1A1AA" />
+                  <Ionicons name="close" size={28} color="#6B7280" />
                 </TouchableOpacity>
               </View>
-              <ScrollView style={{ maxHeight: 400 }}>
+              <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
                 {STATUS_OPTIONS.map((opt) => (
                   <TouchableOpacity
                     key={opt.id}
-                    style={[styles.filterOpt, filterStatus === opt.id && { backgroundColor: '#141416' }]}
+                    style={[styles.filterOpt, filterStatus === opt.id && { backgroundColor: '#F0F0EB' }]}
                     onPress={() => { setFilterStatus(opt.id); setShowFilterModal(false); }}
                   >
                     <View style={[styles.statusDot, { backgroundColor: opt.color, width: 12, height: 12 }]} />
-                    <Text style={[styles.filterOptText, filterStatus === opt.id && { color: '#FFF', fontWeight: 'bold' }]}>
+                    <Text style={[styles.filterOptText, filterStatus === opt.id && { color: '#1A1A1A', fontWeight: 'bold' }]}>
                       {opt.label}
                     </Text>
-                    {filterStatus === opt.id && <Ionicons name="checkmark-circle" size={20} color="#4263EB" />}
+                    {filterStatus === opt.id && <Ionicons name="checkmark-circle" size={20} color="#047CFD" />}
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -733,57 +975,119 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A0B' },
-  header: { paddingHorizontal: 25, paddingTop: 30, paddingBottom: 25, backgroundColor: '#0A0A0B', borderBottomWidth: 1, borderBottomColor: '#28282E' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  header: { paddingHorizontal: 25, paddingTop: 30, paddingBottom: 25, backgroundColor: '#005dc3', borderBottomWidth: 0 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  avatar: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#4263EB', justifyContent: 'center', alignItems: 'center', shadowColor: '#4263EB', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width:0, height:4 } },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: '#FFFFFF' },
-  headerUser: { fontSize: 13, color: '#A1A1AA', fontWeight: '600' },
+  headerTitle: { fontSize: 24, fontWeight: '900', color: '#ffffff' },
+  headerUser: { fontSize: 13, color: '#e0e0e0', fontWeight: '600' },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: { marginLeft: 15, padding: 4 },
-  jornadaBadge: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, gap: 5 },
-  jornadaDot: { width: 8, height: 8, borderRadius: 4 },
-  jornadaBadgeText: { fontSize: 11, fontWeight: '800' },
-  filterSection: { padding: 20, backgroundColor: '#0A0A0B' },
-  filterLabel: { fontSize: 10, color: '#71717A', fontWeight: 'bold', marginBottom: 8, letterSpacing: 1 },
-  filterSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#141416', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: '#28282E' },
-  filterValue: { flex: 1, fontSize: 14, fontWeight: '700', color: '#FFF', marginLeft: 8 },
-  list: { padding: 20, paddingBottom: 100 },
-  clientCard: { backgroundColor: '#141416', borderRadius: 20, padding: 20, marginBottom: 16, borderLeftWidth: 4, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#28282E' },
-  clientInfo: { flex: 1 },
-  clientName: { fontSize: 16, fontWeight: '700', color: '#FFF' },
-  clientAddress: { fontSize: 13, color: '#A1A1AA', marginTop: 4 },
-  clientDebt: { fontSize: 13, color: '#E03131', fontWeight: '700', marginTop: 6 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginRight: 10 },
-  statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase' },
-  distritoText: { fontSize: 11, color: '#71717A' },
+  jornadaCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.5,
+    elevation: 2,
+  },
+  filterSection: { padding: 15, backgroundColor: '#F8FAFC' },
+  filterLabel: { fontSize: 10, color: '#6B7280', fontWeight: 'bold', marginBottom: 8, letterSpacing: 1 },
+  filterSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 14, borderRadius: 16, borderWidth: 1, borderColor: '#E5E5E0' },
+  filterValue: { flex: 1, fontSize: 14, fontWeight: '700', color: '#1A1A1A', marginLeft: 8 },
   statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 15, height: 46, borderRadius: 8, marginTop: 15 },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16, color: '#1A1A1A' },
+  list: { padding: 15, paddingBottom: 150 },
+  clientCard: { backgroundColor: '#FFFFFF', borderRadius: 10, borderTopLeftRadius: 0, borderBottomLeftRadius: 0, padding: 15, marginBottom: 12, borderLeftWidth: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
+  clientInfo: { flex: 1 },
+  clientName: { fontSize: 17, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
+  clientSubtitle: { fontSize: 13, color: '#6B7280', marginBottom: 2 },
+  clientAddress: { fontSize: 14, color: '#1A1A1A', marginBottom: 10 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 5 },
+  clientIndex: { fontSize: 14, color: '#6B7280', width: 24, height: 24, borderRadius: 12, borderWidth: 1, borderColor: '#FFB300', textAlign: 'center', lineHeight: 22, fontWeight: 'bold' },
+  clientDate: { fontSize: 12, color: '#6B7280' },
+  fab: { position: 'absolute', bottom: 90, right: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 6 },
+  bottomFilterBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, backgroundColor: '#FFFFFF', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#E5E5E0', paddingBottom: 10 },
+  bottomFilterItem: { alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%', borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  bottomFilterCount: { fontSize: 16, fontWeight: 'bold', color: '#6B7280', marginBottom: 2 },
+  bottomFilterLabel: { fontSize: 9, color: '#9CA3AF', fontWeight: '600' },
+  workerBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, maxWidth: 160 },
+  workerBadgeText: { fontSize: 11, fontWeight: '700', color: '#475569' },
   offlineTag: { backgroundColor: '#E03131', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 },
   offlineTagText: { color: '#fff', fontSize: 9, fontWeight: '900' },
-  lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, backgroundColor: '#0A0A0B' },
-  lockIconContainer: { width: 100, height: 100, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#28282E' },
-  lockTitle: { fontSize: 24, fontWeight: '900', color: '#FFF', marginBottom: 12, textAlign: 'center' },
-  lockSub: { fontSize: 14, color: '#71717A', textAlign: 'center', lineHeight: 22, marginBottom: 25 },
-  timerContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#33270A', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, borderWidth: 1, borderColor: '#F59F00', marginBottom: 25, gap: 8 },
-  timerText: { fontSize: 20, fontWeight: '900', color: '#F59F00', fontVariant: ['tabular-nums'] },
-  lockBtn: { backgroundColor: '#4263EB', flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 30, borderRadius: 20, gap: 10 },
+  lockBanner: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, backgroundColor: '#F8FAFC' },
+  lockIconContainer: { width: 100, height: 100, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 25, borderWidth: 1, borderColor: '#E5E5E0', backgroundColor: '#FFFFFF' },
+  lockTitle: { fontSize: 24, fontWeight: '900', color: '#1A1A1A', marginBottom: 12, textAlign: 'center' },
+  lockSub: { fontSize: 14, color: '#6B7280', textAlign: 'center', lineHeight: 22, marginBottom: 25 },
+  timerContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8E1', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, borderWidth: 1, borderColor: '#F59F00', marginBottom: 25, gap: 8 },
+  timerText: { fontSize: 20, fontWeight: '900', color: '#D97706', fontVariant: ['tabular-nums'] },
+  lockBtn: { backgroundColor: '#047CFD', flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 30, borderRadius: 20, gap: 10 },
   lockBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
-  modalCard: { backgroundColor: '#141416', width: '90%', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: '#28282E' },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: '#FFF', marginBottom: 20, textAlign: 'center' },
-  estadoBox: { borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalCard: { backgroundColor: '#FFFFFF', width: '90%', borderRadius: 24, padding: 28, borderWidth: 1, borderColor: '#E5E5E0', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: 10 } },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 20, textAlign: 'center' },
+  estadoBox: { borderRadius: 16, padding: 16, marginBottom: 20, alignItems: 'center', backgroundColor: '#F5F5F0', borderColor: '#E5E5E0', borderWidth: 1 },
   estadoLabel: { fontSize: 14, fontWeight: '700' },
   modalBtns: { gap: 12 },
   mBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16, borderRadius: 16 },
   mBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
   closeBtn: { marginTop: 20, alignItems: 'center' },
-  closeBtnText: { color: '#71717A', fontWeight: 'bold' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#141416', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 25, paddingBottom: 50 },
+  closeBtnText: { color: '#6B7280', fontWeight: 'bold' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 25, paddingBottom: 50, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: -5 }, elevation: 10 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  filterOpt: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#28282E' },
-  filterOptText: { flex: 1, marginLeft: 15, fontSize: 15, color: '#A1A1AA' },
+  filterOpt: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E5E5E0' },
+  filterOptText: { flex: 1, marginLeft: 15, fontSize: 15, color: '#4B5563' },
   empty: { marginTop: 80, alignItems: 'center' },
-  emptyText: { color: '#71717A', marginTop: 10, fontSize: 15 },
+  emptyText: { color: '#6B7280', marginTop: 10, fontSize: 15 },
+  rutaBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#eff6ff', borderWidth: 1, borderColor: '#bfdbfe', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, maxWidth: 160 },
+  rutaBadgeText: { fontSize: 11, fontWeight: '700', color: '#047CFD' },
+  // Bolsa flotante Caja Huancayo
+  floatingBag: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    backgroundColor: '#D92B2B',
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    zIndex: 9999,
+  },
+  floatingBagContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  floatingBagBadge: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 6,
+    paddingHorizontal: 4,
+  },
+  floatingBagBadgeText: {
+    color: '#D92B2B',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  floatingBagLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+    marginLeft: 8,
+  },
 });

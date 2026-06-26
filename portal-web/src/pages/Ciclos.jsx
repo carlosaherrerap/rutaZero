@@ -5,6 +5,7 @@ import {
   X, CheckCircle, WifiOff, Clock, CloudOff, Lock, ChevronDown,
   FileSpreadsheet, FileDown, FileUp, MapPin, User, Calendar, Tag
 } from 'lucide-react';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 const ESTADO_COLORS = {
   VISITADO_PAGO: { bg: 'var(--c-surface-2)', text: 'var(--c-success)', label: 'GESTIONADO' },
@@ -376,12 +377,10 @@ export default function Ciclos() {
                 <div className="text-muted">Estado actual: <EstadoBadge estado={selectedCliente.estado} /></div>
               </div>
               <label className="form-label">Nueva Fecha de Pago</label>
-              <input
-                type="date"
+              <CustomDatePicker
                 className="form-input"
                 value={nuevaFecha}
                 onChange={e => setNuevaFecha(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
               />
               <p style={{ fontSize: 12, color: 'var(--c-muted)', marginTop: 8 }}>
                 Al confirmar, el estado del cliente cambiará a <strong>LIBRE</strong> y su fecha de pago será actualizada.

@@ -104,6 +104,15 @@ export default function Workers() {
     }
   };
 
+  const getWorkerStatusColor = (w) => {
+    if (w.estado === 'INACTIVO') return '#212529';
+    const estado = (w.estado_jornada || 'SIN INICIAR').toUpperCase();
+    if (estado.includes('FINALIZADA')) return '#845EF7';
+    if (estado.includes('REFRIGERIO') || estado.includes('ALMUERZO')) return '#FFC107';
+    if (estado.includes('INICIADA')) return '#28A745';
+    return '#DC3545';
+  };
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', transition: 'all 0.3s' }}>
       
@@ -143,7 +152,7 @@ export default function Workers() {
                   onClick={() => handleSelectWorker(w)} 
                   style={{ cursor: 'pointer' }}
                 >
-                  <td>
+                  <td style={{ borderLeft: `6px solid ${getWorkerStatusColor(w)}`, paddingLeft: '16px' }}>
                     <div className="flex items-center gap-3">
                       <div className="avatar-small" style={{ width: '48px', height: '48px' }}>
                         <img src={getAvatarUrl(w.nombres, w.id)} alt="avatar" />

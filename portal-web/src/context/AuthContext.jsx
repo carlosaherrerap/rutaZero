@@ -39,6 +39,12 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     const response = await api.post('/api/auth/login', { username, password });
     const { token: accessToken, user: loggedUser } = response.data;
+
+    // BLOQUEO: Los WORKERS no pueden entrar a la plataforma web
+    if (loggedUser.rol === 'WORKER') {
+      throw new Error('Solo los administradores pueden acceder a este portal web.');
+    }
+
     setToken(accessToken);
     setUser(loggedUser);
     localStorage.setItem('token', accessToken);
@@ -57,14 +63,18 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         try {
           const res = await api.get('/api/auth/me');
-          setUser(res.data.user);
-        } catch (e) {
+          if (res.data.user.rol === 'WORKER') {
+            logout();
+          } else {
+            setUser(res.data.user);
+          }
+        } catch (err) {
           logout();
         }
       }
     };
     verify();
-  }, [token]); // depend on token
+  }, [token, api]); // depend on token
 
   const cambiarSede = (sede) => {
     setSedeActual(sede);
@@ -87,7 +97,12 @@ export const AuthProvider = ({ children }) => {
   const applyStyles = (s) => {
     if (!s) return;
     const root = document.documentElement;
-    root.style.setProperty('--c-surface', s.sidebar_bg);
+    const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000' || s.main_bg.toLowerCase() === '#050505';
+    
+    root.style.setProperty('--c-sidebar-bg', '#027BFD'); // Override theme DB to ensure the requested blue color
+    root.style.setProperty('--c-surface', isDark ? '#1f2128' : '#FFFFFF');
+    root.style.setProperty('--c-surface-2', isDark ? '#2a2d38' : '#F3F4F6');
+    root.style.setProperty('--c-border', isDark ? '#3a3e4e' : '#E5E7EB');
     root.style.setProperty('--c-bg', s.main_bg);
     root.style.setProperty('--c-text', s.main_text);
     root.style.setProperty('--c-sidebar-text', s.sidebar_text);
@@ -96,7 +111,6 @@ export const AuthProvider = ({ children }) => {
     root.style.setProperty('--font-main', s.font_family || 'Inter');
     
     // Also update data-theme attribute for CSS selectors
-    const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000';
     root.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     

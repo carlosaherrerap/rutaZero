@@ -74,7 +74,7 @@ const FichaFormScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF', padding: 25 },
+  container: { flex: 1, backgroundColor: '#FFFFFF', padding: 25 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
   activeDot: { backgroundColor: '#3B82F6', width: 20 },
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
   sub: { color: '#6B7280', marginTop: 5 },
   input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 12, marginBottom: 15 },
   btn: { backgroundColor: '#3B82F6', padding: 20, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  btnText: { color: '#FFF', fontWeight: '700' }
+  btnText: { color: '#1A1A1A', fontWeight: '700' }
 });
 
 export default FichaFormScreen;

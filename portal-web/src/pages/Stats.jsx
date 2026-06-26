@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { MapPin, Navigation, Clock, FileText, Calendar, User } from 'lucide-react';
 import L from 'leaflet';
 import pinmanIcon from '../assets/PINMAN.png';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 // Fix Leaflet icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -165,12 +166,11 @@ export default function Stats() {
         </div>
         <div style={{ flex: 1 }}>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--c-muted)' }}>Fecha de Análisis</label>
-          <input 
-            type="date" 
+          <CustomDatePicker 
             className="form-input" 
             value={fecha} 
             onChange={e => setFecha(e.target.value)}
-            style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--c-border)' }}
+            style={{ width: '100%', border: '1px solid var(--c-border)' }}
           />
         </div>
       </div>

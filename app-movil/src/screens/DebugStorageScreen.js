@@ -179,15 +179,15 @@ export default function DebugStorageScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
-  tabs: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  tabs: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
   tabActive: { borderBottomColor: '#3b82f6' },
   tabText: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
   tabTextActive: { color: '#3b82f6', fontWeight: '800' },
   content: { padding: 15 },
-  section: { backgroundColor: '#fff', borderRadius: 16, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
+  section: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
   sectionTitle: { fontSize: 14, fontWeight: '900', color: '#1e293b', textTransform: 'uppercase' },
   codeBox: { backgroundColor: '#1e293b', padding: 10, borderRadius: 8 },
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   emptySubtitle: { color: '#64748b', marginTop: 5, textAlign: 'center' },
   crashSummary: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#fef2f2', padding: 12, borderRadius: 12, marginBottom: 15 },
   crashSummaryText: { color: '#ef4444', fontWeight: '700' },
-  crashCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: '#ef4444', elevation: 2 },
+  crashCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: '#ef4444', elevation: 2 },
   crashHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   crashBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fef2f2', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   crashContext: { color: '#ef4444', fontSize: 11, fontWeight: '800' },
@@ -206,5 +206,5 @@ const styles = StyleSheet.create({
   stackBox: { backgroundColor: '#1e293b', padding: 10, borderRadius: 8 },
   stackText: { color: '#f87171', fontSize: 9, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
   clearBtn: { backgroundColor: '#ef4444', padding: 15, borderRadius: 12, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  clearBtnText: { color: '#fff', fontWeight: 'bold' }
+  clearBtnText: { color: '#1A1A1A', fontWeight: 'bold' }
 });

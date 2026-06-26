@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useContext } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -117,7 +117,10 @@ const RutaDetalleScreen = ({ route, navigation }) => {
           isGestionado && styles.clientCardDone
         ]}
         onPress={() => {
-          if (isGestionado) return; // BLOQUEADO: ya fue gestionado
+          if (isGestionado) {
+            Alert.alert('Cliente ya gestionado', 'Este cliente ya cuenta con una visita registrada hoy.');
+            return;
+          }
           navigation.navigate('DetalleCliente', {
             cliente: {
               ...item,
@@ -153,7 +156,7 @@ const RutaDetalleScreen = ({ route, navigation }) => {
                 marginRight: 6
               }}>
                 <Ionicons name="cloud-offline" size={9} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold', marginLeft: 3 }}>PENDIENTE</Text>
+                <Text style={{ color: '#1A1A1A', fontSize: 8, fontWeight: 'bold', marginLeft: 3 }}>PENDIENTE</Text>
               </View>
             )}
             <View style={[styles.statusBadge, { backgroundColor: status.color + '18' }]}>

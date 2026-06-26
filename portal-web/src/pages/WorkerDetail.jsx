@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { ChevronLeft, MapPin, FileText, Calendar, User as UserIcon, X, WifiOff } from 'lucide-react';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 export default function WorkerDetail() {
   const { id } = useParams();
@@ -19,6 +20,7 @@ export default function WorkerDetail() {
   const [routeDetail, setRouteDetail] = useState(null);
   const [loadingRouteDetail, setLoadingRouteDetail] = useState(false);
   const [selectedFicha, setSelectedFicha] = useState(null);
+  const [filterRutaDate, setFilterRutaDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
 
   useEffect(() => {
     if (!selectedWorker) {
@@ -163,42 +165,68 @@ export default function WorkerDetail() {
           
           {/* NIVEL 1: RUTAS EN DROPDOWN */}
           <section>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <MapPin size={18} color="var(--c-primary)"/>
-              <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Rutas Asignadas</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <MapPin size={18} color="var(--c-primary)"/>
+                <h4 style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-text)', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Rutas Asignadas</h4>
+              </div>
+              <CustomDatePicker 
+                value={filterRutaDate} 
+                onChange={(e) => {
+                  setFilterRutaDate(e.target.value);
+                  setSelectedRoute(null);
+                  setRouteDetail(null);
+                  setSelectedFicha(null);
+                }} 
+                className="form-input" 
+                style={{ width: '200px', fontSize: '13px', fontWeight: '600' }}
+              />
             </div>
             
             {loadingRoutes ? (
               <div style={{ padding: '20px', textAlign: 'center' }}><div className="spinner"></div></div>
-            ) : workerRoutes.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', background: 'var(--c-surface-2)', borderRadius: '16px', border: '1px dashed var(--c-border)' }}>
-                <p style={{ fontSize: '13px', color: 'var(--c-muted)', margin: 0 }}>No hay rutas registradas para este worker.</p>
-              </div>
-            ) : (
-              <div>
-                <select 
-                  className="form-input" 
-                  value={selectedRoute?.id || ''}
-                  onChange={(e) => {
-                    const r = workerRoutes.find(x => x.id === e.target.value);
-                    if (r) handleSelectRoute(r);
-                    else {
-                      setSelectedRoute(null);
-                      setRouteDetail(null);
-                      setSelectedFicha(null);
-                    }
-                  }}
-                  style={{ width: '100%', maxWidth: '500px', fontSize: '15px', fontWeight: '600' }}
-                >
-                  <option value="">Selecciona una ruta para ver sus clientes...</option>
-                  {workerRoutes.map(r => (
-                    <option key={r.id} value={r.id}>
-                      {r.nombre} • {r.total_clientes} Clientes • Asignado: {new Date(r.fecha_asignacion).toLocaleDateString('es-PE')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+            ) : (() => {
+              const workerRoutesVisibles = workerRoutes.filter(r => {
+                if (!filterRutaDate) return true;
+                const rDate = new Date(r.fecha_asignacion).toISOString().slice(0, 10);
+                const filterDate = new Date(filterRutaDate).toISOString().slice(0, 10);
+                return rDate === filterDate;
+              });
+
+              if (workerRoutesVisibles.length === 0) {
+                return (
+                  <div style={{ padding: '24px', textAlign: 'center', background: 'var(--c-surface-2)', borderRadius: '16px', border: '1px dashed var(--c-border)' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--c-muted)', margin: 0 }}>No hay rutas registradas para la fecha seleccionada.</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  <select 
+                    className="form-input" 
+                    value={selectedRoute?.id || ''}
+                    onChange={(e) => {
+                      const r = workerRoutesVisibles.find(x => x.id === e.target.value);
+                      if (r) handleSelectRoute(r);
+                      else {
+                        setSelectedRoute(null);
+                        setRouteDetail(null);
+                        setSelectedFicha(null);
+                      }
+                    }}
+                    style={{ width: '100%', maxWidth: '500px', fontSize: '15px', fontWeight: '600' }}
+                  >
+                    <option value="">Selecciona una ruta para ver sus clientes...</option>
+                    {workerRoutesVisibles.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.nombre} • {r.total_clientes} Clientes • Asignado: {new Date(r.fecha_asignacion).toLocaleDateString('es-PE')}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })()}
           </section>
 
           {/* NIVEL 2: CLIENTES DE LA RUTA */}

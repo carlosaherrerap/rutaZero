@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { Plus, Search, FileText, Download, AlertCircle, CheckCircle } from 'lucide-react';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 const Amonestaciones = () => {
   const { api, user } = useContext(AuthContext);
@@ -198,8 +199,7 @@ const Amonestaciones = () => {
               <div className="form-row form-row-2">
                 <div className="form-group">
                   <label className="form-label">Fecha</label>
-                  <input 
-                    type="date" 
+                  <CustomDatePicker 
                     className="form-input" 
                     value={formData.fecha}
                     onChange={e => setFormData({...formData, fecha: e.target.value})}

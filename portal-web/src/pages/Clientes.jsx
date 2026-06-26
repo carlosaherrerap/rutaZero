@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
+import CustomDatePicker from '../components/CustomDatePicker.jsx';
 import { 
   User, MapPin, Phone, Mail, Home, Building2, Shield, 
   AlertTriangle, WifiOff, Calendar, ChevronUp, ChevronDown, 
@@ -175,8 +176,7 @@ export default function Clientes() {
           <input type="text" name="search" placeholder="Buscar por nombre, apellidos o DNI..." value={filters.search} onChange={handleFilterChange} />
         </div>
         
-        <input 
-          type="date" 
+        <CustomDatePicker 
           name="fecha_pago" 
           className="form-input" 
           style={{ width: '150px' }} 
@@ -222,7 +222,13 @@ export default function Clientes() {
             ) : clients.length === 0 ? (
               <tr><td colSpan="7" className="text-center py-4">No se encontraron clientes</td></tr>
             ) : clients.map(c => (
-              <tr key={c.id}>
+              <tr 
+                key={c.id}
+                style={{ cursor: 'pointer', transition: 'background-color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                onClick={() => handleShowDetail(c)}
+              >
                 <td>
                   <div className="font-bold">{c.nombres} {c.apellidos}</div>
                   <div className="text-sm text-muted">{c.id.substring(0, 8)}</div>
@@ -258,28 +264,28 @@ export default function Clientes() {
           <div className="modal" style={{ maxWidth: '1100px', width: '95vw', background: 'var(--c-bg)', border: '1px solid var(--c-border)', borderRadius: '24px', overflow: 'hidden' }}>
             
             {/* HEADER MODAL */}
-            <div className="p-10 flex justify-between items-center" style={{ padding: '24px 32px', borderBottom: '1px solid var(--c-border)' }}>
+            <div className="p-10 flex justify-between items-center" style={{ padding: '24px 32px', background: '#047CFD', borderBottom: 'none' }}>
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: '600', color: 'var(--c-text)', margin: 0, letterSpacing: '-0.5px' }}>{selectedClient.nombres} {selectedClient.apellidos}</h2>
+                <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#FFFFFF', margin: 0, letterSpacing: '-0.5px' }}>{selectedClient.nombres} {selectedClient.apellidos}</h2>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
-                  <span style={{ color: 'var(--c-text)', fontSize: '13px', fontWeight: '500', background: 'var(--c-surface-2)', padding: '4px 8px', borderRadius: '4px' }}>ID: {selectedClient.id.substring(0, 8).toUpperCase()}</span>
-                  <span style={{ color: 'var(--c-muted)', fontSize: '12px' }}>•</span>
-                  <span style={{ fontSize: '13px', color: 'var(--c-muted)' }}>Registrado {new Date(selectedClient.created_at || Date.now()).toLocaleDateString('es-PE', { month: 'short', year: 'numeric' })}</span>
+                  <span style={{ color: '#FFFFFF', fontSize: '13px', fontWeight: '600', background: 'rgba(255, 255, 255, 0.2)', padding: '4px 8px', borderRadius: '4px' }}>ID: {selectedClient.id.substring(0, 8).toUpperCase()}</span>
+                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>•</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)' }}>Registrado {new Date(selectedClient.created_at || Date.now()).toLocaleDateString('es-PE', { month: 'short', year: 'numeric' })}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <button className="btn" style={{ background: '#1E293B', color: '#fff', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', gap: '8px', border: 'none', display: 'flex', alignItems: 'center' }}>
-                  <ClipboardList size={16} strokeWidth={2}/> Exportar Ficha
+                <button className="btn" style={{ background: '#FFFFFF', color: '#047CFD', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', gap: '8px', border: 'none', display: 'flex', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <ClipboardList size={16} strokeWidth={2.5}/> Exportar Ficha
                 </button>
                 <button 
                   onClick={() => setShowModal(false)}
                   style={{ 
                     width: '32px', height: '32px', border: 'none', 
                     background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', transition: 'all 0.2s', color: 'var(--c-muted)'
+                    cursor: 'pointer', transition: 'all 0.2s', color: '#FFFFFF'
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-surface-2)'; e.currentTarget.style.color = 'var(--c-text)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--c-muted)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <X size={20}/>
                 </button>
@@ -322,7 +328,7 @@ export default function Clientes() {
                       { icon: <Building2 size={18}/>, label: 'DISTRITO', value: selectedClient.distrito }
                     ].map((item, i) => (
                       <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <div style={{ width: '36px', height: '36px', border: '1px solid var(--c-border)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--c-muted)' }}>{item.icon}</div>
+                        <div style={{ width: '36px', height: '36px', background: 'rgba(4, 124, 253, 0.1)', border: '1px solid rgba(4, 124, 253, 0.2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#047CFD' }}>{item.icon}</div>
                         <div>
                           <div style={{ fontSize: '10px', color: 'var(--c-muted)', fontWeight: '600', marginBottom: '2px', textTransform: 'uppercase' }}>{item.label}</div>
                           <div style={{ fontSize: '13px', fontWeight: '500', color: 'var(--c-text)' }}>{item.value}</div>
@@ -360,7 +366,7 @@ export default function Clientes() {
                         {/* Círculo del timeline */}
                         <div style={{ 
                           position: 'absolute', left: '-5px', top: '24px', width: '12px', height: '12px', 
-                          borderRadius: '50%', background: 'var(--c-bg)', border: `2px solid var(--c-muted)`,
+                          borderRadius: '50%', background: '#FFFFFF', border: `3px solid #047CFD`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2
                         }}>
                         </div>
@@ -369,12 +375,12 @@ export default function Clientes() {
                           background: 'var(--c-surface)', borderRadius: '8px', padding: 0, 
                           border: '1px solid var(--c-border)', transition: 'all 0.3s', overflow: 'hidden'
                         }}>
-                          <div style={{ background: 'var(--c-surface-2)', border: '1px solid var(--c-border)', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--c-border)', borderRadius: '6px 6px 0 0' }}>
+                          <div style={{ background: '#047CFD', border: 'none', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '6px 6px 0 0', color: '#FFFFFF' }}>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                               <EstadoBadge estado={g.tipificacion} />
-                              <div style={{ fontWeight: '500', fontSize: '15px' }}>{g.tipificacion === 'PAGO' ? 'Cobro Recaudado' : (g.tipificacion === 'REPROGRAMARA' ? 'Visita Reprogramada' : 'Gestión Fallida')}</div>
+                              <div style={{ fontWeight: '600', fontSize: '15px' }}>{g.tipificacion === 'PAGO' ? 'Cobro Recaudado' : (g.tipificacion === 'REPROGRAMARA' ? 'Visita Reprogramada' : 'Gestión Fallida')}</div>
                             </div>
-                            <div style={{ fontSize: '13px', color: 'var(--c-text)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                            <div style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.9)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
                               <Calendar size={14}/> {new Date(g.created_at).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' })} • {new Date(g.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
                             </div>
                           </div>

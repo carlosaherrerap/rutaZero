@@ -6,8 +6,8 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { AuthContext } from '../context/AuthContext.jsx';
-
 import pinmanIcon from '../assets/PINMAN.png';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 // Fix Leaflet default icon in Vite
 delete L.Icon.Default.prototype._getIconUrl;
@@ -127,11 +127,11 @@ export default function MapPage() {
         
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginLeft: 'auto' }}>
           <label style={{ fontSize: '14px', fontWeight: 'bold' }}>Filtros:</label>
-          <input 
-            type="date" 
+          <CustomDatePicker 
             className="map-filters-input" 
             value={fechaPago} 
             onChange={(e) => setFechaPago(e.target.value)} 
+            style={{ width: '140px', padding: '0px' }}
           />
           <select 
             className="map-filters-input" 

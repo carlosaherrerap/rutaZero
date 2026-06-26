@@ -11,15 +11,17 @@ const verifySchema = async () => {
     const path = require('path');
     const fs = require('fs');
     
+    const initPath = path.join(__dirname, '../../../database/init.sql');
     const schemaPath = path.join(__dirname, '../../../database/schema.sql');
+    const targetPath = fs.existsSync(initPath) ? initPath : schemaPath;
     
-    if (fs.existsSync(schemaPath)) {
-      console.log('📖 [InitDB] Ejecutando schema.sql...');
-      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
+    if (fs.existsSync(targetPath)) {
+      console.log(`📖 [InitDB] Ejecutando ${path.basename(targetPath)}...`);
+      const schemaSql = fs.readFileSync(targetPath, 'utf8');
       await db.query(schemaSql);
-      console.log('✅ [InitDB] schema.sql ejecutado con éxito.');
+      console.log(`✅ [InitDB] ${path.basename(targetPath)} ejecutado con éxito.`);
     } else {
-      console.warn('⚠️ [InitDB] No se encontró schema.sql en:', schemaPath);
+      console.warn('⚠️ [InitDB] No se encontró init.sql ni schema.sql');
     }
   } catch (err) {
     console.error('❌ [InitDB] Error al inicializar esquema:', err.message);
@@ -98,15 +100,15 @@ const ensureAdminUser = async () => {
     await db.query(query, values);
     console.log('✅ [InitDB] Usuario Admin verificado/actualizado');
     
-    // Seed Configuración del Portal (Tema Oscuro por defecto)
+    // Seed Configuración del Portal (Minimalismo Funcional B2B por defecto)
     await db.query(`
       INSERT INTO configuracion_portal (clave, valor) VALUES 
-      ('main_bg', '#0B0E11'),
-      ('sidebar_bg', '#15191C'),
-      ('primary_color', '#00A9BC'),
-      ('main_text', '#FFFFFF'),
-      ('sidebar_text', '#B2BEC3'),
-      ('logo_filter', 'invert(1) brightness(2)')
+      ('main_bg', '#dddddd'),
+      ('sidebar_bg', '#4465EA'),
+      ('primary_color', '#4465EA'),
+      ('main_text', '#212529'),
+      ('sidebar_text', '#FFFFFF'),
+      ('logo_filter', 'none')
       ON CONFLICT (clave) DO NOTHING;
     `);
 

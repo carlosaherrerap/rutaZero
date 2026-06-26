@@ -56,18 +56,18 @@ const DetalleClienteScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   mapBox: { flex: 1, backgroundColor: '#F9FAFB', justifyContent: 'center', alignItems: 'center', padding: 20 },
   webTitle: { fontSize: 20, fontWeight: '800', color: '#1F2937', marginTop: 20 },
   webSub: { color: '#6B7280', textAlign: 'center', marginTop: 10 },
   coords: { color: '#9CA3AF', fontSize: 13, marginTop: 20, fontStyle: 'italic' },
-  panel: { padding: 30, backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, elevation: 20 },
+  panel: { padding: 30, backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, elevation: 20 },
   name: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center' },
   dir: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginTop: 5, marginBottom: 30 },
   btn: { paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
   btnBlue: { backgroundColor: '#3B82F6' },
   btnGreen: { backgroundColor: '#10B981' },
-  btnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  btnText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700' },
 });
 
 export default DetalleClienteScreen;

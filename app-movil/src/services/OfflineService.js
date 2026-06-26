@@ -266,24 +266,31 @@ export const syncAllOfflineData = async (api) => {
 
     for (const item of queue) {
       try {
-        const data = new FormData();
-        Object.keys(item.formData).forEach(key => data.append(key, item.formData[key]));
-        data.append('es_offline', 'true');
-
-        item.fotos.forEach((uri, index) => {
-          const fileName = uri.split('/').pop() || `evidencia_${index}.jpg`;
-          const ext = fileName.split('.').pop();
-          data.append('evidencias', {
-            uri,
-            name: fileName,
-            type: `image/${ext === 'png' ? 'png' : 'jpeg'}`
+        if (item.formData && item.formData.tipo === 'CAJA_HUANCAYO') {
+          // Para Caja Huancayo enviamos el payload JSON completo con imágenes base64
+          await api.post(`/api/creditos/clientes/${item.clienteId}/verificacion`, item.formData, {
+            timeout: 60000,
           });
-        });
+        } else {
+          const data = new FormData();
+          Object.keys(item.formData).forEach(key => data.append(key, item.formData[key]));
+          data.append('es_offline', 'true');
 
-        await api.post(`/api/workers/clientes/${item.clienteId}/ficha`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          timeout: 120000,
-        });
+          item.fotos.forEach((uri, index) => {
+            const fileName = uri.split('/').pop() || `evidencia_${index}.jpg`;
+            const ext = fileName.split('.').pop();
+            data.append('evidencias', {
+              uri,
+              name: fileName,
+              type: `image/${ext === 'png' ? 'png' : 'jpeg'}`
+            });
+          });
+
+          await api.post(`/api/workers/clientes/${item.clienteId}/ficha`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 120000,
+          });
+        }
       } catch (e) {
         await saveCrashLog(e, `SYNC_FICHA_${item.clienteId}`);
         remainingQueue.push(item);

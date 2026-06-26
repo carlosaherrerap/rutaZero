@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { Eye, Trash2, Plus, X, Map as MapIcon, Users, Calendar, Info, Sparkles } from 'lucide-react';
 import pinmanIcon from '../assets/PINMAN.png';
+import CustomDatePicker from '../components/CustomDatePicker';
 
 const workerIcon = L.icon({
   iconUrl: pinmanIcon,
@@ -60,6 +61,7 @@ export default function Rutas() {
   const [filterPago, setFilterPago] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
   const [searchAvail, setSearchAvail] = useState('');
   const [selectedRouteIdToView, setSelectedRouteIdToView] = useState('');
+  const [filterRutaDate, setFilterRutaDate] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' }));
 
   useEffect(() => {
     fetchData();
@@ -165,7 +167,10 @@ export default function Rutas() {
 
       const rDate = new Date(r.fecha_asignacion).toISOString().slice(0, 10);
       if (rDate === refDate) {
-        // En el backend las rutas traen 'clientes' como array de objetos
+        // En el backend las rutas traen 'client_ids' como array de IDs desde JSON_AGG
+        if (r.client_ids) {
+          r.client_ids.forEach(id => ids.add(id));
+        }
         if (r.clientes) {
           r.clientes.forEach(c => ids.add(c.id));
         }
@@ -173,6 +178,13 @@ export default function Rutas() {
     });
     return ids;
   }, [rutas, newRuta.fecha_asignacion, showViewModal, selectedRutaDetails, editMode, editingRouteId]);
+
+  const rutasVisibles = rutas.filter(r => {
+    if (!filterRutaDate) return true;
+    const rDate = new Date(r.fecha_asignacion).toISOString().slice(0, 10);
+    const filterDate = new Date(filterRutaDate).toISOString().slice(0, 10);
+    return rDate === filterDate;
+  });
 
   // Filtramos por fecha de pago normalizando ambos valores a YYYY-MM-DD
   const clientesVisibles = clientes.filter(c => {
@@ -211,17 +223,31 @@ export default function Rutas() {
       {/* NUEVA VISTA PRINCIPAL DE RUTAS */}
       <div className="card" style={{ marginBottom: '24px', padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
-          <div>
-            <h3 style={{ fontSize: '13px', fontWeight: '900', margin: '0 0 16px 0', textTransform: 'uppercase', color: 'var(--c-muted)' }}>RUTAS ACTIVAS ({rutas.length})</h3>
-            <select 
-              className="form-input" 
-              style={{ width: '350px', fontSize: '14px', fontWeight: '600' }}
-              value={selectedRouteIdToView} 
-              onChange={e => setSelectedRouteIdToView(e.target.value)}
-            >
-              <option value="">-- Selecciona una ruta para ver detalles --</option>
-              {rutas.map(r => <option key={r.id} value={r.id}>{r.nombre} (Worker: {r.worker_nombre})</option>)}
-            </select>
+          <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+            <div>
+              <h3 style={{ fontSize: '13px', fontWeight: '900', margin: '0 0 16px 0', textTransform: 'uppercase', color: 'var(--c-muted)' }}>FECHA DE RUTAS</h3>
+              <CustomDatePicker 
+                value={filterRutaDate} 
+                onChange={(e) => {
+                  setFilterRutaDate(e.target.value);
+                  setSelectedRouteIdToView('');
+                }} 
+                className="form-input" 
+                style={{ width: '200px', fontSize: '14px', fontWeight: '600' }}
+              />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '13px', fontWeight: '900', margin: '0 0 16px 0', textTransform: 'uppercase', color: 'var(--c-muted)' }}>RUTAS ASIGNADAS ({rutasVisibles.length})</h3>
+              <select 
+                className="form-input" 
+                style={{ width: '350px', fontSize: '14px', fontWeight: '600' }}
+                value={selectedRouteIdToView} 
+                onChange={e => setSelectedRouteIdToView(e.target.value)}
+              >
+                <option value="">-- Selecciona una ruta para ver detalles --</option>
+                {rutasVisibles.map(r => <option key={r.id} value={r.id}>{r.nombre} (Worker: {r.worker_nombre})</option>)}
+              </select>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '24px', background: 'var(--c-surface-2)', padding: '16px 24px', borderRadius: '12px', border: '1px solid var(--c-border)' }}>
@@ -359,10 +385,9 @@ export default function Rutas() {
 
                 <div className="form-group">
                   <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', letterSpacing: '1px' }}>FECHA DE VISITA</label>
-                  <input 
-                    type="date" 
+                  <CustomDatePicker 
                     className="form-input" 
-                    style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', height: '45px' }} 
+                    style={{ height: '45px' }} 
                     value={newRuta.fecha_asignacion} 
                     onChange={e => setNewRuta({...newRuta, fecha_asignacion: e.target.value})} 
                   />
@@ -370,10 +395,9 @@ export default function Rutas() {
 
                  <div style={{ marginTop: '10px', padding: '15px', backgroundColor: 'var(--c-surface-2)', borderRadius: '12px', border: '1px solid var(--c-border)' }}>
                    <label className="form-label" style={{ color: 'var(--c-muted)', fontSize: '0.75rem', fontWeight: 'bold' }}>FILTRAR POR FECHA DE PAGO (CLIENTE)</label>
-                   <input 
-                     type="date" 
+                   <CustomDatePicker 
                      className="form-input" 
-                     style={{ backgroundColor: 'var(--c-surface)', borderColor: 'var(--c-border)', color: 'var(--c-text)', marginTop: '10px' }} 
+                     style={{ marginTop: '10px' }} 
                      value={filterPago} 
                      onChange={e => setFilterPago(e.target.value)} 
                    />

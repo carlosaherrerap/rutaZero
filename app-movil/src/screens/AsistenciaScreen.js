@@ -151,7 +151,7 @@ export default function AsistenciaScreen({ navigation }) {
                     <>
                       <Text style={[
                         styles.cellNum,
-                        validated && { color: '#fff' },
+                        validated && { color: '#1A1A1A' },
                         todayDay && !validated && { color: '#3b82f6', fontWeight: '900' }
                       ]}>
                         {day}
@@ -211,14 +211,14 @@ export default function AsistenciaScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#1e293b' },
-  statsRow: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', marginBottom: 8 },
+  statsRow: { flexDirection: 'row', backgroundColor: '#FFFFFF', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', marginBottom: 8 },
   statBox: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 24, fontWeight: '900' },
   statLabel: { fontSize: 10, color: '#94a3b8', fontWeight: '700', marginTop: 2 },
   statDivider: { width: 1, backgroundColor: '#e2e8f0' },
-  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#fff' },
+  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#FFFFFF' },
   monthBtn: { padding: 6 },
   monthTitle: { fontSize: 17, fontWeight: '800', color: '#1e293b' },
   weekHeader: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#f8fafc' },
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   histSection: { padding: 16 },
   histTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b', marginBottom: 12 },
   emptyText: { color: '#94a3b8', fontSize: 13, textAlign: 'center', padding: 20 },
-  jornadaCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 10, elevation: 2 },
+  jornadaCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10, elevation: 2 },
   jornadaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   jornadaFecha: { fontSize: 13, fontWeight: '700', color: '#1e293b', textTransform: 'capitalize' },
   validBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#d1fae5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   jornadaRow: { flexDirection: 'row', justifyContent: 'space-around' },
   jornadaItem: { alignItems: 'center', gap: 3 },
   jornadaVal: { fontSize: 12, fontWeight: '600', color: '#334155' },
-  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
+  tabBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 75, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#f1f5f9', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', elevation: 20 },
   tabItem: { alignItems: 'center' },
   tabLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', marginTop: 4 },
 });

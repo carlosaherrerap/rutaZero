@@ -17,6 +17,7 @@ import Monitoreo from './pages/Monitoreo.jsx';
 import Formularios from './pages/Formularios.jsx';
 import Amonestaciones from './pages/Amonestaciones.jsx';
 import Permisos from './pages/Permisos.jsx';
+import Admision from './pages/Admision.jsx';
 import PlaceholderPage from './pages/PlaceholderPage.jsx';
 import UserGuide from './components/UserGuide.jsx';
 import ChatBot from './components/ChatBot.jsx';
@@ -84,41 +85,41 @@ function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid var(--c-border)', marginBottom: '10px' }}>
-        <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px', filter: 'var(--logo-filter)' }} />
+      <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '10px' }}>
+        <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px', filter: 'brightness(0) invert(1)' }} />
 
         <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease', position: 'relative' }} ref={sedeDropdownRef}>
-          <div style={{ fontSize: '9px', color: isHighlighting ? 'var(--c-primary)' : 'var(--c-muted)', fontWeight: '900', marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>SEDE ACTUAL</div>
+          <div style={{ fontSize: '9px', color: isHighlighting ? '#FFFFFF' : 'rgba(255,255,255,0.6)', fontWeight: '900', marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>SEDE ACTUAL</div>
           <button
             onClick={() => setShowSedeMenu(!showSedeMenu)}
             style={{
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              width: '100%', background: 'var(--c-surface-2)', fontSize: '11px', fontWeight: '800', height: '36px', padding: '0 12px',
-              border: isHighlighting ? '2px solid var(--c-primary)' : '1px solid var(--c-border)',
-              borderRadius: '10px', color: 'var(--c-text)', cursor: 'pointer', transition: 'all 0.2s'
+              width: '100%', background: '#FEFEFE', fontSize: '11px', fontWeight: '800', height: '36px', padding: '0 12px',
+              border: isHighlighting ? '2px solid #047CFD' : '1px solid #FEFEFE',
+              borderRadius: '10px', color: '#047CFD', cursor: 'pointer', transition: 'all 0.2s'
             }}
           >
             <span>{sedeActual.nombre}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showSedeMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.5 }}><path d="M6 9l6 6 6-6" /></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transform: showSedeMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', opacity: 0.8 }}><path d="M6 9l6 6 6-6" /></svg>
           </button>
-          
+
           {showSedeMenu && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0,
-              backgroundColor: 'var(--c-surface)', borderRadius: '12px', border: '1px solid var(--c-border)',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 9999, overflow: 'hidden', animation: 'dropdownIn 0.2s ease-out'
+              backgroundColor: '#FEFEFE', background: '#FEFEFE !important', borderRadius: '12px', border: '1px solid #E5E7EB',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 9999, overflow: 'hidden', animation: 'dropdownIn 0.2s ease-out'
             }}>
               {sedesList.map(s => (
                 <button
                   key={s.id}
                   onClick={() => { cambiarSede(s); setShowSedeMenu(false); }}
                   style={{
-                    display: 'block', width: '100%', padding: '10px 12px', textAlign: 'left', background: 'none', border: 'none',
-                    cursor: 'pointer', fontSize: '11px', fontWeight: '800', color: s.nombre === sedeActual.nombre ? 'var(--c-primary)' : 'var(--c-text)',
-                    backgroundColor: s.nombre === sedeActual.nombre ? 'var(--c-surface-2)' : 'transparent', transition: 'background 0.2s'
+                    display: 'block', width: '100%', padding: '10px 12px', textAlign: 'left', background: '#FEFEFE', border: 'none',
+                    cursor: 'pointer', fontSize: '11px', fontWeight: '800', color: s.nombre === sedeActual.nombre ? '#027BFD' : '#333333',
+                    backgroundColor: s.nombre === sedeActual.nombre ? '#F0F0F0' : 'transparent', transition: 'background 0.2s'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--c-surface-2)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = s.nombre === sedeActual.nombre ? 'var(--c-surface-2)' : 'transparent'}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F0F0F0'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = s.nombre === sedeActual.nombre ? '#F0F0F0' : 'transparent'}
                 >
                   {s.nombre}
                 </button>
@@ -135,6 +136,7 @@ function Sidebar() {
           <li id="nav-mapa"><NavLink to="/map" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Mapa</NavLink></li>
           <li id="nav-clientes"><NavLink to="/clientes" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="clients" />Clientes</NavLink></li>
           <li id="nav-operadores"><NavLink to="/workers" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers" />Operadores</NavLink></li>
+          <li id="nav-admision"><NavLink to="/admision" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Admisión</NavLink></li>
         </ul>
 
         <div className="sidebar-subtitle">GESTION</div>
@@ -191,7 +193,7 @@ function Topbar({ title }) {
   const toggleQuickTheme = async () => {
     const isCurrentlyDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const newTheme = isCurrentlyDark ? 'light' : 'dark';
-    
+
     const presets = {
       dark: {
         sidebar_bg: '#15191C',
@@ -216,10 +218,10 @@ function Topbar({ title }) {
     const selected = presets[newTheme];
     applyStyles(selected);
     // Persist to DB
-    try { 
+    try {
       await api.post('/api/config', selected);
-    } catch (e) { 
-      console.error(e); 
+    } catch (e) {
+      console.error(e);
     }
 
   };
@@ -304,15 +306,23 @@ function Topbar({ title }) {
 // Eliminado para evitar duplicidad o dejarlo como placeholder si se usa en otro lado
 function ThemeToggle() { return null; }
 
+import useAntiScraping from './hooks/useAntiScraping.jsx';
+
 // ─── Protected layout ─────────────────────────────────────────
 function AppLayout({ children, title }) {
   // Theme is now managed in AuthContext to avoid resets on Sede change
+  const { isCompromised } = useAntiScraping();
 
   return (
     <div className="app-shell">
       <Sidebar />
       <div className="main-area fade-in">
         <Topbar title={title} />
+        {isCompromised && (
+          <div style={{ backgroundColor: '#EF4444', color: 'white', padding: '10px 20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 99999 }}>
+            <span>⚠️ ALERTA DE SEGURIDAD: Se ha detectado una extensión no autorizada. Los datos sensibles han sido ofuscados.</span>
+          </div>
+        )}
         <main className="page-content">{children}</main>
         <UserGuide />
         <ChatBot />
@@ -344,6 +354,7 @@ export default function App() {
         <Route path="/localizar" element={<ProtectedRoute><Localizar /></ProtectedRoute>} />
         <Route path="/monitoreo" element={<ProtectedRoute><Monitoreo /></ProtectedRoute>} />
         <Route path="/formularios" element={<ProtectedRoute><Formularios /></ProtectedRoute>} />
+        <Route path="/admision" element={<ProtectedRoute title="Admisión"><Admision /></ProtectedRoute>} />
         <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
         <Route path="/ciclos" element={<ProtectedRoute><Ciclos /></ProtectedRoute>} />
 

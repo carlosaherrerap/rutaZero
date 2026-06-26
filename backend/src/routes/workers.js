@@ -212,6 +212,16 @@ router.patch('/:id', adminOnly, async (req, res) => {
       return res.status(404).json({ error: 'Worker no encontrado' });
     }
 
+    // Si se desactiva al worker, liberar automáticamente cualquier cliente que esté visitando
+    if (estado === 'INACTIVO') {
+      await db.query(
+        `UPDATE clientes 
+         SET estado = 'LIBRE', bloqueado_por = NULL, updated_at = NOW() 
+         WHERE estado = 'EN_VISITA' AND bloqueado_por = $1`,
+        [req.params.id]
+      );
+    }
+
     res.json({ data: rows[0] });
   } catch (err) {
     console.error('Error al actualizar worker:', err);
@@ -328,17 +338,30 @@ router.get('/me/jornadas', async (req, res) => {
 // Obtener mis rutas activas (agrupadas o listadas)
 router.get('/me/ruta', async (req, res) => {
   try {
+    // 1. AUTO-RELEASE DE CLIENTES (Validación estricta)
+    // Libera clientes 'EN_VISITA' si pasó > 1 hora o si el bloqueo ocurrió en un día anterior
+    await db.query(`
+      UPDATE clientes
+      SET estado = 'LIBRE', bloqueado_por = NULL, updated_at = NOW()
+      WHERE estado = 'EN_VISITA' 
+      AND (
+        updated_at < NOW() - INTERVAL '1 hour'
+        OR
+        DATE(updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
+      )
+    `);
+
     // SIN filtro de fecha — muestra TODAS las rutas activas del worker (no COMPLETADO)
     // Evita cualquier problema de zona horaria UTC vs Lima (UTC-5)
     const { rows } = await db.query(
       `SELECT r.id as ruta_id, r.nombre as ruta_nombre, r.fecha_asignacion, r.estado as ruta_estado,
               rc.orden, c.id as cliente_id, c.nombres, c.apellidos, c.deuda_total, ub.direccion as cliente_direccion, 
-              c.estado as cliente_estado, c.bloqueado_por, ub.latitud, ub.longitud, ub.distrito
+              c.estado as cliente_estado, c.bloqueado_por, ub.latitud, ub.longitud, ub.distrito, c.updated_at
        FROM rutas r
        LEFT JOIN ruta_clientes rc ON rc.ruta_id = r.id
        LEFT JOIN clientes c ON c.id = rc.cliente_id
        LEFT JOIN ubicaciones ub ON ub.id = c.ubicacion_id
-       WHERE r.worker_id = $1 AND r.estado != 'COMPLETADO'
+       WHERE r.worker_id = $1 AND r.estado != 'COMPLETADO' AND DATE(r.fecha_asignacion AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') = DATE(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
        ORDER BY r.fecha_asignacion DESC, r.id, rc.orden`,
       [req.user.id]
     );
@@ -352,6 +375,18 @@ router.get('/me/ruta', async (req, res) => {
 // Marcar inicio de visita (Bloquear cliente)
 router.post('/clientes/:id/visitar', async (req, res) => {
   try {
+    // 0. Auto-liberar cualquier cliente EN_VISITA atascado del worker
+    await db.query(`
+      UPDATE clientes 
+      SET estado = 'LIBRE', bloqueado_por = NULL 
+      WHERE estado = 'EN_VISITA' 
+      AND bloqueado_por = $1
+      AND (
+        updated_at < NOW() - INTERVAL '1 hour'
+        OR DATE(updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Lima') < DATE(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')
+      )
+    `, [req.user.id]);
+
     // 1. Validar si el worker ya tiene una visita en curso
     const activeVisitCheck = await db.query(
       `SELECT id FROM clientes WHERE bloqueado_por = $1 AND estado = 'EN_VISITA'`,

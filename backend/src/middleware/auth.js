@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken');
+const db = require('../config/db');
 
 /**
  * Middleware: Verifica JWT en header Authorization: Bearer <token>
  */
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   const SECRET = process.env.JWT_SECRET;
   if (!SECRET) {
@@ -24,8 +25,22 @@ function authMiddleware(req, res, next) {
   }
   try {
     const decoded = jwt.verify(token, SECRET);
-    // console.log(`[+] Auth Success: User ${decoded.username} (${decoded.rol})`); // Silenciado para evitar spam
-    req.user = decoded;
+    
+    // Verificar si el usuario sigue activo en la base de datos y obtener su sede
+    const { rows } = await db.query(
+      'SELECT estado, sede_id FROM usuarios WHERE id = $1',
+      [decoded.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Usuario no encontrado' });
+    }
+
+    if (rows[0].estado !== 'ACTIVO') {
+      return res.status(403).json({ error: 'USER_INACTIVE' });
+    }
+
+    req.user = { ...decoded, sede_id: rows[0].sede_id };
     next();
   } catch (err) {
     console.error('[Auth Error] Token inválido o expirado');

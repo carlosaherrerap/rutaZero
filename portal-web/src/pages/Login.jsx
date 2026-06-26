@@ -1,7 +1,16 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
+import logoPixi from '../assets/logo-pixi.png';
 import './Login.css';
+
+const IconAlert = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+);
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -16,12 +25,11 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login(username, password);
       navigate('/dashboard');
     } catch (err) {
-      setError('Acceso denegado. Verifica tus credenciales.');
+      setError(err.message || 'Credenciales incorrectas. Verifica tu usuario y contraseña.');
     } finally {
       setLoading(false);
     }
@@ -29,83 +37,94 @@ export default function Login() {
 
   return (
     <div className="login-page">
-      <div className="grid-bg"></div>
-      <div className="auth-container">
-        {/* Lado Izquierdo: Branding */}
-        <div className="auth-info-pane">
-          <div className="auth-branding">
-            <h1 className="brand-name-routing">Routing</h1>
-          </div>
+      {/* PANE IZQUIERDO: Animación de Rutas y Branding con forma irregular */}
+      <div className="login-left-pane">
+        <div className="routing-animation">
+          <svg viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid slice" className="map-svg">
+            {/* Rutas (Líneas) */}
+            <path className="route-line route-1" d="M -100 200 C 150 250, 300 100, 500 300 S 700 600, 1100 500" />
+            <path className="route-line route-2" d="M 200 -100 C 250 150, 100 400, 400 500 S 800 400, 900 900" />
+            <path className="route-line route-3" d="M -50 700 C 200 650, 400 800, 600 500 S 800 100, 1200 200" />
+            
+            {/* Nodos (Puntos de entrega) */}
+            <circle cx="215" cy="205" r="6" className="node" />
+            <circle cx="500" cy="300" r="8" className="node" />
+            <circle cx="795" cy="485" r="6" className="node" />
+            
+            <circle cx="215" cy="115" r="6" className="node" />
+            <circle cx="400" cy="500" r="8" className="node" />
+            <circle cx="690" cy="460" r="6" className="node" />
 
-          <div className="auth-features">
-            <div className="feature-item">
-              <div className="feature-dot"></div>
-              <div className="feature-text">
-                <h3>Acceso seguro</h3>
-                <p>Protegemos tus datos operativos con cifrado de grado industrial.</p>
-              </div>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-dot"></div>
-              <div className="feature-text">
-                <h3>Gestión Centralizada</h3>
-                <p>Controla todas tus rutas y trabajadores desde un solo lugar.</p>
-              </div>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-dot"></div>
-              <div className="feature-text">
-                <h3>Operaciones en tiempo real</h3>
-                <p>Monitoreo constante de entregas y jornadas de campo.</p>
-              </div>
-            </div>
-          </div>
+            <circle cx="170" cy="670" r="6" className="node" />
+            <circle cx="600" cy="500" r="8" className="node" />
+            <circle cx="910" cy="205" r="6" className="node" />
+          </svg>
         </div>
 
-        {/* Lado Derecho: Formulario */}
-        <div className="auth-form-pane">
-          <div className="form-content">
+        <div className="auth-branding-overlay">
+          <h1 className="brand-name-routing">Informatech</h1>
+          <p className="brand-tagline">La plataforma operativa de campo más avanzada.</p>
+          <div className="auth-badges-container">
+            <span className="glass-badge">Optimización IA</span>
+            <span className="glass-badge">Tiempo Real</span>
+            <span className="glass-badge">Control Total</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Logo esquina superior derecha */}
+      <img src={logoPixi} alt="Logo Informatech" className="login-logo-tr" />
+
+      {/* PANE DERECHO: Formulario de Login */}
+      <div className="login-right-pane">
+        <div className="auth-form-container">
+          <div className="form-header">
+            <p className="form-eyebrow">BIENVENIDO</p>
             <h2 className="form-title">Iniciar Sesión</h2>
+            <p className="form-subtitle">Ingresa tus credenciales para acceder al panel de control.</p>
+          </div>
 
-            <form onSubmit={handleSubmit}>
-              {error && <div className="error-msg">{error}</div>}
-
-              <div className="form-group-floating">
-                <input
-                  type="text"
-                  id="username"
-                  autoComplete="off"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder=" "
-                  required
-                />
-                <label htmlFor="username">Username</label>
+          <form onSubmit={handleSubmit} noValidate className="login-form">
+            {error && (
+              <div className="error-msg">
+                <IconAlert />
+                {error}
               </div>
+            )}
 
-              <div className="form-group-floating">
-                <input
-                  type="password"
-                  id="password"
-                  autoComplete="off"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder=" "
-                  required
-                />
-                <label htmlFor="password">Password</label>
-              </div>
-
-              <button type="submit" className="btn-continue" disabled={loading}>
-                {loading ? 'Validando...' : 'Entrar'}
-              </button>
-            </form>
-
-            <div className="auth-footer">
-              <p>BY INFORMATECH</p>
+            <div className="form-group">
+              <label htmlFor="username">Usuario</label>
+              <input
+                type="text"
+                id="username"
+                autoComplete="off"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="Ingresa tu usuario"
+                required
+              />
             </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Contraseña</label>
+              <input
+                type="password"
+                id="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            <button type="submit" className="btn-continue" disabled={loading}>
+              {loading ? 'Validando...' : 'INGRESAR'}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            <p>POWERED BY INFORMATECH</p>
           </div>
         </div>
       </div>

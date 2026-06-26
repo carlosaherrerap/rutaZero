@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../config/db');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = Router();
 
@@ -32,7 +33,11 @@ router.post('/login', loginLimiter, [
 
     // Buscar usuario
     const { rows } = await db.query(
-      'SELECT id, username, password_hash, rol, nombres, apellidos, estado FROM usuarios WHERE username = $1',
+      `SELECT u.id, u.username, u.password_hash, u.rol, u.nombres, u.apellidos, u.estado, u.sede_id,
+              s.nombre as sede_nombre
+       FROM usuarios u
+       LEFT JOIN sedes s ON s.id = u.sede_id
+       WHERE u.username = $1`,
       [username]
     );
 
@@ -74,6 +79,7 @@ router.post('/login', loginLimiter, [
         rol: user.rol,
         nombres: user.nombres,
         apellidos: user.apellidos,
+        sede_nombre: user.sede_nombre
       },
     });
   } catch (err) {
@@ -82,31 +88,17 @@ router.post('/login', loginLimiter, [
   }
 });
 
-/**
- * GET /api/auth/me
- * Requiere token JWT
- */
-router.get('/me', async (req, res) => {
+router.get('/me', authMiddleware, async (req, res) => {
   try {
-    // El token se verifica en el middleware
-    const jwt_lib = require('jsonwebtoken');
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
-
-    const token = authHeader.split(' ')[1];
-    const SECRET = process.env.JWT_SECRET;
-    if (!SECRET) {
-      return res.status(500).json({ error: 'Error de configuración del servidor' });
-    }
-    const decoded = jwt_lib.verify(token, SECRET);
-
     const { rows } = await db.query(
-      `SELECT u.id, u.username, u.rol, u.nombres, u.apellidos, u.dni, u.telefono, u.email, u.estado,
+      `SELECT u.id, u.username, u.rol, u.nombres, u.apellidos, u.dni, u.telefono, u.email, u.estado, u.sede_id,
+              s.nombre as sede_nombre,
               ub.latitud, ub.longitud, ub.direccion, ub.distrito
        FROM usuarios u
+       LEFT JOIN sedes s ON s.id = u.sede_id
        LEFT JOIN ubicaciones ub ON ub.id = u.ubicacion_id
        WHERE u.id = $1`,
-      [decoded.id]
+      [req.user.id]
     );
 
     if (rows.length === 0) {
