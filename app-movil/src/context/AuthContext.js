@@ -3,7 +3,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { Platform, Alert } from 'react-native';
 import CryptoJS from 'crypto-js';
-
+//
 import { BASE_URL } from '../config';
 
 export const AuthContext = createContext();
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     await storage.deleteItem('token');
     await storage.deleteItem('user');
-    
+
     // 100% STRICT SECURITY: Crypto-shredding. Destruye la llave maestra AES.
     await storage.deleteItem('AES_OFFLINE_KEY');
     console.log('🛡️ [Auth] Crypto-shredding ejecutado. Datos offline destruidos criptográficamente.');

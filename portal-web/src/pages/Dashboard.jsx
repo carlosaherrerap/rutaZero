@@ -29,25 +29,25 @@ function AnimatedNumber({ value }) {
 
 /* ── Status color & icon map ─────────────────────────────────── */
 const estadoMeta = {
-  LIBRE:         { color: '#28A745', bg: 'rgba(40,167,69,0.08)',  Icon: CheckCircle,  label: 'Libre' },
-  VISITADO_PAGO: { color: '#007BFF', bg: 'rgba(0,123,255,0.08)',  Icon: Wallet,       label: 'Visitado / Pago' },
-  NO_ENCONTRADO: { color: '#DC3545', bg: 'rgba(220,53,69,0.08)',  Icon: AlertCircle,  label: 'No encontrado' },
-  NO_ECONTRADO:  { color: '#DC3545', bg: 'rgba(220,53,69,0.08)',  Icon: AlertCircle,  label: 'No encontrado' },
-  DEFAULT:       { color: '#FFC107', bg: 'rgba(255,193,7,0.08)',  Icon: Calendar,     label: 'Pendiente' },
+  LIBRE: { color: '#28A745', bg: 'rgba(40,167,69,0.08)', Icon: CheckCircle, label: 'Libre' },
+  VISITADO_PAGO: { color: '#007BFF', bg: 'rgba(0,123,255,0.08)', Icon: Wallet, label: 'Visitado / Pago' },
+  NO_ENCONTRADO: { color: '#DC3545', bg: 'rgba(220,53,69,0.08)', Icon: AlertCircle, label: 'No encontrado' },
+  NO_ECONTRADO: { color: '#DC3545', bg: 'rgba(220,53,69,0.08)', Icon: AlertCircle, label: 'No encontrado' },
+  DEFAULT: { color: '#FFC107', bg: 'rgba(255,193,7,0.08)', Icon: Calendar, label: 'Pendiente' },
 };
 const getEstado = (key) => estadoMeta[key] || estadoMeta.DEFAULT;
 
 /* ════════════════════════════════════════════════════════════ */
 export default function Dashboard() {
   const { api, token, sedeActual } = useContext(AuthContext);
-  const [stats, setStats]         = useState(null);
+  const [stats, setStats] = useState(null);
   const [actividad, setActividad] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [page, setPage]           = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportStart, setExportStart] = useState('');
-  const [exportEnd, setExportEnd]     = useState('');
+  const [exportEnd, setExportEnd] = useState('');
 
   useEffect(() => { fetchData(); }, [api]);
 
@@ -82,7 +82,7 @@ export default function Dashboard() {
     const BASE = api.defaults.baseURL || 'http://192.168.1.69:4000';
     let url = `${BASE}/api/dashboard/export_actividad?token=${token}`;
     if (exportStart) url += `&fecha_inicio=${exportStart}`;
-    if (exportEnd)   url += `&fecha_fin=${exportEnd}`;
+    if (exportEnd) url += `&fecha_fin=${exportEnd}`;
     window.open(url, '_blank');
     setShowExportModal(false);
   };
@@ -104,10 +104,10 @@ export default function Dashboard() {
 
   /* ── Stat card data ────────────────────────────────────────── */
   const statCards = [
-    { label: 'Total clientes', value: stats.totalClientes,    sub: 'Cartera total',    Icon: Users,     bgColor: '#4465EA', shadowColor: '#00D8F6' },
-    { label: 'Pagos hoy',      value: stats.clientesPagoHoy,  sub: 'Vencen hoy',       Icon: Wallet,    bgColor: '#28A745', shadowColor: '#09E88A' },
-    { label: 'Workers activos',value: stats.workersActivos,   sub: 'En jornada',       Icon: Activity,  bgColor: '#D39E00', shadowColor: '#FFE81A' },
-    { label: 'Rutas hoy',      value: stats.rutasHoy,         sub: 'Asignadas',        Icon: MapIcon,   bgColor: '#DC3545', shadowColor: '#FF8E9C' },
+    { label: 'Total clientes', value: stats.totalClientes, sub: 'Cartera total', Icon: Users, bgColor: '#4465EA', shadowColor: '#00D8F6' },
+    { label: 'Por evaluar hoy', value: stats.clientesPagoHoy, sub: 'Vencen hoy', Icon: Wallet, bgColor: '#28A745', shadowColor: '#09E88A' },
+    { label: 'Workers activos', value: stats.workersActivos, sub: 'En jornada', Icon: Activity, bgColor: '#D39E00', shadowColor: '#FFE81A' },
+    { label: 'Rutas hoy', value: stats.rutasHoy, sub: 'Asignadas', Icon: MapIcon, bgColor: '#DC3545', shadowColor: '#FF8E9C' },
   ];
 
   return (
@@ -133,12 +133,12 @@ export default function Dashboard() {
       {/* ── STAT CARDS ───────────────────────────────────────── */}
       <div style={S.statsGrid}>
         {statCards.map(({ label, value, sub, Icon, bgColor, shadowColor }, i) => (
-          <div 
-            key={i} 
-            className="b2b-stat-card group" 
-            style={{ 
-              '--card-bg': bgColor, 
-              '--hover-shadow-color': shadowColor 
+          <div
+            key={i}
+            className="b2b-stat-card group"
+            style={{
+              '--card-bg': bgColor,
+              '--hover-shadow-color': shadowColor
             }}
           >
             <div className="b2b-stat-card-content">
