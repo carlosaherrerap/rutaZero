@@ -1,0 +1,109 @@
+react-dom-BxEVyh8D.js?v=8e1e8aaa:445 Warning: Rendering <Context> directly is not supported and will be removed in a future major release. Did you mean to render <Context.Consumer> instead?
+    at div
+    at MapContainerComponent (http://localhost:5173/node_modules/.vite/deps/react-leaflet.js?v=ab1e79c8:394:34)
+    at div
+    at div
+    at MapPage (http://localhost:5173/src/pages/Map.jsx:23:30)
+    at main
+    at div
+    at div
+    at AppLayout (http://localhost:5173/src/App.jsx:1101:22)
+    at ProtectedRoute (http://localhost:5173/src/App.jsx:1174:27)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4006:26)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4637:19)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4589:29)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:7006:26)
+    at App
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:8:32)
+printWarning @ react-dom-BxEVyh8D.js?v=8e1e8aaa:445
+2react-dom-BxEVyh8D.js?v=8e1e8aaa:445 Warning: A context consumer was rendered with multiple children, or a child that isn't a function. A context consumer expects a single child that is a function. If you did pass a function, make sure there is no trailing or leading whitespace around it.
+    at div
+    at MapContainerComponent (http://localhost:5173/node_modules/.vite/deps/react-leaflet.js?v=ab1e79c8:394:34)
+    at div
+    at div
+    at MapPage (http://localhost:5173/src/pages/Map.jsx:23:30)
+    at main
+    at div
+    at div
+    at AppLayout (http://localhost:5173/src/App.jsx:1101:22)
+    at ProtectedRoute (http://localhost:5173/src/App.jsx:1174:27)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4006:26)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4637:19)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4589:29)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:7006:26)
+    at App
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:8:32)
+printWarning @ react-dom-BxEVyh8D.js?v=8e1e8aaa:445
+react-dom-BxEVyh8D.js?v=8e1e8aaa:12945 Uncaught TypeError: render is not a function
+    at updateContextConsumer (react-dom-BxEVyh8D.js?v=8e1e8aaa:12945:18)
+    at beginWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:13118:34)
+    at HTMLUnknownElement.callCallback (react-dom-BxEVyh8D.js?v=8e1e8aaa:3144:11)
+    at Object.invokeGuardedCallbackDev (react-dom-BxEVyh8D.js?v=8e1e8aaa:3164:14)
+    at invokeGuardedCallback (react-dom-BxEVyh8D.js?v=8e1e8aaa:3203:32)
+    at beginWork$1 (react-dom-BxEVyh8D.js?v=8e1e8aaa:15994:5)
+    at performUnitOfWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:15572:12)
+    at workLoopSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15521:36)
+    at renderRootSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15504:6)
+    at performSyncWorkOnRoot (react-dom-BxEVyh8D.js?v=8e1e8aaa:15303:21)
+2react-dom-BxEVyh8D.js?v=8e1e8aaa:445 Warning: A context consumer was rendered with multiple children, or a child that isn't a function. A context consumer expects a single child that is a function. If you did pass a function, make sure there is no trailing or leading whitespace around it.
+    at div
+    at MapContainerComponent (http://localhost:5173/node_modules/.vite/deps/react-leaflet.js?v=ab1e79c8:394:34)
+    at div
+    at div
+    at MapPage (http://localhost:5173/src/pages/Map.jsx:23:30)
+    at main
+    at div
+    at div
+    at AppLayout (http://localhost:5173/src/App.jsx:1101:22)
+    at ProtectedRoute (http://localhost:5173/src/App.jsx:1174:27)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4006:26)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4637:19)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4589:29)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:7006:26)
+    at App
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:8:32)
+printWarning @ react-dom-BxEVyh8D.js?v=8e1e8aaa:445
+react-dom-BxEVyh8D.js?v=8e1e8aaa:12945 Uncaught TypeError: render is not a function
+    at updateContextConsumer (react-dom-BxEVyh8D.js?v=8e1e8aaa:12945:18)
+    at beginWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:13118:34)
+    at HTMLUnknownElement.callCallback (react-dom-BxEVyh8D.js?v=8e1e8aaa:3144:11)
+    at Object.invokeGuardedCallbackDev (react-dom-BxEVyh8D.js?v=8e1e8aaa:3164:14)
+    at invokeGuardedCallback (react-dom-BxEVyh8D.js?v=8e1e8aaa:3203:32)
+    at beginWork$1 (react-dom-BxEVyh8D.js?v=8e1e8aaa:15994:5)
+    at performUnitOfWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:15572:12)
+    at workLoopSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15521:36)
+    at renderRootSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15504:6)
+    at recoverFromConcurrentError (react-dom-BxEVyh8D.js?v=8e1e8aaa:15197:21)
+react-dom-BxEVyh8D.js?v=8e1e8aaa:11723 The above error occurred in the <Context.Consumer> component:
+
+    at div
+    at MapContainerComponent (http://localhost:5173/node_modules/.vite/deps/react-leaflet.js?v=ab1e79c8:394:34)
+    at div
+    at div
+    at MapPage (http://localhost:5173/src/pages/Map.jsx:23:30)
+    at main
+    at div
+    at div
+    at AppLayout (http://localhost:5173/src/App.jsx:1101:22)
+    at ProtectedRoute (http://localhost:5173/src/App.jsx:1174:27)
+    at RenderedRoute (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4006:26)
+    at Routes (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4637:19)
+    at Router (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:4589:29)
+    at BrowserRouter (http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=9d056085:7006:26)
+    at App
+    at AuthProvider (http://localhost:5173/src/context/AuthContext.jsx:8:32)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ react-dom-BxEVyh8D.js?v=8e1e8aaa:11723
+react-dom-BxEVyh8D.js?v=8e1e8aaa:7802 Uncaught TypeError: render is not a function
+    at updateContextConsumer (react-dom-BxEVyh8D.js?v=8e1e8aaa:12945:18)
+    at beginWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:13118:34)
+    at beginWork$1 (react-dom-BxEVyh8D.js?v=8e1e8aaa:15986:12)
+    at performUnitOfWork (react-dom-BxEVyh8D.js?v=8e1e8aaa:15572:12)
+    at workLoopSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15521:36)
+    at renderRootSync (react-dom-BxEVyh8D.js?v=8e1e8aaa:15504:6)
+    at recoverFromConcurrentError (react-dom-BxEVyh8D.js?v=8e1e8aaa:15197:21)
+    at performSyncWorkOnRoot (react-dom-BxEVyh8D.js?v=8e1e8aaa:15308:19)
+    at flushSyncCallbacks (react-dom-BxEVyh8D.js?v=8e1e8aaa:7794:19)
+    at commitRootImpl (react-dom-BxEVyh8D.js?v=8e1e8aaa:15755:4)

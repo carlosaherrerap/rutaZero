@@ -14,8 +14,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const workerIcon = new L.Icon({
-  iconUrl: 'https://cdn-icons-png.flaticon.com/512/3253/3253113.png', // Motito o worker
+const workerIcon = new L.divIcon({
+  className: 'custom-worker-pin',
+  html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#37385b" width="35px" height="35px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`,
   iconSize: [35, 35],
   iconAnchor: [17, 35],
   popupAnchor: [0, -35]

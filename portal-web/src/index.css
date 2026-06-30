@@ -36,9 +36,9 @@ body.obfuscate-mode .page-content::after {
   /* Hover / Input background */
   --c-border: #E5E7EB;
   /* Subtle border separator */
-  --c-primary: #047CFD;
+  --c-primary: #213a5f;
   /* Vibrant Blue for main B2B actions */
-  --c-primary-h: #005dc3;
+  --c-primary-h: #373558;
   --c-accent-teal: #28A745;
   /* Soft B2B Green */
   --c-accent-pink: #DC3545;
@@ -54,7 +54,7 @@ body.obfuscate-mode .page-content::after {
   /* Soft red */
   --c-success: #28A745;
   /* Soft green */
-  --c-info: #047CFD;
+  --c-info: #213a5f;
   /* Corporate blue */
 
   --c-on-primary: #FFFFFF;

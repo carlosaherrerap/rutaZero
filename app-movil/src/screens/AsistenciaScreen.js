@@ -86,7 +86,7 @@ export default function AsistenciaScreen({ navigation }) {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mi Asistencia</Text>
         <TouchableOpacity onPress={fetchJornadas}>
-          <Ionicons name="refresh" size={22} color="#3b82f6" />
+          <Ionicons name="refresh" size={22} color="#213a5f" />
         </TouchableOpacity>
       </View>
 
@@ -99,7 +99,7 @@ export default function AsistenciaScreen({ navigation }) {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
-            <Text style={[styles.statNum, { color: '#3b82f6' }]}>{diasTrabajados}</Text>
+            <Text style={[styles.statNum, { color: '#213a5f' }]}>{diasTrabajados}</Text>
             <Text style={styles.statLabel}>Días Trabajados</Text>
           </View>
           <View style={styles.statDivider} />
@@ -112,11 +112,11 @@ export default function AsistenciaScreen({ navigation }) {
         {/* NAVEGACIÓN DE MES */}
         <View style={styles.monthNav}>
           <TouchableOpacity onPress={prevMonth} style={styles.monthBtn}>
-            <Ionicons name="chevron-back" size={22} color="#3b82f6" />
+            <Ionicons name="chevron-back" size={22} color="#213a5f" />
           </TouchableOpacity>
           <Text style={styles.monthTitle}>{MESES[viewDate.getMonth()]} {viewDate.getFullYear()}</Text>
           <TouchableOpacity onPress={nextMonth} style={styles.monthBtn}>
-            <Ionicons name="chevron-forward" size={22} color="#3b82f6" />
+            <Ionicons name="chevron-forward" size={22} color="#213a5f" />
           </TouchableOpacity>
         </View>
 
@@ -129,7 +129,7 @@ export default function AsistenciaScreen({ navigation }) {
 
         {/* GRILLA CALENDARIO */}
         {loading ? (
-          <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color="#213a5f" style={{ marginTop: 40 }} />
         ) : (
           <View style={styles.grid}>
             {cells.map((day, idx) => {
@@ -152,7 +152,7 @@ export default function AsistenciaScreen({ navigation }) {
                       <Text style={[
                         styles.cellNum,
                         validated && { color: '#1A1A1A' },
-                        todayDay && !validated && { color: '#3b82f6', fontWeight: '900' }
+                        todayDay && !validated && { color: '#213a5f', fontWeight: '900' }
                       ]}>
                         {day}
                       </Text>
@@ -170,7 +170,7 @@ export default function AsistenciaScreen({ navigation }) {
         {/* LEYENDA */}
         <View style={styles.legend}>
           <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#10b981' }]} /><Text style={styles.legendText}>Validado por Admin</Text></View>
-          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#3b82f6' }]} /><Text style={styles.legendText}>Trabajado</Text></View>
+          <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#213a5f' }]} /><Text style={styles.legendText}>Trabajado</Text></View>
           <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} /><Text style={styles.legendText}>En curso</Text></View>
         </View>
 
@@ -195,7 +195,7 @@ export default function AsistenciaScreen({ navigation }) {
               <View style={styles.jornadaRow}>
                 <View style={styles.jornadaItem}><Ionicons name="log-in-outline" size={14} color="#10b981" /><Text style={styles.jornadaVal}>{fmtHora(j.hora_inicio_sesion)}</Text></View>
                 <View style={styles.jornadaItem}><Ionicons name="restaurant-outline" size={14} color="#f59e0b" /><Text style={styles.jornadaVal}>{j.duracion_refrigerio_min ? fmtDuracion(j.duracion_refrigerio_min) : '—'}</Text></View>
-                <View style={styles.jornadaItem}><Ionicons name="document-text-outline" size={14} color="#3b82f6" /><Text style={styles.jornadaVal}>{j.clientes_gestionados || 0} fichas</Text></View>
+                <View style={styles.jornadaItem}><Ionicons name="document-text-outline" size={14} color="#213a5f" /><Text style={styles.jornadaVal}>{j.clientes_gestionados || 0} fichas</Text></View>
                 <View style={styles.jornadaItem}><Ionicons name="time-outline" size={14} color="#64748b" /><Text style={styles.jornadaVal}>{j.horas_trabajadas ? fmtDuracion(Math.round(j.horas_trabajadas * 60)) : '—'}</Text></View>
               </View>
             </View>
@@ -229,8 +229,8 @@ const styles = StyleSheet.create({
   cellValidated: { backgroundColor: '#10b981', borderRadius: 999, margin: 2 },
   cellWorked: { backgroundColor: '#dbeafe', borderRadius: 999, margin: 2 },
   cellInProgress: { backgroundColor: '#fef3c7', borderRadius: 999, margin: 2 },
-  cellToday: { borderWidth: 2, borderColor: '#3b82f6', borderRadius: 999, margin: 2 },
-  workedDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#3b82f6', marginTop: 1 },
+  cellToday: { borderWidth: 2, borderColor: '#213a5f', borderRadius: 999, margin: 2 },
+  workedDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#213a5f', marginTop: 1 },
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, padding: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },

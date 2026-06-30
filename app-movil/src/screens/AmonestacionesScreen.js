@@ -60,7 +60,7 @@ const AmonestacionesScreen = () => {
         .controls { padding: 10px; display: flex; gap: 10px; }
         button { flex: 1; padding: 15px; border-radius: 8px; border: none; font-weight: bold; font-size: 16px; }
         .clear { background: #f1f5f9; color: #475569; }
-        .save { background: #3b82f6; color: white; }
+        .save { background: #213a5f; color: white; }
       </style>
     </head>
     <body>
@@ -122,7 +122,7 @@ const AmonestacionesScreen = () => {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+        <ActivityIndicator size="large" color="#213a5f" style={{ marginTop: 50 }} />
       ) : (
         <FlatList
           data={data}
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   cardType: { fontSize: 16, fontWeight: '700', color: '#ef4444' },
   cardDate: { fontSize: 12, color: '#94a3b8', marginVertical: 4 },
   cardDesc: { fontSize: 13, color: '#64748b' },
-  signBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
+  signBtn: { backgroundColor: '#213a5f', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, flexDirection: 'row', alignItems: 'center' },
   signBtnText: { color: '#1A1A1A', fontSize: 12, fontWeight: 'bold', marginLeft: 5 },
   signedBadge: { flexDirection: 'row', alignItems: 'center' },
   signedText: { color: '#10b981', fontSize: 12, fontWeight: 'bold', marginLeft: 5 },

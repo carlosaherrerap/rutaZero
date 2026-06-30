@@ -44,7 +44,9 @@ function generate(count, sede, districts, prefix, idStart) {
     }
 
     uLines.push(`('${uId}', '${lat}', '${lon}', 'Dirección Masiva ${id}', '${district}', '${sede === LIMA_SEDE ? 'LIMA' : 'AREQUIPA'}', '${sede === LIMA_SEDE ? 'LIMA' : 'AREQUIPA'}')`);
-    cLines.push(`('${cId}', 'Cliente', 'Masivo ${id}', '${dni}', '${tel}', NULL, '${uId}', '${sede}', 'LIBRE', '2026-05-${(id % 28) + 1}', ${(Math.random() * 5000).toFixed(2)}, ${(Math.random() * 15).toFixed(0)}, '2026-05-08')`);
+    const targetIdx = (id % 22);
+    const paymentDate = targetIdx === 0 ? '2026-06-29' : (targetIdx === 1 ? '2026-06-30' : `2026-07-${targetIdx - 1}`);
+    cLines.push(`('${cId}', 'Cliente', 'Masivo ${id}', '${dni}', '${tel}', NULL, '${uId}', '${sede}', 'LIBRE', '${paymentDate}', ${(Math.random() * 5000).toFixed(2)}, ${(Math.random() * 15).toFixed(0)}, '2026-05-08')`);
   }
   
   sql += `INSERT INTO ubicaciones (id, latitud, longitud, direccion, distrito, provincia, departamento) VALUES\n` + uLines.join(',\n') + ' ON CONFLICT DO NOTHING;\n\n';

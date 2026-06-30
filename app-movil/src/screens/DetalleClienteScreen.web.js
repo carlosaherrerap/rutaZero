@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 22, fontWeight: '800', color: '#111827', textAlign: 'center' },
   dir: { fontSize: 14, color: '#6B7280', textAlign: 'center', marginTop: 5, marginBottom: 30 },
   btn: { paddingVertical: 18, borderRadius: 15, alignItems: 'center' },
-  btnBlue: { backgroundColor: '#3B82F6' },
+  btnBlue: { backgroundColor: '#213a5f' },
   btnGreen: { backgroundColor: '#10B981' },
   btnText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700' },
 });

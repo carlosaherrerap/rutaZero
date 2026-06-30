@@ -60,7 +60,7 @@ export default function MapPage() {
 
   // Iconos Personalizados - PINES GRANDES
   const getClientIcon = (estado) => {
-    let color = 'var(--c-info)'; // Azul por defecto (LIBRE)
+    let color = '#37385b'; // Azul por defecto (LIBRE)
     if (estado === 'EN_VISITA') color = 'var(--c-accent)';
     if (estado === 'VISITADO_PAGO') color = 'var(--c-success)';
     if (estado === 'REPROGRAMADO') color = 'var(--c-warn)';

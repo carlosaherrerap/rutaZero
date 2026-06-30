@@ -110,6 +110,6 @@ const errStyles = StyleSheet.create({
   subtitle: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginTop: 10, lineHeight: 22 },
   msgBox: { maxHeight: 120, backgroundColor: '#1e293b', borderRadius: 10, padding: 12, marginTop: 20, width: '100%' },
   msgText: { color: '#f87171', fontSize: 11, fontFamily: 'monospace' },
-  btn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3b82f6', padding: 15, borderRadius: 12, marginTop: 25, gap: 8 },
+  btn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#213a5f', padding: 15, borderRadius: 12, marginTop: 25, gap: 8 },
   btnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

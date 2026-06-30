@@ -107,7 +107,7 @@ const PermisosScreen = () => {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+        <ActivityIndicator size="large" color="#213a5f" style={{ marginTop: 50 }} />
       ) : (
         <FlatList
           data={permisos}
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
   header: { padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { fontSize: 24, fontWeight: '800', color: '#1e293b' },
-  addBtn: { backgroundColor: '#3b82f6', width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', elevation: 4 },
+  addBtn: { backgroundColor: '#213a5f', width: 45, height: 45, borderRadius: 22.5, justifyContent: 'center', alignItems: 'center', elevation: 4 },
   list: { padding: 20 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 15, elevation: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 15, color: '#1e293b' },
   modalFooter: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   cancelBtn: { padding: 15 },
-  submitBtn: { backgroundColor: '#3b82f6', paddingHorizontal: 25, borderRadius: 12, justifyContent: 'center', height: 50 }
+  submitBtn: { backgroundColor: '#213a5f', paddingHorizontal: 25, borderRadius: 12, justifyContent: 'center', height: 50 }
 });
 
 export default PermisosScreen;

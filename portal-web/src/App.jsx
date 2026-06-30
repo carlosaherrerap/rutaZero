@@ -86,7 +86,7 @@ function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '10px' }}>
-        <img src={logoSidebar} alt="InformaTech" style={{ height: '36px', width: 'auto', marginBottom: '16px', filter: 'brightness(0) invert(1)' }} />
+        <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: '900', marginBottom: '16px', letterSpacing: '-0.5px' }}>Mi Radar</h2>
 
         <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease', position: 'relative' }} ref={sedeDropdownRef}>
           <div style={{ fontSize: '9px', color: isHighlighting ? '#FFFFFF' : 'rgba(255,255,255,0.6)', fontWeight: '900', marginBottom: '6px', letterSpacing: '1.5px', textTransform: 'uppercase' }}>SEDE ACTUAL</div>

@@ -77,13 +77,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF', padding: 25 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E5E7EB', marginHorizontal: 4 },
-  activeDot: { backgroundColor: '#3B82F6', width: 20 },
+  activeDot: { backgroundColor: '#213a5f', width: 20 },
   title: { fontSize: 20, fontWeight: '800', marginBottom: 20 },
   card: { padding: 20, backgroundColor: '#F9FAFB', borderRadius: 15 },
   val: { fontSize: 18, fontWeight: '700' },
   sub: { color: '#6B7280', marginTop: 5 },
   input: { backgroundColor: '#F3F4F6', padding: 15, borderRadius: 12, marginBottom: 15 },
-  btn: { backgroundColor: '#3B82F6', padding: 20, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  btn: { backgroundColor: '#213a5f', padding: 20, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   btnText: { color: '#1A1A1A', fontWeight: '700' }
 });
 

@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     const root = document.documentElement;
     const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000' || s.main_bg.toLowerCase() === '#050505';
     
-    root.style.setProperty('--c-sidebar-bg', '#027BFD'); // Override theme DB to ensure the requested blue color
+    root.style.setProperty('--c-sidebar-bg', 'linear-gradient(180deg, #1c365d, #373558)'); // Override theme DB to ensure the requested gradient
     root.style.setProperty('--c-surface', isDark ? '#1f2128' : '#FFFFFF');
     root.style.setProperty('--c-surface-2', isDark ? '#2a2d38' : '#F3F4F6');
     root.style.setProperty('--c-border', isDark ? '#3a3e4e' : '#E5E7EB');

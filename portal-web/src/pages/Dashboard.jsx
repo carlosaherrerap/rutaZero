@@ -117,7 +117,7 @@ export default function Dashboard() {
       <section style={S.hero}>
         <div>
           <p style={S.heroEyebrow}>Sede operativa · {sedeActual?.nombre}</p>
-          <h1 style={S.heroTitle}>Routing <span style={{ color: '#007BFF' }}>{sedeActual?.nombre}</span></h1>
+          <h1 style={S.heroTitle}>Panel de control - <span style={{ color: 'var(--c-primary)' }}>{sedeActual?.nombre}</span></h1>
           <p style={S.heroSub}>Resumen de operaciones y estado de rutas activas.</p>
         </div>
         <div style={S.heroCtas}>

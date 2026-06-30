@@ -42,8 +42,8 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.logoTitle}>Routing</Text>
-              <Text style={styles.logoSub}>WORKER PORTAL</Text>
+              <Text style={styles.logoTitle}>Mi Radar</Text>
+              <Text style={styles.logoSub}>DISPOSITIVO DE GESTION</Text>
             </View>
 
             <View style={styles.form}>

@@ -45,13 +45,8 @@ export default function useAntiScraping() {
                 href.includes('moz-extension://') ||
                 id.toLowerCase().includes('scraper') ||
                 id.toLowerCase().includes('data-extractor') ||
-                id.toLowerCase().includes('extension') ||
-                id.toLowerCase().includes('color') ||
-                id.toLowerCase().includes('picker') ||
-                node.tagName === 'IFRAME' ||
                 node.hasAttribute?.('data-extension') ||
-                node.hasAttribute?.('data-extension-id') ||
-                node.shadowRoot
+                node.hasAttribute?.('data-extension-id')
               ) {
                 // BLOQUEO ESTRICTO DE CUALQUIER EXTENSIÓN PARA OFUSCACIÓN DE DATOS
                 handleCompromised('Extensión de navegador no autorizada inyectada');

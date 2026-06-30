@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
 
 @font-face {
   font-family: 'Serimi';
@@ -23,7 +24,7 @@
   left: 0;
   width: 65%;
   height: 100%;
-  background: var(--c-primary-h);
+  background: linear-gradient(180deg, var(--c-primary), var(--c-primary-h));
   clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
   z-index: 2;
   display: flex;
@@ -33,57 +34,24 @@
   overflow: hidden;
 }
 
-/* ─── ANIMACIÓN MAPA Y RUTAS (SVG) ─── */
+/* ─── ANIMACIÓN MAPA Y RUTAS (VIDEO) ─── */
 .routing-animation {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  z-index: 2;
-  opacity: 0.35;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
   pointer-events: none;
 }
 
-.map-svg {
+.background-video {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  opacity: 0.3;
+  filter: brightness(0.8) contrast(1.2);
 }
-
-.route-line {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 2;
-  stroke-dasharray: 8 8;
-  opacity: 0.6;
-}
-
-.node {
-  fill: #ffffff;
-}
-
-.pulse-node {
-  animation: pulseNode 2s infinite;
-}
-
-@keyframes pulseNode {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.8); opacity: 0.5; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.vehicle {
-  offset-rotate: auto;
-}
-
-.vehicle-1 { animation: moveVehicle1 12s linear infinite; offset-path: path("M -100 200 C 150 250, 300 100, 500 300 S 700 600, 1100 500"); }
-.vehicle-2 { animation: moveVehicle2 15s linear infinite; offset-path: path("M 200 -100 C 250 150, 100 400, 400 500 S 800 400, 900 900"); }
-.vehicle-3 { animation: moveVehicle3 18s linear infinite; offset-path: path("M -50 700 C 200 650, 400 800, 600 500 S 800 100, 1200 200"); }
-
-@keyframes moveVehicle1 { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
-@keyframes moveVehicle2 { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
-@keyframes moveVehicle3 { 0% { offset-distance: 0%; } 100% { offset-distance: 100%; } }
 
 /* ─── BRANDING EN PANE IZQUIERDO ─── */
 .auth-branding-overlay {
@@ -94,13 +62,24 @@
 }
 
 .brand-name-routing {
-  font-family: 'Serimi', var(--font-main);
-  font-size: 80px;
+  font-family: 'Outfit', var(--font-main);
+  font-size: 4.5rem;
+  font-weight: 800;
   color: #ffffff;
   margin: 0;
   letter-spacing: -2px;
-  line-height: 1;
+  line-height: 1.1;
   text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  background: linear-gradient(135deg, #ffffff, #c0c0c0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: floatBrand 6s ease-in-out infinite;
+}
+
+@keyframes floatBrand {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
 }
 
 .brand-tagline {
@@ -183,7 +162,7 @@
 
 .form-subtitle {
   color: var(--c-muted);
-  font-size: 1rem;
+  font-size: 0.85rem;
   margin: 0;
   line-height: 1.5;
 }

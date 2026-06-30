@@ -58,7 +58,7 @@ export default function DebugStorageScreen({ navigation }) {
   const renderSection = (title, content, icon) => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Ionicons name={icon} size={20} color="#3b82f6" />
+        <Ionicons name={icon} size={20} color="#213a5f" />
         <Text style={styles.sectionTitle}>{title}</Text>
       </View>
       <View style={styles.codeBox}>
@@ -95,7 +95,7 @@ export default function DebugStorageScreen({ navigation }) {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>🐛 Inspector de Datos</Text>
         <TouchableOpacity onPress={loadAll}>
-          <Ionicons name="refresh" size={24} color="#3b82f6" />
+          <Ionicons name="refresh" size={24} color="#213a5f" />
         </TouchableOpacity>
       </View>
 
@@ -105,7 +105,7 @@ export default function DebugStorageScreen({ navigation }) {
           style={[styles.tab, activeTab === 'cache' && styles.tabActive]}
           onPress={() => setActiveTab('cache')}
         >
-          <Ionicons name="server-outline" size={16} color={activeTab === 'cache' ? '#3b82f6' : '#94a3b8'} />
+          <Ionicons name="server-outline" size={16} color={activeTab === 'cache' ? '#213a5f' : '#94a3b8'} />
           <Text style={[styles.tabText, activeTab === 'cache' && styles.tabTextActive]}>Caché / Datos</Text>
         </TouchableOpacity>
         <TouchableOpacity 
@@ -120,7 +120,7 @@ export default function DebugStorageScreen({ navigation }) {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />
+        <ActivityIndicator size="large" color="#213a5f" style={{ marginTop: 50 }} />
       ) : (
         <ScrollView style={styles.content}>
 
@@ -183,11 +183,11 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
   tabs: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderBottomWidth: 3, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: '#3b82f6' },
+  tabActive: { borderBottomColor: '#213a5f' },
   tabText: { fontSize: 13, fontWeight: '600', color: '#94a3b8' },
-  tabTextActive: { color: '#3b82f6', fontWeight: '800' },
+  tabTextActive: { color: '#213a5f', fontWeight: '800' },
   content: { padding: 15 },
-  section: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
+  section: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#213a5f' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
   sectionTitle: { fontSize: 14, fontWeight: '900', color: '#1e293b', textTransform: 'uppercase' },
   codeBox: { backgroundColor: '#1e293b', padding: 10, borderRadius: 8 },

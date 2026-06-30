@@ -710,7 +710,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={styles.headerTitle}>InformaTech</Text>
+              <Text style={styles.headerTitle}>Mi Radar</Text>
               <TouchableOpacity onPress={() => navigation.navigate('DebugStorage')}>
                 <Ionicons name="map" size={20} color="#ffffff" />
               </TouchableOpacity>

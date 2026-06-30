@@ -98,9 +98,9 @@ export const TrackingService = {
         distanceInterval: 5,
         deferredUpdatesInterval: 1000 * 60,
         foregroundService: {
-          notificationTitle: "InformaTech Radar",
+          notificationTitle: "Mi Radar",
           notificationBody: "Monitoreando tu ruta de trabajo...",
-          notificationColor: "#3b82f6"
+          notificationColor: "#213a5f"
         }
       });
       return true;
