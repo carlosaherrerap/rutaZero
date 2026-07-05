@@ -64,7 +64,16 @@ const apiLimiter = rateLimit({
   message: { error: 'Demasiadas peticiones desde esta IP, por favor intente más tarde.' }
 });
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
+  'http://localhost:5173', 
+  'http://localhost:3000',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500',
+  'https://www.informaperu.com',
+  'http://www.informaperu.com',
+  'https://informaperu.com',
+  'http://informaperu.com'
+];
 app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sin origin (ej. mobile app curl), origin='null' de local/capacitor, orígenes en la lista local, o dominios de Render dinámicos
