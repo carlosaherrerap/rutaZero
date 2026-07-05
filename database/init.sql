@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     estado          estado_worker NOT NULL DEFAULT 'ACTIVO',
     sede_id         UUID REFERENCES sedes(id),
     ubicacion_id    UUID REFERENCES ubicaciones(id),
+    session_token   VARCHAR(255),
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );

@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     let whereClause = 'WHERE 1=1';
     const params = [];
 
-    const sedeId = req.headers['x-sede-id'] || req.user.sede_id;
+    const sedeId = req.headers['x-sede-id'] || (req.user ? req.user.sede_id : null);
     if (sedeId) {
       params.push(sedeId);
       whereClause += ` AND c.sede_id = $${params.length}`;
