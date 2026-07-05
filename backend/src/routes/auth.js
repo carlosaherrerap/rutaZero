@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const db = require('../config/db');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
@@ -65,10 +66,13 @@ router.post('/login', loginLimiter, [
       return res.status(500).json({ error: 'Error interno de configuración de seguridad del servidor' });
     }
 
+    const sessionToken = crypto.randomBytes(16).toString('hex');
+    await db.query('UPDATE usuarios SET session_token = $1 WHERE id = $2', [sessionToken, user.id]);
+
     const token = jwt.sign(
-      { id: user.id, username: user.username, rol: user.rol },
+      { id: user.id, username: user.username, rol: user.rol, sessionToken },
       SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '15m' } // Changed default to 15m
+      { expiresIn: process.env.JWT_EXPIRES_IN || '12h' } // Aumentado a 12h para evitar caída de conexión, seguridad por sessionToken
     );
 
     res.json({

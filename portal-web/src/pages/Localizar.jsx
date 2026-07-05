@@ -78,7 +78,7 @@ export default function Localizar() {
     setBreadcrumb([]);
     try {
       const res = await api.get(`/api/tracking/ruta-dia/${worker.id}`);
-      const points = res.data.data || [];
+      const points = res.data?.data || [];
       setBreadcrumb(points.map(p => [parseFloat(p.latitud), parseFloat(p.longitud)]));
     } catch (e) {
       console.error('Error fetching breadcrumb', e);

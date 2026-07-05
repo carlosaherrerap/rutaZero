@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://192.168.1.50:4000';
+export const BASE_URL = 'http://192.168.18.27:4000';
 
 // export const BASE_URL = 'https://rutazero-backend-co5q.onrender.com';
 

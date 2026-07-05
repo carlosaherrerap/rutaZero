@@ -6,7 +6,10 @@ const isLocalhost = process.env.DATABASE_URL && (process.env.DATABASE_URL.includ
 const poolConfig = process.env.DATABASE_URL 
   ? { 
       connectionString: process.env.DATABASE_URL,
-      ssl: isLocalhost ? false : { rejectUnauthorized: false }
+      ssl: isLocalhost ? false : { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     }
   : {
       host: process.env.DB_HOST || 'localhost',
@@ -14,9 +17,16 @@ const poolConfig = process.env.DATABASE_URL
       database: process.env.DB_NAME || 'rutazero',
       user: process.env.DB_USER || 'rutazero_admin',
       password: process.env.DB_PASSWORD || 'rutazero_2026',
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     };
 
 const pool = new Pool(poolConfig);
+
+pool.on('error', (err, client) => {
+  console.error('Unexpected error on idle client', err);
+});
 
 // Forzar zona horaria local en cada cliente del pool
 pool.on('connect', (client) => {

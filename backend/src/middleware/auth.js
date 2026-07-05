@@ -28,7 +28,7 @@ async function authMiddleware(req, res, next) {
     
     // Verificar si el usuario sigue activo en la base de datos y obtener su sede
     const { rows } = await db.query(
-      'SELECT estado, sede_id FROM usuarios WHERE id = $1',
+      'SELECT estado, sede_id, session_token FROM usuarios WHERE id = $1',
       [decoded.id]
     );
 
@@ -38,6 +38,11 @@ async function authMiddleware(req, res, next) {
 
     if (rows[0].estado !== 'ACTIVO') {
       return res.status(403).json({ error: 'USER_INACTIVE' });
+    }
+
+    // Validar sesión única (si se asignó un token al usuario, debe coincidir con el actual)
+    if (decoded.sessionToken && rows[0].session_token && rows[0].session_token !== decoded.sessionToken) {
+      return res.status(401).json({ error: 'Sesión iniciada en otro dispositivo.' });
     }
 
     req.user = { ...decoded, sede_id: rows[0].sede_id };
