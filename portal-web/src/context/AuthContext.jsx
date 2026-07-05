@@ -97,23 +97,22 @@ export const AuthProvider = ({ children }) => {
   const applyStyles = (s) => {
     if (!s) return;
     const root = document.documentElement;
-    // Forced light theme by default as requested
-    const isDark = false; 
+    const isDark = s.main_bg.toLowerCase() === '#0b0e11' || s.main_bg.toLowerCase() === '#000000' || s.main_bg.toLowerCase() === '#050505';
     
-    root.style.setProperty('--c-sidebar-bg', '#F9F9F7'); 
-    root.style.setProperty('--c-surface', '#FFFFFF');
-    root.style.setProperty('--c-surface-2', '#F3F4F6');
-    root.style.setProperty('--c-border', '#E5E7EB');
-    root.style.setProperty('--c-bg', '#FFFFFF');
-    root.style.setProperty('--c-text', '#111111');
-    root.style.setProperty('--c-sidebar-text', '#222222');
-    root.style.setProperty('--c-primary', '#2D3436');
-    root.style.setProperty('--logo-filter', 'invert(1) brightness(0.2)');
-    root.style.setProperty('--font-main', 'Inter');
+    root.style.setProperty('--c-sidebar-bg', 'linear-gradient(180deg, #1c365d, #373558)'); // Override theme DB to ensure the requested gradient
+    root.style.setProperty('--c-surface', isDark ? '#1f2128' : '#FFFFFF');
+    root.style.setProperty('--c-surface-2', isDark ? '#2a2d38' : '#F3F4F6');
+    root.style.setProperty('--c-border', isDark ? '#3a3e4e' : '#E5E7EB');
+    root.style.setProperty('--c-bg', s.main_bg);
+    root.style.setProperty('--c-text', s.main_text);
+    root.style.setProperty('--c-sidebar-text', s.sidebar_text);
+    root.style.setProperty('--c-primary', s.primary_color);
+    root.style.setProperty('--logo-filter', s.logo_filter || 'none');
+    root.style.setProperty('--font-main', s.font_family || 'Inter');
     
     // Also update data-theme attribute for CSS selectors
-    root.setAttribute('data-theme', 'light');
-    localStorage.setItem('theme', 'light');
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
     
     // Forced re-render of components listening to theme if needed
     // (though CSS variables usually handle this)

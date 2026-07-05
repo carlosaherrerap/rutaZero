@@ -72,14 +72,15 @@ router.post('/registro-cliente', upload.array('fotos', 5), async (req, res) => {
 
     // 1. Crear ubicación
     const ubRes = await db.query(
-      'INSERT INTO ubicaciones (latitud, longitud, direccion, distrito, departamento, provincia) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      'INSERT INTO ubicaciones (latitud, longitud, direccion, distrito, departamento, provincia, referencia) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       [
         parseFloat(latitud) || 0, 
         parseFloat(longitud) || 0, 
         direccion || '', 
         distrito || '',
         departamento || '',
-        provincia || ''
+        provincia || '',
+        referencia || ''
       ]
     );
     const ubicacion_id = ubRes.rows[0].id;
@@ -155,14 +156,15 @@ router.post('/registro-worker', upload.none(), async (req, res) => {
 
     console.log('📍 Creando ubicación para worker...');
     const ubRes = await db.query(
-      'INSERT INTO ubicaciones (latitud, longitud, direccion, distrito, departamento, provincia) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      'INSERT INTO ubicaciones (latitud, longitud, direccion, distrito, departamento, provincia, referencia) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
       [
         parseFloat(latitud) || 0, 
         parseFloat(longitud) || 0, 
         direccion || '', 
         distrito || '',
         departamento || '',
-        provincia || ''
+        provincia || '',
+        referencia || ''
       ]
     );
     const ubicacion_id = ubRes.rows[0].id;
