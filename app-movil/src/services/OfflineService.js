@@ -3,6 +3,7 @@
  * Almacena datos bancarios y gestiones localmente usando AsyncStorage,
  * protegiéndolos con cifrado AES-256-GCM.
  */
+import '../crypto-polyfill';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { saveCrashLog } from './CrashLogService';

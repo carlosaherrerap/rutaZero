@@ -1,3 +1,4 @@
+import '../crypto-polyfill';
 import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
