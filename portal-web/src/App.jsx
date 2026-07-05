@@ -48,7 +48,7 @@ const Icon = ({ name, size = 16 }) => {
 };
 
 // ─── Sidebar ──────────────────────────────────────────────────
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   const { sedeActual, cambiarSede } = useContext(AuthContext);
   const [isHighlighting, setIsHighlighting] = React.useState(false);
   const [showSedeMenu, setShowSedeMenu] = React.useState(false);
@@ -78,14 +78,34 @@ function Sidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sedeDropdownRef]);
 
-  const handleSedeChange = (e) => {
-    const selected = sedesList.find(s => s.nombre === e.target.value);
-    if (selected) cambiarSede(selected);
-  };
-
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '10px' }}>
+    <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
+      <div className="sidebar-header" style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', marginBottom: '10px', position: 'relative' }}>
+        
+        {/* Mobile Close Button */}
+        <button 
+          className="sidebar-close-btn"
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '16px',
+            background: 'none',
+            border: 'none',
+            color: '#ffffff',
+            cursor: 'pointer',
+            padding: '4px',
+            display: 'none', // Only shown on mobile/tablet via CSS
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
         <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: '900', marginBottom: '16px', letterSpacing: '-0.5px' }}>Mi Radar</h2>
 
         <div className={`sede-selector-box ${isHighlighting ? 'highlight-pulse' : ''}`} style={{ transition: 'all 0.5s ease', position: 'relative' }} ref={sedeDropdownRef}>
@@ -112,7 +132,7 @@ function Sidebar() {
               {sedesList.map(s => (
                 <button
                   key={s.id}
-                  onClick={() => { cambiarSede(s); setShowSedeMenu(false); }}
+                  onClick={() => { cambiarSede(s); setShowSedeMenu(false); if (onClose) onClose(); }}
                   style={{
                     display: 'block', width: '100%', padding: '10px 12px', textAlign: 'left', background: '#FEFEFE', border: 'none',
                     cursor: 'pointer', fontSize: '11px', fontWeight: '800', color: s.nombre === sedeActual.nombre ? '#027BFD' : '#333333',
@@ -132,38 +152,38 @@ function Sidebar() {
       <div className="sidebar-content" style={{ flex: 1, overflowY: 'auto' }}>
         <div className="sidebar-subtitle">VISUALIZACION</div>
         <ul className="sidebar-nav">
-          <li id="nav-principal"><NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard" />Principal</NavLink></li>
-          <li id="nav-mapa"><NavLink to="/map" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Mapa</NavLink></li>
-          <li id="nav-clientes"><NavLink to="/clientes" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="clients" />Clientes</NavLink></li>
-          <li id="nav-operadores"><NavLink to="/workers" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers" />Operadores</NavLink></li>
-          <li id="nav-admision"><NavLink to="/admision" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Admisión</NavLink></li>
+          <li id="nav-principal"><NavLink to="/dashboard" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="dashboard" />Principal</NavLink></li>
+          <li id="nav-mapa"><NavLink to="/map" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Mapa</NavLink></li>
+          <li id="nav-clientes"><NavLink to="/clientes" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="clients" />Clientes</NavLink></li>
+          <li id="nav-operadores"><NavLink to="/workers" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="workers" />Operadores</NavLink></li>
+          <li id="nav-admision"><NavLink to="/admision" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Admisión</NavLink></li>
         </ul>
 
         <div className="sidebar-subtitle">GESTION</div>
         <ul className="sidebar-nav">
-          <li><NavLink to="/rutas" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="routes" />Rutas</NavLink></li>
-          <li><NavLink to="/formularios" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="forms" />Formularios</NavLink></li>
-          <li><NavLink to="/ciclos" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="cycles" />Ciclos</NavLink></li>
+          <li><NavLink to="/rutas" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="routes" />Rutas</NavLink></li>
+          <li><NavLink to="/formularios" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="forms" />Formularios</NavLink></li>
+          <li><NavLink to="/ciclos" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="cycles" />Ciclos</NavLink></li>
         </ul>
 
         <div className="sidebar-subtitle">RADAR</div>
         <ul className="sidebar-nav">
-          <li><NavLink to="/localizar" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Radar</NavLink></li>
-          <li><NavLink to="/monitoreo" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance" />Productividad</NavLink></li>
-          <li><NavLink to="/stats" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Trayectos</NavLink></li>
+          <li><NavLink to="/localizar" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Radar</NavLink></li>
+          <li><NavLink to="/monitoreo" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance" />Productividad</NavLink></li>
+          <li><NavLink to="/stats" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="map" />Trayectos</NavLink></li>
         </ul>
 
         <div className="sidebar-subtitle">REPORTES Y ASISTENCIA</div>
         <ul className="sidebar-nav">
-          <li><NavLink to="/asistencia" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance" />Asistencia</NavLink></li>
-          <li><NavLink to="/amonestaciones" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Amonestaciones</NavLink></li>
-          <li><NavLink to="/permisos" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Permisos</NavLink></li>
+          <li><NavLink to="/asistencia" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="attendance" />Asistencia</NavLink></li>
+          <li><NavLink to="/amonestaciones" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Amonestaciones</NavLink></li>
+          <li><NavLink to="/permisos" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Permisos</NavLink></li>
         </ul>
 
         <div className="sidebar-subtitle">CONFIGURACIONES</div>
         <ul className="sidebar-nav">
-          <li><NavLink to="/temas" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Paleta / Temas</NavLink></li>
-          <li><NavLink to="/tipografia" className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Tipografía</NavLink></li>
+          <li><NavLink to="/temas" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Paleta / Temas</NavLink></li>
+          <li><NavLink to="/tipografia" onClick={onClose} className={({ isActive }) => isActive ? 'active' : ''}><Icon name="config" />Tipografía</NavLink></li>
         </ul>
       </div>
     </aside>
@@ -171,13 +191,12 @@ function Sidebar() {
 }
 
 // ─── Topbar & Profile ─────────────────────────────────────────
-function Topbar({ title }) {
+function Topbar({ title, onToggleSidebar }) {
   const { user, logout, applyStyles, api } = useContext(AuthContext);
   const [showMenu, setShowMenu] = React.useState(false);
   const navigate = useNavigate();
   const dropdownRef = React.useRef(null);
 
-  // Cerrar dropdown al hacer click fuera
   React.useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -217,31 +236,48 @@ function Topbar({ title }) {
 
     const selected = presets[newTheme];
     applyStyles(selected);
-    // Persist to DB
     try {
       await api.post('/api/config', selected);
     } catch (e) {
       console.error(e);
     }
-
   };
 
   const isDark = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
 
   return (
     <header className="topbar">
-      <div className="topbar-left">
+      <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button 
+          className="sidebar-toggle-btn" 
+          onClick={onToggleSidebar}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--c-text)',
+            cursor: 'pointer',
+            padding: '8px',
+            display: 'none', // Managed in CSS
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
         <span className="topbar-title" style={{ fontFamily: title === 'Principal' ? 'Serimi' : 'inherit', fontSize: title === 'Principal' ? '28px' : 'inherit' }}>{title}</span>
       </div>
 
       <div className="topbar-right">
-
         <div className="profile-container" ref={dropdownRef}>
           <button className="profile-trigger" onClick={() => setShowMenu(!showMenu)} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '6px 14px', borderRadius: '14px', border: '1px solid var(--c-border)', transition: 'all 0.2s' }}>
             <div className="avatar-small">
               {user?.nombres ? user.nombres[0].toUpperCase() : 'A'}
             </div>
-            <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
+            <div style={{ textAlign: 'left', lineHeight: '1.2' }} className="profile-text-wrap">
               <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--c-text)' }}>
                 {user?.nombres ? user.nombres.split(' ')[0] : (user?.username || 'Admin')}
               </div>
@@ -303,21 +339,34 @@ function Topbar({ title }) {
 }
 
 // ─── Theme Toggle (Ahora integrado en Topbar) ─────────────────
-// Eliminado para evitar duplicidad o dejarlo como placeholder si se usa en otro lado
 function ThemeToggle() { return null; }
 
 import useAntiScraping from './hooks/useAntiScraping.jsx';
 
 // ─── Protected layout ─────────────────────────────────────────
 function AppLayout({ children, title }) {
-  // Theme is now managed in AuthContext to avoid resets on Sede change
   const { isCompromised } = useAntiScraping();
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-mobile-open' : ''}`}>
+      {/* Background Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)} 
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 99,
+          }}
+        />
+      )}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-area fade-in">
-        <Topbar title={title} />
+        <Topbar title={title} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         {isCompromised && (
           <div style={{ backgroundColor: '#EF4444', color: 'white', padding: '10px 20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 99999 }}>
             <span>⚠️ ALERTA DE SEGURIDAD: Se ha detectado una extensión no autorizada. Los datos sensibles han sido ofuscados.</span>

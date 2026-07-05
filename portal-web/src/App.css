@@ -993,3 +993,95 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     background-position: -200% 0;
   }
 }
+
+/* ============================================================
+   RESPONSIVE DESIGN (Media Queries)
+   ============================================================ */
+
+/* Screens under 1024px (Tablets & Mobile) */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000 !important;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important; /* Expose close button on mobile sidebar */
+  }
+
+  .sidebar-toggle-btn {
+    display: flex !important; /* Expose hamburger button in topbar */
+  }
+
+  .topbar {
+    padding: 0 20px !important;
+  }
+
+  .page-content {
+    padding: 20px !important;
+  }
+
+  /* Bento Grid Stats to stack or wrap better */
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+/* Screens under 768px (Mobile Phones) */
+@media (max-width: 768px) {
+  .topbar-title {
+    font-size: 16px !important;
+  }
+
+  /* Shrink user profile text to save space */
+  .profile-text-wrap {
+    display: none !important;
+  }
+
+  .topbar-right {
+    gap: 12px !important;
+  }
+
+  /* Bento Grid Stats to stack */
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Filter bars for tables and grids */
+  .filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .filter-bar > * {
+    width: 100% !important;
+  }
+
+  /* Custom detail grid layouts */
+  .detail-grid, .grid-2col, .grid-3col, .grid-4col, .bento-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Modals */
+  .modal {
+    max-height: 95vh !important;
+  }
+
+  .modal-header, .modal-body, .modal-footer {
+    padding: 16px 20px !important;
+  }
+}
