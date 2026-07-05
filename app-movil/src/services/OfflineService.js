@@ -150,7 +150,15 @@ export const updateLocalJourneyStatus = async (status, extraData = {}) => {
 export const saveJourneyActionOffline = async (endpoint) => {
   try {
     const raw = await AsyncStorage.getItem(JOURNEY_ACTIONS_KEY);
-    const queue = raw ? await decryptData(raw) : [];
+    let queue = [];
+    if (raw) {
+      try {
+        queue = await decryptData(raw);
+      } catch (decryptErr) {
+        console.warn('⚠️ [Offline] Falló descifrado de jornada previa. Inicializando nueva cola.', decryptErr.message);
+        queue = [];
+      }
+    }
     queue.push({ endpoint, savedAt: new Date().toISOString() });
     
     const cipherText = await encryptData(queue);
@@ -212,7 +220,15 @@ export const updateLocalClientStatus = async (clienteId, status) => {
 export const saveFichaOffline = async (clienteId, formData, fotos) => {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    const queue = raw ? await decryptData(raw) : [];
+    let queue = [];
+    if (raw) {
+      try {
+        queue = await decryptData(raw);
+      } catch (decryptErr) {
+        console.warn('⚠️ [Offline] Falló descifrado de fichas previas. Inicializando nueva cola.', decryptErr.message);
+        queue = [];
+      }
+    }
 
     queue.push({
       id: Date.now().toString(),
