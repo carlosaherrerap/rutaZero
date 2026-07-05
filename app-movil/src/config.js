@@ -1,6 +1,5 @@
-export const BASE_URL = 'http://192.168.18.27:4000';
-
-// export const BASE_URL = 'https://rutazero-backend-co5q.onrender.com';
+// export const BASE_URL = 'http://192.168.18.27:4000'; // Local
+export const BASE_URL = 'https://rutazero-backend-cgtl.onrender.com'; // Render (Producción)
 
 export const API_URL = `${BASE_URL}/api`;
 

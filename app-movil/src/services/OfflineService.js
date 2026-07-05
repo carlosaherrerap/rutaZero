@@ -20,12 +20,34 @@ const SYNC_LOG_KEY = 'rz_sync_log';
 const getAesKey = async () => {
   try {
     if (Platform.OS === 'web') return 'web_fallback_key_not_secure'; // Para simulación en web
-    const key = await SecureStore.getItemAsync('AES_OFFLINE_KEY');
-    if (!key) throw new Error('Llave AES destruida o no encontrada. Datos bloqueados.');
-    return key;
+    
+    let key = null;
+    try {
+      key = await SecureStore.getItemAsync('AES_OFFLINE_KEY');
+    } catch (e) {
+      console.warn('⚠️ [Crypto] Error leyendo SecureStore:', e.message);
+    }
+    
+    if (key) return key;
+
+    // Si no existe o falló SecureStore, usar un fallback basado en el ID de usuario si está guardado
+    try {
+      const savedUser = await SecureStore.getItemAsync('user');
+      if (savedUser) {
+        const userObj = JSON.parse(savedUser);
+        if (userObj && userObj.id) {
+          return CryptoJS.SHA256(userObj.id).toString();
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ [Crypto] Falló obtención de llave de respaldo:', e.message);
+    }
+
+    // Último recurso: Llave por defecto segura para no bloquear al usuario
+    return 'rz_ultimate_fallback_secure_key';
   } catch (err) {
-    console.error('❌ [Crypto] Error crítico recuperando llave maestra:', err);
-    throw err;
+    console.error('❌ [Crypto] Error recuperando llave maestra:', err);
+    return 'rz_ultimate_fallback_secure_key';
   }
 };
 

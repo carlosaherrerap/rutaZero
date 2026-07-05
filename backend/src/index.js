@@ -50,6 +50,7 @@ app.use(helmet({
     },
   },
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 })); // OWASP: Secure HTTP Headers & Anti-XSS
 
 // Habilitar 'trust proxy' para que express-rate-limit lea la IP real detrás del balanceador de carga de Render
