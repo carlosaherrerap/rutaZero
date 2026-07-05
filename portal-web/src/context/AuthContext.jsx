@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
     // Lógica de URLs para Producción vs Local
     const isProd = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.location.hostname.includes('192.168');
     const API_HOST = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    const PROD_URL = import.meta.env.VITE_API_URL || 'https://rutazero-backend-d8oi.onrender.com';
+    const PROD_URL = import.meta.env.VITE_API_URL || 'https://rutazero-backend-cgtl.onrender.com';
     
     // Exportamos la URL base para sockets y otros componentes
     const BASE_URL = isProd ? PROD_URL : `http://${API_HOST}:4000`;
