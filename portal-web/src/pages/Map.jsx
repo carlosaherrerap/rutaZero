@@ -60,11 +60,11 @@ export default function MapPage() {
 
   // Iconos Personalizados - PINES GRANDES
   const getClientIcon = (estado) => {
-    let color = '#37385b'; // Azul por defecto (LIBRE)
-    if (estado === 'EN_VISITA') color = 'var(--c-accent)';
-    if (estado === 'VISITADO_PAGO') color = 'var(--c-success)';
-    if (estado === 'REPROGRAMADO') color = 'var(--c-warn)';
-    if (estado === 'NO_ENCONTRADO') color = 'var(--c-danger)';
+    let color = '#36375b'; // SIN VISITA / LIBRE
+    if (estado === 'EN_VISITA') color = '#027BFD'; // EN VISITA (azul)
+    if (estado === 'VISITADO_PAGO') color = '#28A745'; // GESTIONADO / PAGADO (verde)
+    if (estado === 'REPROGRAMADO') color = '#FFC107'; // REPROGRAMADO / REPROGRAMARA (amarillo)
+    if (estado === 'NO_ENCONTRADO') color = '#DC3545'; // NO ENCONTRADO (rojo)
 
     return L.divIcon({
       className: 'custom-div-icon',
