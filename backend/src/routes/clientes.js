@@ -163,7 +163,8 @@ router.get('/mapa', async (req, res) => {
     }
 
     if (fecha_pago) {
-      queryClientes += ` AND c.fecha_pago = $${paramIdx++}`;
+      queryClientes += ` AND (c.fecha_pago = $${paramIdx} OR c.fecha_gestion = $${paramIdx})`;
+      paramIdx++;
       params.push(fecha_pago);
     }
     
